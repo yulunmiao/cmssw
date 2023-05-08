@@ -6,3 +6,5 @@
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
 #include "DataFormats/HGCalDigi/interface/PHGCSimAccumulator.h"
 #include "DataFormats/HGCalDigi/interface/HGCalRawDataEmulatorInfo.h"
+#include "DataFormats/HGCalDigi/interface/HGCalHostDigiCollection.h"
+#include "DataFormats/HGCalDigi/interface/HGCalDigiSoA.h"

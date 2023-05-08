@@ -1,0 +1,17 @@
+<lcgdict>
+  <class name="hgcalrechit::HGCalRecHitSoA"/>
+  <class name="hgcalrechit::HGCalRecHitSoA::View"/>
+  <class name="hgcalrechit::HGCalHostRecHitCollection"/>
+  <read
+    sourceClass="hgcalrechit::HGCalHostRecHitCollection"
+    targetClass="hgcalrechit::HGCalHostRecHitCollection"
+    version="[1-]"
+    source="hgcalrechit::HGCalRecHitSoA layout_;"
+    target="buffer_,layout_,view_"
+    embed="false">
+  <![CDATA[
+    hgcalrechit::HGCalHostRecHitCollection::ROOTReadStreamer(newObj, onfile.layout_);
+  ]]>
+  </read>
+  <class name="edm::Wrapper<hgcalrechit::HGCalHostRecHitCollection>" splitLevel="0"/>
+</lcgdict>

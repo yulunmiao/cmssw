@@ -40,4 +40,20 @@
     <version ClassVersion="3" checksum="2245547372"/>
   </class>
   <class name="edm::Wrapper<HGCalSlinkEmulatorInfo>"/>
+
+  <class name="hgcaldigi::HGCalDigiSoA"/>
+  <class name="hgcaldigi::HGCalDigiSoA::View"/>
+  <class name="hgcaldigi::HGCalHostDigiCollection"/>
+  <read
+    sourceClass="hgcaldigi::HGCalHostDigiCollection"
+    targetClass="hgcaldigi::HGCalHostDigiCollection"
+    version="[1-]"
+    source="hgcaldigi::HGCalDigiSoA layout_;"
+    target="buffer_,layout_,view_"
+    embed="false">
+  <![CDATA[
+    hgcaldigi::HGCalHostDigiCollection::ROOTReadStreamer(newObj, onfile.layout_);
+  ]]>
+  </read>
+  <class name="edm::Wrapper<hgcaldigi::HGCalHostDigiCollection>" splitLevel="0"/>
 </lcgdict>
