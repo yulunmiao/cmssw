@@ -1,5 +1,5 @@
-#ifndef EventFilter_HGCalRawToDigi_SlinkTypes_h
-#define EventFilter_HGCalRawToDigi_SlinkTypes_h
+#ifndef EventFilter_HGCalRawToDigi_ECONDTypes_h
+#define EventFilter_HGCalRawToDigi_ECONDTypes_h
 
 #include <cstdint>
 #include <map>

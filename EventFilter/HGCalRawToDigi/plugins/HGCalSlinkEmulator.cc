@@ -26,7 +26,7 @@
 
 #include "DataFormats/HGCalDigi/interface/HGCalRawDataEmulatorInfo.h"
 #include "EventFilter/HGCalRawToDigi/interface/HGCalFrameGenerator.h"
-#include "EventFilter/HGCalRawToDigi/interface/HGCalModuleTreeReader.h"
+#include "EventFilter/HGCalRawToDigi/interface/HGCalSlinkFromRaw.h"
 
 class HGCalSlinkEmulator : public edm::stream::EDProducer<> {
 public:
@@ -41,52 +41,55 @@ private:
 
   const bool store_emul_info_;
   const bool store_fed_header_trailer_;
-
+  std::string emul_type_;
+  
   const edm::EDPutTokenT<FEDRawDataCollection> fedRawToken_;
-  std::unique_ptr<hgcal::econd::Emulator> emulator_;
 
   edm::Service<edm::RandomNumberGenerator> rng_;
   edm::EDPutTokenT<HGCalSlinkEmulatorInfo> fedEmulInfoToken_;
   hgcal::HGCalFrameGenerator frame_gen_;
+  std::unique_ptr<hgcal::SlinkFromRaw> raw_reader_;
 };
 
+//
 HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
     : fed_id_(iConfig.getParameter<unsigned int>("fedId")),
       store_emul_info_(iConfig.getParameter<bool>("storeEmulatorInfo")),
       store_fed_header_trailer_(iConfig.getParameter<bool>("fedHeaderTrailer")),
+      emul_type_(iConfig.getParameter<std::string>("emulatorType")),
       fedRawToken_(produces<FEDRawDataCollection>()),
       frame_gen_(iConfig) {
-  // figure out which emulator is to be used
-  const auto& emul_type = iConfig.getParameter<std::string>("emulatorType");
-  if (frame_gen_.econdParams().empty())
-    throw cms::Exception("HGCalSlinkEmulator")
-        << "No ECON-D parameters were retrieved from the configuration. Please add at least one.";
-  const auto& econd_params = frame_gen_.econdParams().begin()->second;
-  if (emul_type == "trivial")
-    emulator_ = std::make_unique<hgcal::econd::TrivialEmulator>(econd_params);
-  else if (emul_type == "hgcmodule")
-    emulator_ = std::make_unique<hgcal::econd::HGCalModuleTreeReader>(
-        econd_params,
-        iConfig.getUntrackedParameter<std::string>("treeName"),
-        iConfig.getUntrackedParameter<std::vector<std::string>>("inputs"));
-  else
-    throw cms::Exception("HGCalSlinkEmulator") << "Invalid emulator type chosen: '" << emul_type << "'.";
+  
+  if (emul_type_=="slinkfromraw") {
+    raw_reader_ = std::make_unique<hgcal::SlinkFromRaw>(iConfig);
+  } else {  
+    frame_gen_.setEmulator(emul_type_);
 
-  frame_gen_.setEmulator(*emulator_);
+    // ensure the random number generator service is present in configuration
+    if (!rng_.isAvailable())
+      throw cms::Exception("HGCalSlinkEmulator") << "The HGCalSlinkEmulator module requires the "
+        "RandomNumberGeneratorService,\n"
+        "which appears to be absent. Please add that service to your "
+        "configuration\n"
+        "or remove the modules that require it.";
 
-  // ensure the random number generator service is present in configuration
-  if (!rng_.isAvailable())
-    throw cms::Exception("HGCalSlinkEmulator") << "The HGCalSlinkEmulator module requires the "
-                                                  "RandomNumberGeneratorService,\n"
-                                                  "which appears to be absent. Please add that service to your "
-                                                  "configuration\n"
-                                                  "or remove the modules that require it.";
+    if (store_emul_info_)
+      fedEmulInfoToken_ = produces<HGCalSlinkEmulatorInfo>();
+  }
 
-  if (store_emul_info_)
-    fedEmulInfoToken_ = produces<HGCalSlinkEmulatorInfo>();
 }
 
+//
 void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+
+  //raw s-link can be put directly to the event
+  if(emul_type_=="slinkfromraw") {
+    FEDRawDataCollection raw_data = raw_reader_->next();
+    iEvent.emplace(fedRawToken_, std::move(raw_data));
+    return;
+  }
+
+  //otherwise generate a new frame
   frame_gen_.setRandomEngine(rng_->getEngine(iEvent.streamID()));
 
   // build the S-link payload
@@ -95,9 +98,9 @@ void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSet
 
   // compute the total S-link payload size
   size_t total_event_size = slink_event_size;
-  if (store_fed_header_trailer_)
+  if (store_fed_header_trailer_){
     total_event_size += FEDHeader::length + FEDTrailer::length;
-
+  }
   // fill the output FED raw data collection
   FEDRawDataCollection raw_data;
   auto& fed_data = raw_data.FEDData(fed_id_);

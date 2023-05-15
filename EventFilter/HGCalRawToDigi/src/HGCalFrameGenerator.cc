@@ -9,8 +9,8 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/CRC16.h"
-
 #include "EventFilter/HGCalRawToDigi/interface/HGCalECONDEmulator.h"
+#include "EventFilter/HGCalRawToDigi/interface/HGCalModuleTreeReader.h"
 #include "EventFilter/HGCalRawToDigi/interface/HGCalFrameGenerator.h"
 #include "EventFilter/HGCalRawToDigi/interface/HGCalRawDataPackingTools.h"
 
@@ -49,6 +49,10 @@ namespace hgcal {
   }
 
   HGCalFrameGenerator::HGCalFrameGenerator(const edm::ParameterSet& iConfig) {
+
+    inputfile_key_=iConfig.getUntrackedParameter<std::string>("treeName");
+    inputfile_list_=iConfig.getUntrackedParameter<std::vector<std::string>>("inputs");
+    
     const auto slink_config = iConfig.getParameter<edm::ParameterSet>("slinkParams");
 
     size_t econd_id = 0;
@@ -100,9 +104,30 @@ namespace hgcal {
     return desc;
   }
 
+  //
   void HGCalFrameGenerator::setRandomEngine(CLHEP::HepRandomEngine& rng) { rng_ = &rng; }
 
-  void HGCalFrameGenerator::setEmulator(econd::Emulator& emul) { emul_ = &emul; }
+  //
+  void HGCalFrameGenerator::setEmulator(std::string emul_type) {
+
+    //check for the presence of ECON-D parameters
+    if (econdParams().empty())
+      throw cms::Exception("HGCalFrameGenerator")
+        << "No ECON-D parameters were retrieved from the configuration. Please add at least one.";
+    const auto& econd_params = econdParams().begin()->second;
+
+    //instantiate the correct emulator type
+    if (emul_type == "trivial") {
+      emulator_ = std::make_unique<hgcal::econd::TrivialEmulator>(econd_params);
+    }
+    else if (emul_type == "hgcmodule") {
+      emulator_ = std::make_unique<hgcal::econd::HGCalModuleTreeReader>(econd_params, inputfile_key_, inputfile_list_);
+    }
+    else {
+      throw cms::Exception("HGCalSlinkEmulator") << "Invalid emulator type chosen: '" << emul_type << "'.";
+    }
+    
+  }
 
   //--------------------------------------------------
   // emulation part

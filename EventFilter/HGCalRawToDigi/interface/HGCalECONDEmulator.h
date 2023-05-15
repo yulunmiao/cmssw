@@ -3,27 +3,17 @@
 
 #include <cstddef>
 
+#include "EventFilter/HGCalRawToDigi/interface/HGCalRawDataBaseEmulator.h"
 #include "EventFilter/HGCalRawToDigi/interface/HGCalECONDEmulatorParameters.h"
-#include "EventFilter/HGCalRawToDigi/interface/SlinkTypes.h"
+#include "EventFilter/HGCalRawToDigi/interface/ECONDTypes.h"
 
 namespace hgcal::econd {
-  /// Pure virtual base class for a ECON-D event emulator implementation
-  class Emulator {
-  public:
-    explicit Emulator(const EmulatorParameters& params) : params_(params) {}
-    virtual ~Emulator() = default;
-
-    /// Fetch the next ECON-D event
-    virtual ECONDInput next() = 0;
-
-  protected:
-    const EmulatorParameters params_;
-  };
 
   /// A "trivial" ECON-D emulator emulating non-empty ECON-D events
-  class TrivialEmulator : public Emulator {
+  class TrivialEmulator : public ECONDEmulatorBase {
   public:
-    using Emulator::Emulator;
+    
+    using ECONDEmulatorBase::ECONDEmulatorBase;
 
     ECONDInput next() override;
 
