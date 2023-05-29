@@ -1,3 +1,11 @@
+<library file="HGCalElectronicsMapESSourceTester.cc" name="HGCalElectronicsMapESSourceTester">
+  <use name="CondFormats/DataRecord"/>
+  <use name="CondFormats/HGCalObjects"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/ParameterSet"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
+
 <bin file="testHGCalLogicalMapping.cc" name="testHGCalLogicalMapping">
   <flags TEST_RUNNER_ARGS=" 2000 Geometry/HGCalMapping/data/channels_sipmontile.hgcal.txt Geometry/HGCalMapping/data/modulelocator.txt"/>
   <use name="Geometry/HGCalMapping"/>

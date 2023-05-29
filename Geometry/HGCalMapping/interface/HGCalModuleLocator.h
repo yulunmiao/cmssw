@@ -47,6 +47,9 @@ class HGCalModuleLocator {
     // DAQ from Module location
     std::string getDAQ(int plane, int u, int v, int isSiPM) const;
 
+    //returns the info
+    HGCalCondSerializableModuleInfo getInfo() {return mod2loc_; }
+  
   private:
   
     //object holding all module info
