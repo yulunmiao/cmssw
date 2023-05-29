@@ -1,0 +1,14 @@
+#include "CondCore/ESSources/interface/registration_macros.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableGenericConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableGenericConfig.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableSiCellChannelInfoRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiCellChannelInfo.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableSiPMTileInfoRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiPMTileInfo.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+
+REGISTER_PLUGIN(HGCalCondSerializableGenericConfigRcd,HGCalCondSerializableGenericConfig);
+REGISTER_PLUGIN(HGCalCondSerializableSiCellChannelInfoRcd,HGCalCondSerializableSiCellChannelInfo);
+REGISTER_PLUGIN(HGCalCondSerializableSiPMTileInfoRcd,HGCalCondSerializableSiPMTileInfo);
+REGISTER_PLUGIN(HGCalCondSerializableModuleInfoRcd,HGCalCondSerializableModuleInfo);
