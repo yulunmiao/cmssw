@@ -19,4 +19,10 @@ namespace CondFormats_HGCalObjects {
   std::vector<HGCalModuleInfo> v_hmi;
   HGCalCondSerializableModuleInfo h_csmi();
 
+  HGCalPedestals hp;
+  std::pair<uint32_t,HGCalPedestals> p_hp;
+  std::map<uint32_t,HGCalPedestals> v_hp;
+  HGCalCondSerializablePedestals h_csp();
+
+  
 }  // namespace CondFormats_HGCalObjects

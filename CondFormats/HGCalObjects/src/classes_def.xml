@@ -25,4 +25,12 @@
   <class name="HGCalModuleInfo"/>
   <class name="std::vector<HGCalModuleInfo>"/>
 
+  <class name="HGCalCondSerializablePedestals" class_version="0">
+    <field name="params_" mapping="blob"/>
+  </class>
+  <class name="HGCalPedestals"/>
+  <class name="std::map<uint32_t, HGCalPedestals>"/>
+  <class name="std::pair<uint32_t, HGCalPedestals>"/>
+
+  
 </lcgdict>

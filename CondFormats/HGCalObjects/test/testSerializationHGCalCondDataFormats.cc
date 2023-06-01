@@ -24,5 +24,10 @@ int main()
   testSerialization<HGCalCondSerializableModuleInfo>();
   testSerialization<std::vector<HGCalCondSerializableModuleInfo>>();
 
+  //pedestals
+  testSerialization<HGCalPedestals>();
+  testSerialization<HGCalCondSerializablePedestals>();
+  testSerialization<std::vector<HGCalCondSerializablePedestals>>();
+
   return 0;
 }

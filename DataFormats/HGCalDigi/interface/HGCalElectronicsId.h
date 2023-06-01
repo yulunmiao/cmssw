@@ -42,12 +42,14 @@ public:
   */
   HGCalElectronicsId() : value_(0) {}
   HGCalElectronicsId(bool cmflag,uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
+  HGCalElectronicsId(uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
   HGCalElectronicsId(uint32_t value) : value_(value) {}
   HGCalElectronicsId(const HGCalElectronicsId& o) : value_(o.value_) {}
 
   /**
      @short getters
   */
+
 
   uint32_t operator()() const { return value_; }
   bool operator<(const HGCalElectronicsId& oth) const { return value_ < oth.value_; }
@@ -57,12 +59,14 @@ public:
   uint8_t econdIdx() const;
   uint8_t econdeRx() const;
   uint8_t halfrocChannel() const;
+  uint8_t sequentialHalfrocChannel() const;
   bool isCM() const;
   void print(std::ostream& out = std::cout) const {
     out << "Raw=0x" << std::hex << raw() << std::dec << std::endl
         << "\tFED-ID: " << (uint32_t)fedId() << " Capture Block: " << (uint32_t)captureBlock()
         << " ECON-D idx: " << (uint32_t)econdIdx() << " eRx: " << (uint32_t)econdeRx()
-        << " 1/2 ROC ch.: " << (uint32_t)halfrocChannel() << " isCM=" << isCM() << std::endl;
+        << " 1/2 ROC ch.: " << (uint32_t)halfrocChannel() << " (" << (uint32_t) sequentialHalfrocChannel() << ") "
+        << " isCM=" << isCM() << std::endl;
   }
 
 private:

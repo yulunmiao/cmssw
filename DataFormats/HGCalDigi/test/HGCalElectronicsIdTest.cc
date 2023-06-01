@@ -36,20 +36,23 @@ int main(int argc, char** argv) {
   // do the trials: time/performance test and exploit randomisation to check
   unsigned long int u = 0;
   for (; u < repetitions; u++) {
-    cmflag = (bool) (myrand()%2);
+
     fedid = myrand() % 576;
     captureblock = myrand() % 10;
     econdidx = myrand() % 12;
     econderx = myrand() % 12;
     halfrocch = myrand() % 39;
-
-    HGCalElectronicsId eid(cmflag,fedid, captureblock, econdidx, econderx, halfrocch);
+    cmflag = ((halfrocch==37) || (halfrocch==38)) ? true : false;
+    uint8_t croppedHalfRocCh(cmflag ? (halfrocch-37)%2 : halfrocch);
+    
+    HGCalElectronicsId eid(fedid, captureblock, econdidx, econderx, halfrocch);
     assert(cmflag == eid.isCM());
     assert(fedid == eid.fedId());
     assert(captureblock == eid.captureBlock());
     assert(econdidx == eid.econdIdx());
     assert(econderx == eid.econdeRx());
-    assert(halfrocch == eid.halfrocChannel());
+    assert(halfrocch == eid.sequentialHalfrocChannel());
+    assert(croppedHalfRocCh == eid.halfrocChannel());
 
     if (verbosity > 0)
       eid.print(std::cout);
