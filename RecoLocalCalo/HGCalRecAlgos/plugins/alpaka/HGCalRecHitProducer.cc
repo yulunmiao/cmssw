@@ -35,17 +35,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     void produce(edm::Event&, const edm::EventSetup&) override;
 
-    std::unique_ptr<HGCalDeviceDigiCollection> hostToDevice(const std::unique_ptr<HGCalHostDigiCollection> &hostDigis);
-    std::unique_ptr<HGCalHostRecHitCollection> deviceToHost(const std::unique_ptr<HGCalDeviceRecHitCollection> &deviceRecHits);
-
     const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
-    const edm::EDPutTokenT<std::unique_ptr<HGCalHostRecHitCollection>> recHitsToken_;
+    const edm::EDPutTokenT<std::unique_ptr<HGCalDeviceRecHitCollection>> recHitsToken_;
     const std::unique_ptr<HGCalRecHitCalibrationAlgorithms> calibrator;
   };
 
   HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
       : elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
-        recHitsToken_(produces<std::unique_ptr<HGCalHostRecHitCollection>>()),
+        recHitsToken_(produces<std::unique_ptr<HGCalDeviceRecHitCollection>>()),
         calibrator(std::make_unique<HGCalRecHitCalibrationAlgorithms>())
   {}
 
@@ -53,29 +50,20 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   {
     // Read digis
     auto elecDigis = iEvent.get(elecDigisToken_); // this ultimately should return HGCalHostRecHitCollection
-    auto hostDigis = std::make_unique<HGCalHostDigiCollection>(); // = iEvent.get(elecDigisToken_);
+    
+    // Filling host digis with some dummy values
+    auto digis = std::make_unique<HGCalDeviceDigiCollection>(); // = iEvent.get(elecDigisToken_);
 
-    std::unique_ptr<HGCalDeviceDigiCollection> deviceDigis = hostToDevice(hostDigis);
-    std::unique_ptr<HGCalDeviceRecHitCollection> deviceRecHits = calibrator->calibrate(deviceDigis);
-    std::unique_ptr<HGCalHostRecHitCollection> hostRecHits = deviceToHost(deviceRecHits);
+    //          electronicsID raw cm flags
+    digis->view()[0] = {0, 10 , 1 , 0};
+    digis->view()[1] = {1, 9  , 2 , 0};
+    digis->view()[2] = {2, 11 , 1 , 0};
+    digis->view()[3] = {3, 10 , 1 , 0};
 
-    iEvent.emplace(recHitsToken_, std::move(hostRecHits));
+    std::unique_ptr<HGCalDeviceRecHitCollection> recHits = calibrator->calibrate(digis);
+    
+    iEvent.emplace(recHitsToken_, std::move(recHits));
   }
-
-  std::unique_ptr<HGCalDeviceDigiCollection> HGCalRecHitProducer::hostToDevice(const std::unique_ptr<HGCalHostDigiCollection> &hostDigis)
-  {
-    auto deviceDigis = std::make_unique<HGCalDeviceDigiCollection>();
-    // populate device digis from host digis
-    return deviceDigis;
-  }
-
-  std::unique_ptr<HGCalHostRecHitCollection> HGCalRecHitProducer::deviceToHost(const std::unique_ptr<HGCalDeviceRecHitCollection> &deviceRecHits)
-  {
-    auto hostRecHits = std::make_unique<HGCalHostRecHitCollection>();
-    // populate host rec hits from device rec hits
-    return hostRecHits;
-  }
-
 
   void HGCalRecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
