@@ -27,6 +27,8 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
+  using namespace std;
+
   class HGCalRecHitProducer : public edm::stream::EDProducer<> {
   public:
     explicit HGCalRecHitProducer(const edm::ParameterSet&);
@@ -35,39 +37,43 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     void produce(edm::Event&, const edm::EventSetup&) override;
 
-    const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
-    const edm::EDPutTokenT<std::unique_ptr<HGCalDeviceRecHitCollection>> recHitsToken_;
+    // const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
+    const edm::EDPutTokenT<HGCalDeviceRecHitCollection> recHitsToken_;
     const std::unique_ptr<HGCalRecHitCalibrationAlgorithms> calibrator;
   };
 
-  HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
-      : elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
-        recHitsToken_(produces<std::unique_ptr<HGCalDeviceRecHitCollection>>()),
+  HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig): 
+        // elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
+        recHitsToken_(produces<HGCalDeviceRecHitCollection>()),
         calibrator(std::make_unique<HGCalRecHitCalibrationAlgorithms>())
   {}
 
   void HGCalRecHitProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   {
+    cout<<"\n\nINFO -- Start of produce\n\n"<<endl;
     // Read digis
-    auto elecDigis = iEvent.get(elecDigisToken_); // this ultimately should return HGCalHostRecHitCollection
+    // auto elecDigis = iEvent.get(elecDigisToken_); // this ultimately should return HGCalHostRecHitCollection
     
     // Filling host digis with some dummy values
+    cout<<"INFO -- Creating digis collection"<<endl;
     auto digis = std::make_unique<HGCalDeviceDigiCollection>(); // = iEvent.get(elecDigisToken_);
 
-    //          electronicsID raw cm flags
-    digis->view()[0] = {0, 10 , 1 , 0};
-    digis->view()[1] = {1, 9  , 2 , 0};
-    digis->view()[2] = {2, 11 , 1 , 0};
-    digis->view()[3] = {3, 10 , 1 , 0};
+    // //          electronicsID raw cm flags
+    // digis->view()[0] = {0, 10 , 1 , 0};
+    // digis->view()[1] = {1, 9  , 2 , 0};
+    // digis->view()[2] = {2, 11 , 1 , 0};
+    // digis->view()[3] = {3, 10 , 1 , 0};
 
+    cout<<"INFO -- calling calibrate method"<<endl;
     std::unique_ptr<HGCalDeviceRecHitCollection> recHits = calibrator->calibrate(digis);
     
-    iEvent.emplace(recHitsToken_, std::move(recHits));
+    cout<<"INFO -- storing rec hits in the event"<<endl;
+    iEvent.emplace(recHitsToken_, std::move(*recHits));
   }
 
   void HGCalRecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("Digis", edm::InputTag("hgcalDigis", "DIGI", "TEST"));
+    // desc.add<edm::InputTag>("Digis", edm::InputTag("hgcalDigis", "DIGI", "TEST"));
     descriptions.addWithDefaultLabel(desc);
   }
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

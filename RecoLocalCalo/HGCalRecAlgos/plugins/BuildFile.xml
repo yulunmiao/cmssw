@@ -1,3 +1,18 @@
+<!-- host-only plugins -->
+<!-- <library file="*.cc" name="RecoLocalCaloHGCalRecAlgosPlugins">
+  <use name="alpaka"/>
+  <use name="fmt"/>
+  <use name="DataFormats/PortableTestObjects"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/MessageLogger"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <use name="RecoLocalCalo/HGCalRecAlgos"/>
+  <flags EDM_PLUGIN="1"/>
+</library> -->
+
+
+
 <!-- alpaka-based portable plugins -->
 <library file="alpaka/*.cc" name="RecoLocalCaloHGCalRecAlgosPluginsPortable">
   <use name="alpaka"/>
@@ -5,6 +20,7 @@
   The dependency on "DataFormats/PortableTestObjects" automatically expands to include
   the host-only library (if it exists) and the corresponding Alpaka libraries (if they exist)
   -->
+  <use name="DataFormats/PortableTestObjects"/>
   <use name="DataFormats/HGCalRecHit"/>
   <use name="DataFormats/HGCalDigi"/>
   <use name="DataFormats/TestObjects"/>

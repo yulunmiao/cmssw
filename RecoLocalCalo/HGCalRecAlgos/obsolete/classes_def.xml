@@ -1,4 +1,5 @@
 <lcgdict>
+  <!-- <class name="hgcalrechit::HGCalRecHitSoALayout"/> -->
   <class name="hgcalrechit::HGCalRecHitSoA"/>
   <class name="hgcalrechit::HGCalRecHitSoA::View"/>
   <class name="hgcalrechit::HGCalHostRecHitCollection"/>
