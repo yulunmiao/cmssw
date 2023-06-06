@@ -2,114 +2,118 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
-
-#include "EventFilter/HGCalRawToDigi/interface/HGCalSlinkFromRaw/FileReader.h"
-
 // example reader by P.Dauncey, using https://gitlab.cern.ch/pdauncey/hgcal10glinkreceiver
 
 using namespace hgcal;
 
 SlinkFromRaw::SlinkFromRaw(const edm::ParameterSet &iConfig) : SlinkEmulatorBase(iConfig) {
-
-    std::vector<std::string> inputfile_list=iConfig.getUntrackedParameter<std::vector<std::string>>("inputs");
+ 
+  inputfiles_=iConfig.getUntrackedParameter<std::vector<std::string>>("inputs");
+  ifile_=0;
     
-    edm::LogInfo("SlinkFromRaw") << "files: \n";
-    copy(begin(inputfile_list),end(inputfile_list),
-         std::ostream_iterator<std::string>{std::cout,"\n"});
-
-    for (const auto& inputfile : inputfile_list){
-        // Create the file reader
-        hgcal_slinkfromraw::FileReader _fileReader;
-
-        // Make the buffer space for the records
-        hgcal_slinkfromraw::RecordT<4095> *r(new hgcal_slinkfromraw::RecordT<4095>);
-        
-        // Set up specific records to interpet the formats
-        const hgcal_slinkfromraw::RecordStarting *rStart((hgcal_slinkfromraw::RecordStarting*)r);
-        const hgcal_slinkfromraw::RecordStopping *rStop ((hgcal_slinkfromraw::RecordStopping*)r);
-        const hgcal_slinkfromraw::RecordRunning  *rEvent((hgcal_slinkfromraw::RecordRunning*) r);
-        
-        // Defaults to the files being in directory "dat"
-        // Can call setDirectory("blah") to change this
-        //_fileReader.setDirectory("somewhere/else");
-
-        edm::LogInfo("SlinkFromRaw: Reading file") << inputfile << "\n";
-        _fileReader.open(inputfile);
-
-        unsigned nEvents(0);
-        
-        while(_fileReader.read(r)) {
-            if(       r->state()==hgcal_slinkfromraw::FsmState::Starting) {
-                rStart->print();
-                std::cout << std::endl;
-                
-            } else if(r->state()==hgcal_slinkfromraw::FsmState::Stopping) {
-                rStop->print();
-                std::cout << std::endl;
-                
-            } else {
-                
-                // We have an event record
-                nEvents++;
-                
-                bool print(nEvents<=1);
-                
-                if(print) {
-                    rEvent->print();
-                    std::cout << std::endl;
-                }
-                
-                // Check id is correct
-                if(!rEvent->valid()) rEvent->print();
-                
-                // Access the Slink header ("begin-of-event")
-                // This should always be present; check pattern is correct
-                const hgcal_slinkfromraw::SlinkBoe *b(rEvent->slinkBoe());
-                assert(b!=nullptr);
-                if(!b->validPattern()) b->print();
-                
-                // Access the Slink trailer ("end-of-event")
-                // This should always be present; check pattern is correct
-                const hgcal_slinkfromraw::SlinkEoe *e(rEvent->slinkEoe());
-                assert(e!=nullptr);
-                if(!e->validPattern()) e->print();
-                
-                // Access the BE packet header
-                const hgcal_slinkfromraw::BePacketHeader *bph(rEvent->bePacketHeader());
-                if(bph!=nullptr && print) bph->print();
-                
-                // Access ECON-D packet as an array of 32-bit words
-                const uint32_t *pEcond(rEvent->econdPayload());
-                
-                // Check this is not an empty event
-                if(pEcond!=nullptr) {
-                    
-                    if(print) {
-                        std::cout << "First 10 words of ECON-D packet" << std::endl;
-                        std::cout << std::hex << std::setfill('0');
-                        for(unsigned i(0);i<10;i++) {
-                            std::cout << "0x" << std::setw(8) << pEcond[i] << std::endl;
-                        }
-                        std::cout << std::dec << std::setfill(' ');
-                        std::cout << std::endl;
-                    }
-                    
-                }
-            }
-        }
-        
-        std::cout << "Total number of event records seen = "
-                  << nEvents << std::endl;
-        
-        delete r;
-        
-    }
-
-
-  throw cms::Exception("SlinkFromRaw::CTOR") << "Not implemented!";
+  edm::LogInfo("SlinkFromRaw") << "files: \n";
+  copy(begin(inputfiles_),end(inputfiles_), std::ostream_iterator<std::string>{std::cout,"\n"});
+    
+  // Make the buffer space for the records
+  record_ = new hgcal_slinkfromraw::RecordT<4095>;
+  nEvents_=0;
 }
 
 //
 FEDRawDataCollection SlinkFromRaw::next() {
-  throw cms::Exception("SlinkFromRaw::next") << "Not implemented!";
+
+  FEDRawDataCollection raw_data;
+  
+  //open for the first time
+  if( fileReader_.closed() ) {
+    auto inputfile = inputfiles_[ifile_];
+    fileReader_.open(inputfile);
+  }
+
+  //no more records in the file
+  if(!fileReader_.read(record_)) {
+    ifile_++;
+
+    if(ifile_>=inputfiles_.size())
+      throw cms::Exception("SlinkFromRaw::next") << "No more files";
+    fileReader_.close();
+    auto inputfile=inputfiles_[ifile_];
+    fileReader_.open(inputfile);
+  }
+
+  edm::LogInfo("SlinkFromRaw: Reading record from file #") << ifile_ << "nevents=" << nEvents_ << "\n";
+  
+  // Set up specific records to interpet the formats
+  const hgcal_slinkfromraw::RecordStarting *rStart((hgcal_slinkfromraw::RecordStarting*)record_);
+  const hgcal_slinkfromraw::RecordStopping *rStop ((hgcal_slinkfromraw::RecordStopping*)record_);
+  const hgcal_slinkfromraw::RecordRunning  *rEvent((hgcal_slinkfromraw::RecordRunning*)record_);
+  if(record_->state()==hgcal_slinkfromraw::FsmState::Starting) {
+    rStart->print();
+    std::cout << std::endl;
+  } else if(record_->state()==hgcal_slinkfromraw::FsmState::Stopping) {
+    rStop->print();
+    std::cout << std::endl;
+  } else {
+                
+    // We have a new event
+    nEvents_++;
+    bool print(nEvents_<=1);
+    if(print) {
+      rEvent->print();
+      std::cout << std::endl;
+    }
+
+    // Check id is correct
+    if(!rEvent->valid()) rEvent->print();
+                
+    // Access the Slink header ("begin-of-event")
+    // This should always be present; check pattern is correct
+    const hgcal_slinkfromraw::SlinkBoe *b(rEvent->slinkBoe());
+    assert(b!=nullptr);
+    if(!b->validPattern()) b->print();
+    
+    // Access the Slink trailer ("end-of-event")
+    // This should always be present; check pattern is correct
+    const hgcal_slinkfromraw::SlinkEoe *e(rEvent->slinkEoe());
+    assert(e!=nullptr);
+    if(!e->validPattern()) e->print();
+                
+    // Access the BE packet header
+    const hgcal_slinkfromraw::BePacketHeader *bph(rEvent->bePacketHeader());
+    if(bph!=nullptr && print) bph->print();
+    
+    // Access ECON-D packet as an array of 32-bit words
+    const uint32_t *pEcond(rEvent->econdPayload());
+    
+    // Check this is not an empty event
+    if(pEcond!=nullptr) {
+                    
+      if(print) {
+        std::cout << "First 10 words of ECON-D packet" << std::endl;
+        std::cout << std::hex << std::setfill('0');
+        for(unsigned i(0);i<10;i++) {
+          std::cout << "0x" << std::setw(8) << pEcond[i] << std::endl;
+        }
+        std::cout << std::dec << std::setfill(' ');
+        std::cout << std::endl;
+      }
+
+      //copy to the event
+      auto *payload=rEvent->daqPayload();
+      std::cout << payload << " " << sizeof(payload)/sizeof(uint32_t) << std::endl;
+      size_t total_event_size = sizeof(payload)/sizeof(char);
+      std::cout << "\t -> " << total_event_size << std::endl;
+      auto& fed_data = raw_data.FEDData(1);
+      std::cout << "?" << std::endl;
+      fed_data.resize(total_event_size);
+      std::cout << "??" << std::endl;
+      auto* ptr = fed_data.data();
+      std::cout << "???" << std::endl;
+      memcpy(ptr, (char*)payload, total_event_size);
+      std::cout << "????" << std::endl;
+    }
+  }
+
+  std::cout << "returning raw_data" << std::endl;
+  return raw_data;
 }

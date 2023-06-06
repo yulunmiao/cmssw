@@ -39,7 +39,7 @@ options.register('storeRAWOutput', False, VarParsing.VarParsing.multiplicity.sin
 options.register('storeEmulatorInfo', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the emulator metadata')
 
-options.maxEvents = 1  # number of events to emulate
+options.maxEvents = 10  # number of events to emulate
 options.output = 'output.root'  # output EDM file
 options.secondaryOutput = 'output.raw'  # output streamer file
 options.parseArguments()
@@ -70,6 +70,26 @@ process.hgcalDigis.fedIds = cms.vuint32(options.fedId)
 
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis)
 
-
 process.outpath = cms.EndPath()
+
+if options.storeOutput:
+    process.output = cms.OutputModule("PoolOutputModule",
+        fileName = cms.untracked.string(options.output),
+        outputCommands = cms.untracked.vstring(
+            'drop *',
+            'keep *_hgcalEmulatedSlinkRawData_*_*',
+            'keep *_hgcalDigis_*_*',
+        )
+    )
+    process.outpath += process.output
+    
+if options.storeRAWOutput:
+    process.outputRAW = cms.OutputModule("FRDOutputModule",
+        source = cms.InputTag('hgcalEmulatedSlinkRawData'),
+        frdVersion = cms.untracked.uint32(6),
+        frdFileVersion = cms.untracked.uint32(1),
+        fileName = cms.untracked.string(options.secondaryOutput)
+    )
+    process.outpath += process.outputRAW
+
 

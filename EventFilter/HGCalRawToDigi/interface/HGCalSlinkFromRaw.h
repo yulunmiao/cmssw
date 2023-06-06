@@ -2,6 +2,7 @@
 #define EventFilter_HGCalRawToDigi_HGCalSlinkFromRaw_h
 
 #include "EventFilter/HGCalRawToDigi/interface/HGCalRawDataBaseEmulator.h"
+#include "EventFilter/HGCalRawToDigi/interface/HGCalSlinkFromRaw/FileReader.h"
 
 #include <ostream>
 #include <iostream>
@@ -27,8 +28,12 @@ namespace hgcal {
     FEDRawDataCollection next() override;
     
   private:
-    
-    
+
+    size_t ifile_;
+    std::vector<std::string> inputfiles_;
+    hgcal_slinkfromraw::FileReader fileReader_;
+    hgcal_slinkfromraw::RecordT<4095> *record_;
+    uint32_t nEvents_;
   };
   
 }  // namespace hgcal
