@@ -21,8 +21,14 @@ process.MessageLogger.cerr.INFO.limit = cms.untracked.int32(10000000)
 #     alpaka = cms.untracked.Pset( backend = cms.untracked.string("serial_sync"))
 # )
 
-process.producerGpu = cms.EDProducer('alpaka_cuda_async::HGCalRecHitProducer')
-process.producerCpu = cms.EDProducer('alpaka_serial_sync::HGCalRecHitProducer')
+process.producerGpu = cms.EDProducer(
+    'alpaka_cuda_async::HGCalRecHitProducer',
+    digis = cms.InputTag('hgcalDigis', '', 'TEST')
+)
+process.producerCpu = cms.EDProducer(
+    'alpaka_serial_sync::HGCalRecHitProducer',
+    digis = cms.InputTag('hgcalDigis', '', 'TEST')
+)
 
 process.output = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string("./recHits.root"),

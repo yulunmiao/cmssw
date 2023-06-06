@@ -11,9 +11,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   using namespace cms::alpakatools;
   using namespace std;
 
-  typedef std::unique_ptr<HGCalDeviceDigiCollection> Digis;
-  typedef std::unique_ptr<HGCalDeviceRecHitCollection> RecHits;
-
   class HGCalRecHitCalibrationKernel_digisToRecHits {
   public:
     template <typename TAcc, typename T>
@@ -33,61 +30,70 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   class HGCalRecHitCalibrationKernel_pedestalCorrection {
   public:
     template <typename TAcc, typename T>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, T &recHits, float pedestalValue) const {
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T recHits, float pedestalValue) const {
       for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
         recHits[index].energy() -= pedestalValue;
       }
     }
   };
 
-std::unique_ptr<HGCalDeviceRecHitCollection> HGCalRecHitCalibrationAlgorithms::calibrate(const std::unique_ptr<HGCalDeviceDigiCollection> &digis)
+unique_ptr<HGCalDeviceRecHitCollection> HGCalRecHitCalibrationAlgorithms::calibrate(const HGCalHostDigiCollection &digis)
 {
   cout<<"\n\nINFO -- Start of calibrate\n\n"<<endl;
 
   auto queue = Queue(devices<Platform>()[0]); // should pick the right device somehow...
   auto grid = make_workdiv<Acc1D>(4, 4);
 
-  auto recHits = std::make_unique<HGCalDeviceRecHitCollection>();
-
-  cout<<"INFO -- converting digis to rechits"<<endl;
+  cout << "Input digis: " << endl;
+  print(digis, 10);
+  
+  cout<<"\n\nINFO -- converting digis to rechits"<<endl;
+  auto recHits = make_unique<HGCalDeviceRecHitCollection>(digis.view().metadata().size(), queue);
 
   alpaka::exec<Acc1D>(queue, 
                       grid, 
                       HGCalRecHitCalibrationKernel_digisToRecHits{}, 
-                      digis->view(),
+                      digis.view(),
                       recHits->view()
-                      // recHits->view()
   );
 
-  std::cout << "Input digis: " << std::endl;
+  cout << "RecHits before calibration: " << endl;
+  print(recHits, 10);
 
-  for(int i=0; i<digis->view().metadata().size(); i++){
-    std::cout<<i;
-    std::cout<<"\t"<<digis->view()[i].electronicsId();
-    std::cout<<"\t"<<digis->view()[i].raw();
-    std::cout<<"\t"<<digis->view()[i].cm();
-    std::cout<<"\t"<<digis->view()[i].flags();
-  }
-
-
-  std::cout << "RecHits: " << std::endl;
-
-  for(int i=0; i<recHits->view().metadata().size(); i++){
-    std::cout<<i;
-    std::cout<<"\t"<<recHits->view()[i].detid();
-    std::cout<<"\t"<<recHits->view()[i].energy();
-    std::cout<<"\t"<<recHits->view()[i].time();
-    std::cout<<"\t"<<recHits->view()[i].flags();
-  }
-
+  float pedestalValue = 10;
+  alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, recHits->view(), pedestalValue);
   
-  // float pedestalValue = 10;
-  // alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, recHits->view(), pedestalValue);
-  
+  cout << "RecHits after pedestal calibration: " << endl;
+  print(recHits, 10);
+
   // applySomeCalibration(recHits);
   // applySomeOtherCalibration(recHits);
 
     return recHits;
+}
+
+void HGCalRecHitCalibrationAlgorithms::print(const HGCalHostDigiCollection &digis, int max){
+  int max_ = max > 0 ? max : digis.view().metadata().size();
+  for(int i=0; i<max_; i++){
+    cout<<i;
+    cout<<"\t"<<digis.view()[i].electronicsId();
+    cout<<"\t"<<digis.view()[i].raw();
+    cout<<"\t"<<digis.view()[i].cm();
+    cout<<"\t"<<digis.view()[i].flags();
+    cout<<endl;
+  }
+}
+
+void HGCalRecHitCalibrationAlgorithms::print(const unique_ptr<HGCalDeviceRecHitCollection> &recHits, int max){
+  int max_ = max > 0 ? max : recHits->view().metadata().size();
+  for(int i=0; i<max_; i++){
+    cout<<i;
+    cout<<"\t"<<recHits->view()[i].detid();
+    cout<<"\t"<<recHits->view()[i].energy();
+    cout<<"\t"<<recHits->view()[i].time();
+    cout<<"\t"<<recHits->view()[i].flags();
+    cout<<endl;
+  }
 }
 
 } // namespace ALPAKA_ACCELERATOR_NAMESPACE
@@ -96,29 +102,6 @@ std::unique_ptr<HGCalDeviceRecHitCollection> HGCalRecHitCalibrationAlgorithms::c
 //
 // Some potentially useful code snippets:
 //
-
-// class HGCalRecHitCalibrationKernel {
-// public:
-//   template <typename TAcc, typename = std::enable_if_t<alpaka::isAccelerator<TAcc>>>
-//   ALPAKA_FN_ACC void operator()(TAcc const& acc,
-//                                 HGCalDeviceRecHitCollection::View view,
-//                                 int32_t size, double xvalue) const {
-//     // global index of the thread within the grid
-//     const int32_t thread = alpaka::getIdx<alpaka::Grid,alpaka::Threads>(acc)[0u];
-
-//     for (int32_t i : elements_with_stride(acc, size)) {
-//       // view[i] = {i, i, 1., 2., 3., 4., 5., 6.};
-//     }
-//     // const portabletest::Matrix matrix{{1, 2, 3, 4, 5, 6}, {2, 4, 6, 8, 10, 12}, {3, 6, 9, 12, 15, 18}};
-
-//     // // set this only once in the whole kernel grid
-//     // if (thread == 0) view.r() = 1.;
-
-//     // // make a strided loop over the kernel grid, coveringup to "size" elements
-//     // for (int32_t i : elements_with_stride(acc, size)) view[i] = {xvalue, 0., 0., i, matrix * i};
-//   }
-// };
-
 
 //   void HGCalRecHitCalibrationAlgorithms::fill(Queue& queue, HGCalDeviceRecHitCollection& collection, double xvalue) const {
 //     // use 64 items per group (this value is arbitrary, but it's a reasonable starting point)
