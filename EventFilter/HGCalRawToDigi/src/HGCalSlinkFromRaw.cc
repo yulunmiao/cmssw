@@ -98,22 +98,20 @@ FEDRawDataCollection SlinkFromRaw::next() {
         std::cout << std::endl;
       }
 
-      //copy to the event
-      auto *payload=rEvent->daqPayload();
-      std::cout << payload << " " << sizeof(payload)/sizeof(uint32_t) << std::endl;
-      size_t total_event_size = sizeof(payload)/sizeof(char);
+      //record_->print();
+      
+      //copy to the event      
+      auto *payload=record_->getPayload();
+      auto payloadLength=record_->payloadLength()-2;
+      std::cout << payload << " " << payloadLength/sizeof(uint32_t) << std::endl;
+      size_t total_event_size = payloadLength/sizeof(char);
       std::cout << "\t -> " << total_event_size << std::endl;
       auto& fed_data = raw_data.FEDData(1);
-      std::cout << "?" << std::endl;
       fed_data.resize(total_event_size);
-      std::cout << "??" << std::endl;
       auto* ptr = fed_data.data();
-      std::cout << "???" << std::endl;
       memcpy(ptr, (char*)payload, total_event_size);
-      std::cout << "????" << std::endl;
     }
   }
 
-  std::cout << "returning raw_data" << std::endl;
   return raw_data;
 }
