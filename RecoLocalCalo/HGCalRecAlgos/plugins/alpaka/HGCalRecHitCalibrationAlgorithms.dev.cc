@@ -16,23 +16,45 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, const T &digis,
                                   HGCalDeviceRecHitCollection::View recHits) const {
+      
+
+      auto ToA_to_time = [&](uint16_t ToA){return float(ToA);};
+      auto ADC_to_energy = [&](uint16_t ADC){return float(ADC);};
+      // auto ToT_to_energy = [&](uint16_t ToT){return float(ToT);};
 
       // dummy digis -> rechits conversion (to be replaced by the actual formula)
       for (auto index : elements_with_stride(acc, digis.metadata().size())) {
         recHits[index].detid() = static_cast<uint32_t>(digis[index].electronicsId());
-        recHits[index].energy() = static_cast<double>(digis[index].raw());
-        recHits[index].time() = static_cast<double>(digis[index].cm());
+        recHits[index].energy() = ADC_to_energy(digis[index].raw());
+        recHits[index].time() = ToA_to_time(digis[index].cm());
         recHits[index].flags() = digis[index].flags();
       }
     }
   };
 
-  class HGCalRecHitCalibrationKernel_pedestalCorrection {
-  public:
+  struct HGCalRecHitCalibrationKernel_pedestalCorrection {
     template <typename TAcc, typename T>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, T recHits, float pedestalValue) const {
       for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
         recHits[index].energy() -= pedestalValue;
+      }
+    }
+  };
+
+  struct HGCalRecHitCalibrationKernel_commonModeCorrection {
+    template <typename TAcc, typename T>
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T recHits, float commonModeValue) const {
+      for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
+        recHits[index].energy() -= commonModeValue;
+      }
+    }
+  };
+
+  struct HGCalRecHitCalibrationKernel_ADCmCorrection {
+    template <typename TAcc, typename T>
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, T recHits, float ADCmValue) const {
+      for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
+        recHits[index].energy() -= ADCmValue;
       }
     }
   };
@@ -62,14 +84,20 @@ unique_ptr<HGCalDeviceRecHitCollection> HGCalRecHitCalibrationAlgorithms::calibr
 
   float pedestalValue = 10;
   alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, recHits->view(), pedestalValue);
-  
   cout << "RecHits after pedestal calibration: " << endl;
   print(recHits, 10);
 
-  // applySomeCalibration(recHits);
-  // applySomeOtherCalibration(recHits);
+  float commonModeValue = 10;
+  alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, recHits->view(), commonModeValue);
+  cout << "RecHits after CM calibration: " << endl;
+  print(recHits, 10);
 
-    return recHits;
+  float ADCmValue = 10;
+  alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, recHits->view(), ADCmValue);
+  cout << "RecHits after ADCm calibration: " << endl;
+  print(recHits, 10);
+
+  return recHits;
 }
 
 void HGCalRecHitCalibrationAlgorithms::print(const HGCalHostDigiCollection &digis, int max){
