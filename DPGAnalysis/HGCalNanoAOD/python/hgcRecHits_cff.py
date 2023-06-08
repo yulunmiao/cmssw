@@ -15,12 +15,26 @@ hgcEERecHitsTable = cms.EDProducer("SimpleCaloRecHitFlatTableProducer",
     )
 )
 
+hgcEERecHitsPositionTable = cms.EDProducer("HGCRecHitPositionTableProducer",
+     src = hgcEERecHitsTable.src,
+     cut = hgcEERecHitsTable.cut,
+     name = hgcEERecHitsTable.name,
+     doc  = hgcEERecHitsTable.doc,
+ )
+
 hgcHEfrontRecHitsTable = hgcEERecHitsTable.clone()
 hgcHEfrontRecHitsTable.src = "HGCalRecHit:HGCHEFRecHits"
 hgcHEfrontRecHitsTable.name = "RecHitHGCHEF"
+
+hgcHEfrontRecHitsPositionTable = cms.EDProducer("HGCRecHitPositionTableProducer",
+     src = hgcHEfrontRecHitsTable.src,
+     cut = hgcHEfrontRecHitsTable.cut,
+     name = hgcHEfrontRecHitsTable.name,
+     doc  = hgcHEfrontRecHitsTable.doc,
+ )
 
 hgcHEbackRecHitsTable = hgcEERecHitsTable.clone()
 hgcHEbackRecHitsTable.src = "HGCalRecHit:HGCHEBRecHits"
 hgcHEbackRecHitsTable.name = "RecHitHGCHEB"
 
-hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEbackRecHitsTable,hgcHEfrontRecHitsTable)
+hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEfrontRecHitsTable,hgcHEbackRecHitsTable,hgcEERecHitsPositionTable,hgcHEfrontRecHitsPositionTable)

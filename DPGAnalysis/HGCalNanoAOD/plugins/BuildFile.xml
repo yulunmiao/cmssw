@@ -5,8 +5,12 @@
 <use name="DataFormats/NanoAOD"/>
 <use name="CommonTools/Utils"/>
 <use name="RecoLocalCalo/HGCalRecAlgos"/>
-<use name="DataFormats/HGCRecHit"/>
 <use name="DPGAnalysis/HGCalNanoAOD"/>
+<use name="DataFormats/CaloRecHit"/>
+<use name="Geometry/CaloGeometry"/>
+<use name="DataFormats/HGCRecHit"/>
+<use name="Geometry/HGCalGeometry"/>
+<use name="Geometry/Records"/>
 <library file="*.cc" name="DPGAnalysisHGCalNanoAOD_plugins">
    <flags EDM_PLUGIN="1"/>
 </library>

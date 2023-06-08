@@ -2,11 +2,12 @@ cmsDriver.py NANO \
     -s USER:DPGAnalysis/HGCalNanoAOD/hgcRecHits_cff.hgcRecHitsTask \
     --datatier NANOAOD \
     --eventcontent NANOAOD \
-    --filein file:$CMSSW_BASE/src/23634.0_TTbar_14TeV+2026D95/step3.root \
+    --filein file:/eos/user/d/dalfonso/HGCALtbeam/singleMu_pt10/step3.root \
     --fileout hgcalnano_testcmsdriver.root \
-    -n 100 \
+    -n -1 \
     --nThreads 4 \
     --conditions auto:phase2_realistic_T21 \
+    --geometry Extended2026D95 \
     --era Phase2C17I13M9 \
     --python_filename testcmsdriver_cfg.py \
     --no_exec
