@@ -1,66 +1,54 @@
-// Typical CMSSW imports
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/stream/EDProducer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
+// CMSSW includes
+#include "DataFormats/HGCalDigi/interface/HGCalHostDigiCollection.h"
+#include "DataFormats/HGCalDigi/interface/alpaka/HGCalDeviceDigiCollection.h"
+#include "DataFormats/HGCalRecHit/interface/HGCalHostRecHitCollection.h"
+#include "DataFormats/HGCalRecHit/interface/alpaka/HGCalDeviceRecHitCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
-#include "FWCore/Utilities/interface/EDGetToken.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/Utilities/interface/StreamID.h"
-
-// Alpaka-related imports
-#include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/EDPutToken.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/Event.h"
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/CopyToDevice.h"
-
-// HGCal digis and RecHits
-#include "DataFormats/HGCalDigi/interface/HGCalHostDigiCollection.h"
-#include "DataFormats/HGCalDigi/interface/alpaka/HGCalDeviceDigiCollection.h"
-
-#include "DataFormats/HGCalRecHit/interface/HGCalHostRecHitCollection.h"
-#include "DataFormats/HGCalRecHit/interface/alpaka/HGCalDeviceRecHitCollection.h"
-
-// Alpaka-based calibration class
 #include "RecoLocalCalo/HGCalRecAlgos/plugins/alpaka/HGCalRecHitCalibrationAlgorithms.h"
-
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   using namespace cms::alpakatools;
-  using namespace std;
 
-  class HGCalRecHitProducer : public edm::stream::EDProducer<> {
+  class HGCalRecHitProducer : public stream::EDProducer<> {
   public:
     explicit HGCalRecHitProducer(const edm::ParameterSet&);
     static void fillDescriptions(edm::ConfigurationDescriptions&);
 
   private:
-    void produce(edm::Event&, const edm::EventSetup&) override;
+    void produce(device::Event&, device::EventSetup const&) override;
 
     const edm::EDGetTokenT<HGCalHostDigiCollection> digisToken_;
-    const edm::EDPutTokenT<HGCalDeviceRecHitCollection> recHitsToken_;
-    const std::unique_ptr<HGCalRecHitCalibrationAlgorithms> calibrator;
+    const device::EDPutToken<HGCalDeviceRecHitCollection> recHitsToken_;
+    HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
   };
 
-  HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig) :
-    digisToken_(consumes<HGCalHostDigiCollection>(iConfig.getParameter<edm::InputTag>("digis"))),
-    recHitsToken_{produces()},
-    calibrator(std::make_unique<HGCalRecHitCalibrationAlgorithms>())
-  {}
+  HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
+      : digisToken_{consumes<HGCalHostDigiCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
+        recHitsToken_{produces()},
+        calibrator_{} {}
 
-  void HGCalRecHitProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
-  {
-    cout<<"\n\nINFO -- Start of produce\n\n"<<endl;
+  void HGCalRecHitProducer::produce(device::Event& iEvent, device::EventSetup const& iSetup) {
+    auto queue = iEvent.queue();
+
+    std::cout << "\n\nINFO -- Start of produce\n\n" << std::endl;
     // Read digis
     auto const& hostDigis = iEvent.get(digisToken_);
-    cout<<"Loaded host digis: "<<hostDigis.view().metadata().size()<<endl;
+    std::cout << "Loaded host digis: " << hostDigis.view().metadata().size() << std::endl;
 
-    cout<<"\n\nINFO -- calling calibrate method"<<endl;
-    std::unique_ptr<HGCalDeviceRecHitCollection> recHits = calibrator->calibrate(hostDigis);
-    
-    cout<<"\n\nINFO -- storing rec hits in the event"<<endl;
-    iEvent.emplace(recHitsToken_, std::move(*recHits));
+    std::cout << "\n\nINFO -- calling calibrate method" << std::endl;
+    auto recHits = calibrator_.calibrate(queue, hostDigis);
+
+    std::cout << "\n\nINFO -- storing rec hits in the event" << std::endl;
+    iEvent.put(recHitsToken_, std::move(recHits));
   }
 
   void HGCalRecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -71,4 +59,5 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
 // define this as a plug-in
+#include "HeterogeneousCore/AlpakaCore/interface/alpaka/MakerMacros.h"
 DEFINE_FWK_ALPAKA_MODULE(HGCalRecHitProducer);

@@ -21,17 +21,17 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   class HGCalRecHitCalibrationAlgorithms {
   public:
-    std::unique_ptr<HGCalDeviceRecHitCollection> calibrate(const HGCalHostDigiCollection &digis);
+    std::unique_ptr<HGCalDeviceRecHitCollection> calibrate(Queue& queue, HGCalHostDigiCollection const& digis);
 
     // if converting host digis to device rechits turns out too slow, we should copy host digis to device digis and then
     // convert to device rechits on device
-    // std::unique_ptr<HGCalDeviceRecHitCollection> calibrate(const std::unique_ptr<HGCalDeviceDigiCollection> &digis);
+    // std::unique_ptr<HGCalDeviceRecHitCollection> calibrate(Queue& queue, const std::unique_ptr<HGCalDeviceDigiCollection> &digis);
 
   private:
-    void print(const std::unique_ptr<HGCalDeviceRecHitCollection> &recHits, int max=-1);
-    void print(const HGCalHostDigiCollection &digis, int max=-1);
+    void print(Queue& queue, HGCalDeviceRecHitCollection const& recHits, int max = -1) const;
+    void print(HGCalHostDigiCollection const& digis, int max = -1) const;
   };
 
-} // namespace ALPAKA_ACCELERATOR_NAMESPACE
+}  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif // __HGCalRecHitCalibrationAlgorithms_H__
+#endif  // __HGCalRecHitCalibrationAlgorithms_H__
