@@ -1,5 +1,4 @@
 #include "DataFormats/Common/interface/DeviceProduct.h"
 #include "DataFormats/Common/interface/Wrapper.h"
-#include "DataFormats/Portable/interface/Product.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiSoA.h"
 #include "DataFormats/HGCalDigi/interface/alpaka/HGCalDeviceDigiCollection.h"

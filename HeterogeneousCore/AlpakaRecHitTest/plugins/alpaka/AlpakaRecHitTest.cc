@@ -1,4 +1,3 @@
-#include "DataFormats/Portable/interface/Product.h"
 //#include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceCollection.h"
 #include "DataFormats/PortableTestObjects/interface/alpaka/TestDeviceRecHitCollection.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
