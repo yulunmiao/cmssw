@@ -10,6 +10,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   using namespace cms::alpakatools;
 
+  enum HGCalCalibrationFlag {
+      kPedestalCorrection=0,
+      kCMCorrection,
+      kADCmCorrection,
+  };
+
   class HGCalRecHitCalibrationKernel_digisToRecHits {
   public:
     template <typename TAcc>
@@ -32,7 +38,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDeviceRecHitCollection::View recHits, float pedestalValue) const {
       for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
-        recHits[index].energy() -= pedestalValue;
+        if ((recHits[index].flags() >> kPedestalCorrection) & 1){
+          recHits[index].energy() -= pedestalValue;
+        }
       }
     }
   };
