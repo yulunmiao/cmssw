@@ -20,8 +20,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   public:
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDeviceDigiCollection::ConstView digis, HGCalDeviceRecHitCollection::View recHits) const {
-      auto ToA_to_time = [&](uint16_t ToA) { return float(ToA); };
-      auto ADC_to_energy = [&](uint16_t ADC) { return float(ADC); };
+      auto ToA_to_time = [&](uint32_t ToA) { return float(ToA); };
+      auto ADC_to_energy = [&](uint32_t ADC) { return float(ADC); };
       // auto ToT_to_energy = [&](uint16_t ToT){return float(ToT);};
 
       // dummy digis -> rechits conversion (to be replaced by the actual formula)
