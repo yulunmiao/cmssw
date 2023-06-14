@@ -12,6 +12,10 @@
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
+<<<<<<< HEAD
+=======
+#include "DataFormats/HGCalDigi/interface/HGCalDigiHostCollection.h"
+>>>>>>> c2ca5af427a (Renaming HGCal collections to be consistent with other types)
 
 class HGCalRawToDigi : public edm::stream::EDProducer<> {
 public:
@@ -25,6 +29,10 @@ private:
   const edm::EDGetTokenT<FEDRawDataCollection> fedRawToken_;
   const edm::EDPutTokenT<HGCalDigiCollection> digisToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecDigisToken_;
+<<<<<<< HEAD
+=======
+  const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
+>>>>>>> c2ca5af427a (Renaming HGCal collections to be consistent with other types)
 
   const std::vector<unsigned int> fedIds_;
   const unsigned int badECONDMax_;
@@ -36,6 +44,10 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
     : fedRawToken_(consumes<FEDRawDataCollection>(iConfig.getParameter<edm::InputTag>("src"))),
       digisToken_(produces<HGCalDigiCollection>()),
       elecDigisToken_(produces<HGCalElecDigiCollection>()),
+<<<<<<< HEAD
+=======
+      elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
+>>>>>>> c2ca5af427a (Renaming HGCal collections to be consistent with other types)
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
@@ -103,6 +115,19 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       });
     }
   }
+<<<<<<< HEAD
+=======
+
+  //auto elec_digis_soa = std::make_unique<hgcaldigi::HGCalDigiHostCollection>(elec_digis.size(), cms::alpakatools::host());
+  hgcaldigi::HGCalDigiHostCollection elec_digis_soa(elec_digis.size(),cms::alpakatools::host());
+  for (unsigned int i = 0; i < elec_digis.size(); i++) {
+      elec_digis_soa.view()[i].electronicsId() = elec_digis[i].id().raw();
+      elec_digis_soa.view()[i].raw() = elec_digis[i].raw();
+      elec_digis_soa.view()[i].cm() = 0;
+      elec_digis_soa.view()[i].flags() = 0;
+  }
+
+>>>>>>> c2ca5af427a (Renaming HGCal collections to be consistent with other types)
   iEvent.emplace(digisToken_, std::move(digis));
   iEvent.emplace(elecDigisToken_, std::move(elec_digis));
 }

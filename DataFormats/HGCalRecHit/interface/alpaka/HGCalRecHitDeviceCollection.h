@@ -1,5 +1,5 @@
-#ifndef DataFormats_HGCalRecHit_interface_alpaka_HGCalDeviceRecHitCollection_h
-#define DataFormats_HGCalRecHit_interface_alpaka_HGCalDeviceRecHitCollection_h
+#ifndef DataFormats_HGCalRecHit_interface_alpaka_HGCalRecHitDeviceCollection_h
+#define DataFormats_HGCalRecHit_interface_alpaka_HGCalRecHitDeviceCollection_h
 
 #include "DataFormats/Portable/interface/alpaka/PortableCollection.h"
 #include "DataFormats/HGCalRecHit/interface/HGCalRecHitSoA.h"
@@ -14,10 +14,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     using namespace ::hgcalrechit;
 
     // SoA in device global memory
-    using HGCalDeviceRecHitCollection = PortableCollection<HGCalRecHitSoA>;
+    using HGCalRecHitDeviceCollection = PortableCollection<HGCalRecHitSoA>;
 
   }  // namespace hgcalrechit
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-#endif  // DataFormats_HGCalRecHit_interface_alpaka_HGCalDeviceRecHitCollection_h
+#endif  // DataFormats_HGCalRecHit_interface_alpaka_HGCalRecHitDeviceCollection_h

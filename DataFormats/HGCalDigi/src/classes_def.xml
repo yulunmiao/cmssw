@@ -43,17 +43,17 @@
 
   <class name="hgcaldigi::HGCalDigiSoA"/>
   <class name="hgcaldigi::HGCalDigiSoA::View"/>
-  <class name="hgcaldigi::HGCalHostDigiCollection"/>
+  <class name="hgcaldigi::HGCalDigiHostCollection"/>
   <read
-    sourceClass="hgcaldigi::HGCalHostDigiCollection"
-    targetClass="hgcaldigi::HGCalHostDigiCollection"
+    sourceClass="hgcaldigi::HGCalDigiHostCollection"
+    targetClass="hgcaldigi::HGCalDigiHostCollection"
     version="[1-]"
     source="hgcaldigi::HGCalDigiSoA layout_;"
     target="buffer_,layout_,view_"
     embed="false">
   <![CDATA[
-    hgcaldigi::HGCalHostDigiCollection::ROOTReadStreamer(newObj, onfile.layout_);
+    hgcaldigi::HGCalDigiHostCollection::ROOTReadStreamer(newObj, onfile.layout_);
   ]]>
   </read>
-  <class name="edm::Wrapper<hgcaldigi::HGCalHostDigiCollection>" splitLevel="0"/>
+  <class name="edm::Wrapper<hgcaldigi::HGCalDigiHostCollection>" splitLevel="0"/>
 </lcgdict>

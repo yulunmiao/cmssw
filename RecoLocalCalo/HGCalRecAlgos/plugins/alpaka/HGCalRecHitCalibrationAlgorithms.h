@@ -9,10 +9,10 @@
 #include "DataFormats/HGCalDigi/interface/HGCROCChannelDataFrame.h"
 
 // Host and devide HGCal RecHit data formats
-#include "DataFormats/HGCalDigi/interface/alpaka/HGCalDeviceDigiCollection.h"
-#include "DataFormats/HGCalRecHit/interface/alpaka/HGCalDeviceRecHitCollection.h"
+#include "DataFormats/HGCalDigi/interface/alpaka/HGCalDigiDeviceCollection.h"
+#include "DataFormats/HGCalRecHit/interface/alpaka/HGCalRecHitDeviceCollection.h"
 
-#include "DataFormats/HGCalDigi/interface/HGCalHostDigiCollection.h"
+#include "DataFormats/HGCalDigi/interface/HGCalDigiHostCollection.h"
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
@@ -21,15 +21,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   class HGCalRecHitCalibrationAlgorithms {
   public:
-    std::unique_ptr<HGCalDeviceRecHitCollection> calibrate(Queue& queue, HGCalHostDigiCollection const& digis);
+    std::unique_ptr<HGCalRecHitDeviceCollection> calibrate(Queue& queue, HGCalDigiHostCollection const& digis);
 
     // if converting host digis to device rechits turns out too slow, we should copy host digis to device digis and then
     // convert to device rechits on device
-    // std::unique_ptr<HGCalDeviceRecHitCollection> calibrate(Queue& queue, const std::unique_ptr<HGCalDeviceDigiCollection> &digis);
+    // std::unique_ptr<HGCalRecHitDeviceCollection> calibrate(Queue& queue, const std::unique_ptr<HGCalDigiDeviceCollection> &digis);
 
   private:
-    void print(Queue& queue, HGCalDeviceRecHitCollection const& recHits, int max = -1) const;
-    void print(HGCalHostDigiCollection const& digis, int max = -1) const;
+    void print(Queue& queue, HGCalRecHitDeviceCollection const& recHits, int max = -1) const;
+    void print(HGCalDigiHostCollection const& digis, int max = -1) const;
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE

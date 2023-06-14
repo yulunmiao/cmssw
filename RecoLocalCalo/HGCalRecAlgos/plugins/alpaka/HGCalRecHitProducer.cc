@@ -1,8 +1,8 @@
 // CMSSW includes
-#include "DataFormats/HGCalDigi/interface/HGCalHostDigiCollection.h"
-#include "DataFormats/HGCalDigi/interface/alpaka/HGCalDeviceDigiCollection.h"
-#include "DataFormats/HGCalRecHit/interface/HGCalHostRecHitCollection.h"
-#include "DataFormats/HGCalRecHit/interface/alpaka/HGCalDeviceRecHitCollection.h"
+#include "DataFormats/HGCalDigi/interface/HGCalDigiHostCollection.h"
+#include "DataFormats/HGCalDigi/interface/alpaka/HGCalDigiDeviceCollection.h"
+#include "DataFormats/HGCalRecHit/interface/HGCalRecHitHostCollection.h"
+#include "DataFormats/HGCalRecHit/interface/alpaka/HGCalRecHitDeviceCollection.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
@@ -26,13 +26,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     void produce(device::Event&, device::EventSetup const&) override;
 
-    const edm::EDGetTokenT<HGCalHostDigiCollection> digisToken_;
-    const device::EDPutToken<HGCalDeviceRecHitCollection> recHitsToken_;
+    const edm::EDGetTokenT<HGCalDigiHostCollection> digisToken_;
+    const device::EDPutToken<HGCalRecHitDeviceCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
   };
 
   HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
-      : digisToken_{consumes<HGCalHostDigiCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
+      : digisToken_{consumes<HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
         recHitsToken_{produces()},
         calibrator_{} {}
 
