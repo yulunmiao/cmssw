@@ -15,20 +15,4 @@
   ]]>
   </read>
   <class name="edm::Wrapper<portabletest::TestHostCollection>" splitLevel="0"/>
-
-  <class name="portabletest::TestRecHitSoA"/>
-  <class name="portabletest::TestRecHitSoA::View"/>
-  <class name="portabletest::TestHostRecHitCollection"/>
-  <read
-    sourceClass="portabletest::TestHostRecHitCollection"
-    targetClass="portabletest::TestHostRecHitCollection"
-    version="[1-]"
-    source="portabletest::TestRecHitSoA layout_;"
-    target="buffer_,layout_,view_"
-    embed="false">
-  <![CDATA[
-    portabletest::TestHostRecHitCollection::ROOTReadStreamer(newObj, onfile.layout_);
-  ]]>
-  </read>
-  <class name="edm::Wrapper<portabletest::TestHostRecHitCollection>" splitLevel="0"/>
 </lcgdict>
