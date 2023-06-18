@@ -77,42 +77,45 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   std::unique_ptr<HGCalRecHitDeviceCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection const& digis) {
     std::cout << "\n\nINFO -- Start of calibrate\n\n" << std::endl;
 
-    auto grid = make_workdiv<Acc1D>(4, 4);
+    std::cout<<"N blocks: "<<n_blocks<<"\tN threads: "<<n_threads<<std::endl;
+    auto grid = make_workdiv<Acc1D>(n_blocks, n_threads);
 
-    std::cout << "Input digis: " << std::endl;
-    print(digis, 10);
-
-    std::cout << "\n\nINFO -- allocating rechits buffer" << std::endl;
-    auto recHits = std::make_unique<HGCalRecHitDeviceCollection>(digis.view().metadata().size(), queue);
-    print(queue, *recHits, 10);
-
-    std::cout << "\n\nINFO -- copying the digis to the device\n\n" << std::endl;
+    bool verbose = false;
+    int n_hits_to_print = 10;
+    
+    if(verbose) std::cout << "Input digis: " << std::endl;
+    if(verbose) print(digis, n_hits_to_print);
+    
+    if(verbose) std::cout << "\n\nINFO -- copying the digis to the device\n\n" << std::endl;
     HGCalDigiDeviceCollection device_digis(digis.view().metadata().size(), queue);
     alpaka::memcpy(queue, device_digis.buffer(), digis.const_buffer());
 
-    std::cout << "\n\nINFO -- converting digis to rechits" << std::endl;
+    if(verbose) std::cout << "\n\nINFO -- allocating rechits buffer" << std::endl;
+    auto recHits = std::make_unique<HGCalRecHitDeviceCollection>(digis.view().metadata().size(), queue);
+    
+    if(verbose) std::cout << "\n\nINFO -- converting digis to rechits" << std::endl;
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.const_view(), recHits->view());
+    
+    if(verbose) std::cout << "RecHits before calibration: " << std::endl;
+    if(verbose) print(queue, *recHits, n_hits_to_print);
 
-    std::cout << "RecHits before calibration: " << std::endl;
-    print(queue, *recHits, 10);
-
-    float pedestalValue = 10;
+    float pedestalValue = n_hits_to_print;
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, recHits->view(), pedestalValue);
 
-    std::cout << "RecHits after pedestal calibration: " << std::endl;
-    print(queue, *recHits, 10);
+    if(verbose) std::cout << "RecHits after pedestal calibration: " << std::endl;
+    print(queue, *recHits, n_hits_to_print);
 
-    float commonModeValue = 10;
+    float commonModeValue = n_hits_to_print;
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, recHits->view(), commonModeValue);
 
-    std::cout << "RecHits after CM calibration: " << std::endl;
-    print(queue, *recHits, 10);
+    if(verbose) std::cout << "RecHits after CM calibration: " << std::endl;
+    if(verbose) print(queue, *recHits, n_hits_to_print);
 
-    float ADCmValue = 10;
+    float ADCmValue = n_hits_to_print;
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, recHits->view(), ADCmValue);
 
-    std::cout << "RecHits after ADCm calibration: " << std::endl;
-    print(queue, *recHits, 10);
+    if(verbose) std::cout << "RecHits after ADCm calibration: " << std::endl;
+    if(verbose) print(queue, *recHits, n_hits_to_print);
 
     return recHits;
   }
