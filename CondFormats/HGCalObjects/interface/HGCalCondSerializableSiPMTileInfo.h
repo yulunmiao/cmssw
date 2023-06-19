@@ -8,8 +8,8 @@
 #include "CondFormats/Serialization/interface/Serializable.h"
 
 struct HGCalSiPMTileInfo {
-  int sipmcell,plane,iring,iphi,trigch,trigsum,modiring;
-  std::string t;
+  int sipmcell,plane,iring,iphi,trigch,trigsum,modiring,t;
+  std::string type;
   COND_SERIALIZABLE;
 };
 

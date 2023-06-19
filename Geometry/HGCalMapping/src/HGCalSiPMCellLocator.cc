@@ -14,7 +14,7 @@ void HGCalSiPMCellLocator::buildLocatorFrom(std::string channelpath)
       std::istringstream stream(line);
 
       HGCalSiPMTileInfo c; 
-      stream >> c.sipmcell >> c.plane >> c.iring >> c.iphi >> c.t >> c.trigch >> c.trigsum >> c.modiring;
+      stream >> c.sipmcell >> c.plane >> c.iring >> c.iphi >> c.type >> c.trigch >> c.trigsum >> c.modiring >> c.t;
       cellColl_.addParameter(c);
     }
   }
@@ -86,7 +86,8 @@ DetId HGCalSiPMCellLocator::getDetId(HGCalElectronicsId& id, int seq, int z, int
   int idlayer = layer - 25;
   int idtype = ((idlayer <= 8) ? 0 : ((idlayer <= 17) ? 1 : 2));
   int ring = ((z == 0) ? celliring : (-1)*celliring);
-  int iphi = modiphi*10 + celliphi;
+  // iphi currently calculated for SiPM modules with iphi 0-7 only
+  int iphi = modiphi*8 + celliphi;
 
   HGCScintillatorDetId detid(idtype, idlayer, ring, iphi, false, true);
   return detid;
@@ -116,7 +117,8 @@ std::tuple<int,int,int> HGCalSiPMCellLocator::getModuleLocation(DetId& id) const
     {
       modiring = ((cellring <= 5) ? 0 : ((cellring <= 17 ) ? 1 : ((cellring <= 25) ? 2 : ((cellring <= 33) ? 3 : 4))));
     }
-    int modiphi = detid.iphi()/10;
+    // iphi currently calculated for SiPM modules with iphi 0-7 only
+    int modiphi = detid.iphi()/8;
 
     return std::make_tuple(layer,modiring,modiphi);
   }
