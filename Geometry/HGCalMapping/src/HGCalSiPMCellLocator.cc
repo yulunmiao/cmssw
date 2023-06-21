@@ -27,14 +27,14 @@ void HGCalSiPMCellLocator::buildLocatorFrom(std::string channelpath)
 
 }
 
-int HGCalSiPMCellLocator::getSiPMchannel(int seq, uint8_t econderx, uint8_t halfrocch) const
+int HGCalSiPMCellLocator::getSiPMchannel(uint8_t econderx, uint8_t halfrocch) const
 {
-  return seq + 72*(int)(econderx/2) + 36*halfrocch;
+  return halfrocch + 36*econderx;
 }
 
-std::tuple<int,int,int> HGCalSiPMCellLocator::getCellLocation(int seq, int econderx, int halfrocch, int layer, int modiring, int modiphi) const
+std::tuple<int,int,int> HGCalSiPMCellLocator::getCellLocation(int econderx, int halfrocch, int layer, int modiring, int modiphi) const
 {
-  int sipmcell = getSiPMchannel(seq, econderx, halfrocch);
+  int sipmcell = getSiPMchannel(econderx, halfrocch);
 
   auto _matchesByChannel = [sipmcell, layer, modiring](HGCalSiPMTileInfo c){
     return c.sipmcell == sipmcell && c.plane == layer && c.modiring == modiring;
@@ -48,9 +48,9 @@ std::tuple<int,int,int> HGCalSiPMCellLocator::getCellLocation(int seq, int econd
 }
 
 
-std::tuple<int,int> HGCalSiPMCellLocator::getCellLocation(HGCalElectronicsId& id, int seq, int layer, int modiring, int modiphi) const
+std::tuple<int,int> HGCalSiPMCellLocator::getCellLocation(HGCalElectronicsId& id, int layer, int modiring, int modiphi) const
 {
-  int sipmcell = getSiPMchannel(seq, (int)id.econdeRx(), (int)id.halfrocChannel());
+  int sipmcell = getSiPMchannel((int)id.econdeRx(), (int)id.halfrocChannel());
 
   auto _matchesByChannel = [sipmcell, layer, modiring](HGCalSiPMTileInfo c){
     return c.sipmcell == sipmcell && c.plane == layer && c.modiring == modiring;
@@ -66,9 +66,9 @@ std::tuple<int,int> HGCalSiPMCellLocator::getCellLocation(HGCalElectronicsId& id
   return std::make_tuple(celliring, celliphi);
 }
 
-DetId HGCalSiPMCellLocator::getDetId(HGCalElectronicsId& id, int seq, int z, int layer, int modiring, int modiphi) const
+DetId HGCalSiPMCellLocator::getDetId(HGCalElectronicsId& id, int z, int layer, int modiring, int modiphi) const
 {
-  int sipmcell = getSiPMchannel(seq, id.econdeRx(), id.halfrocChannel());
+  int sipmcell = getSiPMchannel(id.econdeRx(), id.halfrocChannel());
 
   auto _matchesByChannel = [sipmcell, layer, modiring](HGCalSiPMTileInfo c){
     return c.sipmcell == sipmcell && c.plane == layer && c.modiring == modiring;
@@ -86,8 +86,8 @@ DetId HGCalSiPMCellLocator::getDetId(HGCalElectronicsId& id, int seq, int z, int
   int idlayer = layer - 25;
   int idtype = ((idlayer <= 8) ? 0 : ((idlayer <= 17) ? 1 : 2));
   int ring = ((z == 0) ? celliring : (-1)*celliring);
-  // iphi currently calculated for SiPM modules with iphi 0-7 only
-  int iphi = modiphi*8 + celliphi;
+  // iphi currently calculated for SiPM modules with iphi 0-7 only, DetId iphi defined for 1-288
+  int iphi = modiphi*8 + celliphi + 1;
 
   HGCScintillatorDetId detid(idtype, idlayer, ring, iphi, false, true);
   return detid;
@@ -117,8 +117,8 @@ std::tuple<int,int,int> HGCalSiPMCellLocator::getModuleLocation(DetId& id) const
     {
       modiring = ((cellring <= 5) ? 0 : ((cellring <= 17 ) ? 1 : ((cellring <= 25) ? 2 : ((cellring <= 33) ? 3 : 4))));
     }
-    // iphi currently calculated for SiPM modules with iphi 0-7 only
-    int modiphi = detid.iphi()/8;
+    // iphi currently calculated for SiPM modules with iphi 0-7 only, DetId iphi defined for 1-288
+    int modiphi = (detid.iphi()-1)/8;
 
     return std::make_tuple(layer,modiring,modiphi);
   }
