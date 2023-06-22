@@ -27,14 +27,14 @@ void HGCalSiPMCellLocator::buildLocatorFrom(std::string channelpath)
 
 }
 
-int HGCalSiPMCellLocator::getSiPMchannel(uint8_t econderx, uint8_t halfrocch) const
+int HGCalSiPMCellLocator::getSiPMchannel(int seq, uint8_t econderx, uint8_t halfrocch) const
 {
   return halfrocch + 36*econderx;
 }
 
-std::tuple<int,int,int> HGCalSiPMCellLocator::getCellLocation(int econderx, int halfrocch, int layer, int modiring, int modiphi) const
+std::tuple<int,int,int> HGCalSiPMCellLocator::getCellLocation(int seq, int econderx, int halfrocch, int layer, int modiring, int modiphi) const
 {
-  int sipmcell = getSiPMchannel(econderx, halfrocch);
+  int sipmcell = getSiPMchannel(seq, econderx, halfrocch);
 
   auto _matchesByChannel = [sipmcell, layer, modiring](HGCalSiPMTileInfo c){
     return c.sipmcell == sipmcell && c.plane == layer && c.modiring == modiring;
@@ -48,9 +48,9 @@ std::tuple<int,int,int> HGCalSiPMCellLocator::getCellLocation(int econderx, int 
 }
 
 
-std::tuple<int,int> HGCalSiPMCellLocator::getCellLocation(HGCalElectronicsId& id, int layer, int modiring, int modiphi) const
+std::tuple<int,int> HGCalSiPMCellLocator::getCellLocation(HGCalElectronicsId& id, int seq, int layer, int modiring, int modiphi) const
 {
-  int sipmcell = getSiPMchannel((int)id.econdeRx(), (int)id.halfrocChannel());
+  int sipmcell = getSiPMchannel(seq, (int)id.econdeRx(), (int)id.halfrocChannel());
 
   auto _matchesByChannel = [sipmcell, layer, modiring](HGCalSiPMTileInfo c){
     return c.sipmcell == sipmcell && c.plane == layer && c.modiring == modiring;
@@ -66,9 +66,9 @@ std::tuple<int,int> HGCalSiPMCellLocator::getCellLocation(HGCalElectronicsId& id
   return std::make_tuple(celliring, celliphi);
 }
 
-DetId HGCalSiPMCellLocator::getDetId(HGCalElectronicsId& id, int z, int layer, int modiring, int modiphi) const
+DetId HGCalSiPMCellLocator::getDetId(HGCalElectronicsId& id, int seq, int z, int layer, int modiring, int modiphi) const
 {
-  int sipmcell = getSiPMchannel(id.econdeRx(), id.halfrocChannel());
+  int sipmcell = getSiPMchannel(seq, id.econdeRx(), id.halfrocChannel());
 
   auto _matchesByChannel = [sipmcell, layer, modiring](HGCalSiPMTileInfo c){
     return c.sipmcell == sipmcell && c.plane == layer && c.modiring == modiring;
