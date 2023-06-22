@@ -21,7 +21,8 @@ void testSiPMCellLocator(int nentries, std::string path_channelmap, std::string 
   HGCalSiPMCellLocator celllocator;
   celllocator.buildLocatorFrom(path_channelmap);
 
-  int plane,modiu,modiv,plane_,modiu_,modiv_,isSiPM,z(0),maxseq(20);
+  int zside;
+  int plane,modiu,modiv,plane_,modiu_,modiv_,isSiPM,isHD,modType,z(0),maxseq(20);
   int econdidx,captureblock,slink,captureblockidx,fedid,econderx(0),halfrocch(0),seq;
   std::string DAQ;
 
@@ -38,7 +39,7 @@ void testSiPMCellLocator(int nentries, std::string path_channelmap, std::string 
     {
       std::getline(file, line);
       std::istringstream stream(line);
-      stream >> plane >> modiu >> modiv >> isSiPM >> econdidx >> captureblock >> slink >> captureblockidx >> fedid >> DAQ;
+      stream >> plane >> modiu >> modiv >> isSiPM >> isHD >> modType >> econdidx >> captureblock >> slink >> captureblockidx >> fedid >> DAQ >> zside;
       if(isSiPM)
       {
         for(seq = 0; seq < maxseq; seq++) {
@@ -46,7 +47,7 @@ void testSiPMCellLocator(int nentries, std::string path_channelmap, std::string 
           // Calibration and common mode channels
           if (seq == 8 || seq == 17 || seq == 18) continue;
 
-          HGCalElectronicsId eid(fedid, captureblockidx, econdidx, econderx, halfrocch);                 
+          HGCalElectronicsId eid(zside>0,false,fedid, captureblockidx, econdidx, econderx, halfrocch);                 
           
           HGCScintillatorDetId detid = celllocator.getDetId(eid, seq, z, plane, modiu, modiv);
           assert(detid.sipm());

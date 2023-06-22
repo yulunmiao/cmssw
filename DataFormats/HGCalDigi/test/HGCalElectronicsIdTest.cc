@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
     verbosity = std::stoul(argv[2], nullptr, 0);
 
   // init static values
+  bool zside(false);
   bool cmflag(false);
   uint16_t fedid(0);
   uint8_t captureblock(0), econdidx(0), econderx(0), halfrocch(0);
@@ -37,6 +38,7 @@ int main(int argc, char** argv) {
   unsigned long int u = 0;
   for (; u < repetitions; u++) {
 
+    zside = (bool) myrand()%2;
     fedid = myrand() % 576;
     captureblock = myrand() % 10;
     econdidx = myrand() % 12;
@@ -45,7 +47,8 @@ int main(int argc, char** argv) {
     cmflag = ((halfrocch==37) || (halfrocch==38)) ? true : false;
     uint8_t croppedHalfRocCh(cmflag ? (halfrocch-37)%2 : halfrocch);
     
-    HGCalElectronicsId eid(fedid, captureblock, econdidx, econderx, halfrocch);
+    HGCalElectronicsId eid(zside,fedid, captureblock, econdidx, econderx, halfrocch);
+    assert(zside == eid.zSide());
     assert(cmflag == eid.isCM());
     assert(fedid == eid.fedId());
     assert(captureblock == eid.captureBlock());

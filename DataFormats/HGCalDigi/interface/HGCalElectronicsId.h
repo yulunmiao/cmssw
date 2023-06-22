@@ -21,7 +21,8 @@
 class HGCalElectronicsId {
 public:
   enum HGCalElectronicsIdMask {
-    kCommonMode = 0x1,
+    kZsideMask = 0x1,
+    kCommonModeMask = 0x1,
     kFEDIDMask = 0x3ff,
     kCaptureBlockMask = 0xf,
     kECONDIdxMask = 0xf,
@@ -29,6 +30,7 @@ public:
     kHalfROCChannelMask = 0x3f
   };
   enum HGCalElectronicsIdShift {
+    kZsideShift = 29,
     kCommonModeShift = 28,
     kFEDIDShift = 18,
     kCaptureBlockShift = 14,
@@ -41,8 +43,8 @@ public:
      @short CTOR
   */
   HGCalElectronicsId() : value_(0) {}
-  HGCalElectronicsId(bool cmflag,uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
-  HGCalElectronicsId(uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
+  HGCalElectronicsId(bool zside, bool cmflag,uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
+  HGCalElectronicsId(bool zside, uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
   HGCalElectronicsId(uint32_t value) : value_(value) {}
   HGCalElectronicsId(const HGCalElectronicsId& o) : value_(o.value_) {}
 
@@ -54,6 +56,7 @@ public:
   uint32_t operator()() const { return value_; }
   bool operator<(const HGCalElectronicsId& oth) const { return value_ < oth.value_; }
   uint32_t raw() const { return value_; }
+  bool zSide() const;
   uint16_t fedId() const;
   uint8_t captureBlock() const;
   uint8_t econdIdx() const;
@@ -66,7 +69,7 @@ public:
         << "\tFED-ID: " << (uint32_t)fedId() << " Capture Block: " << (uint32_t)captureBlock()
         << " ECON-D idx: " << (uint32_t)econdIdx() << " eRx: " << (uint32_t)econdeRx()
         << " 1/2 ROC ch.: " << (uint32_t)halfrocChannel() << " (" << (uint32_t) sequentialHalfrocChannel() << ") "
-        << " isCM=" << isCM() << std::endl;
+        << " isCM=" << isCM() << " zSide=" << zSide() << std::endl;
   }
 
 private:

@@ -26,7 +26,7 @@ void HGCalUnpacker<D>::parseSLink(
     const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
     const std::function<D(HGCalElectronicsId elecID)>& logicalMapping) {
   uint16_t sLink = 0;
-
+  bool zside(false); //fixme: this should be based on slink number (fedId)
   channelDataSize_ = 0;
   commonModeDataSize_ = 0;
   badECOND_.clear();
@@ -152,7 +152,7 @@ void HGCalUnpacker<D>::parseSLink(
             for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through all channels in eRx
               if (((erxHeader >> channel) & 1) == 0)
                 continue;  // only pick active channels
-              const HGCalElectronicsId id(sLink, captureBlock, econd, erx, channel);
+              const HGCalElectronicsId id(zside, false, sLink, captureBlock, econd, erx, channel);
               commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
               const uint32_t tempIndex = bitCounter / 32 + iword;
               const uint8_t tempBit = bitCounter % 32;
@@ -222,7 +222,7 @@ void HGCalUnpacker<D>::parseSLink(
             }
             iword += 2;  // length of the standard eRx header (2 * 32 bits)
             for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through all channels in eRx
-              const HGCalElectronicsId id(sLink, captureBlock, econd, erx, channel);
+              const HGCalElectronicsId id(zside,false,sLink, captureBlock, econd, erx, channel);
               commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
               channelData_[channelDataSize_] =
                   HGCROCChannelDataFrame<HGCalElectronicsId>(logicalMapping(id), inputArray[iword]);
@@ -281,6 +281,7 @@ void HGCalUnpacker<D>::parseCaptureBlock(
     const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
     const std::function<D(HGCalElectronicsId elecID)>& logicalMapping) {
   uint16_t sLink = 0;
+  bool zside(false); //fixme me this should be based on the slink id
   uint8_t captureBlock = 0;
 
   channelDataSize_ = 0;
@@ -396,7 +397,7 @@ void HGCalUnpacker<D>::parseCaptureBlock(
           for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through channels in eRx
             if (((erxHeader >> channel) & 1) == 0)
               continue;  // only pick active channels
-            const HGCalElectronicsId id(sLink, captureBlock, econd, erx, channel);
+            const HGCalElectronicsId id(zside,false,sLink, captureBlock, econd, erx, channel);
             commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
             const uint32_t tempIndex = bitCounter / 32 + iword;
             const uint8_t tempBit = bitCounter % 32;
@@ -465,7 +466,7 @@ void HGCalUnpacker<D>::parseCaptureBlock(
           iword += 2;  // length of a standard eRx header (2 * 32 bits)
 
           for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through all channels in eRx
-            const HGCalElectronicsId id(sLink, captureBlock, econd, erx, channel);
+            const HGCalElectronicsId id(zside,false,sLink, captureBlock, econd, erx, channel);
             commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
             channelData_[channelDataSize_] =
                 HGCROCChannelDataFrame<HGCalElectronicsId>(logicalMapping(id), inputArray[iword]);
@@ -512,6 +513,7 @@ void HGCalUnpacker<D>::parseECOND(
     const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
     const std::function<D(HGCalElectronicsId elecID)>& logicalMapping) {
   uint16_t sLink = 0;
+  bool zside(false); //fixme this should be based on the slink id
   uint8_t captureBlock = 0;
   uint8_t econd = 0;
 
@@ -604,7 +606,7 @@ void HGCalUnpacker<D>::parseECOND(
         for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through all channels in eRx
           if (((erxHeader >> channel) & 1) == 0)
             continue;  // only pick active channels
-          const HGCalElectronicsId id(sLink, captureBlock, econd, erx, channel);
+          const HGCalElectronicsId id(zside,false,sLink, captureBlock, econd, erx, channel);
           commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
           const uint32_t tempIndex = bitCounter / 32 + iword;
           const uint8_t tempBit = bitCounter % 32;
@@ -671,7 +673,7 @@ void HGCalUnpacker<D>::parseECOND(
         iword += 2;  // length of the standard eRx header (2 * 32 bits)
 
         for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through all channels in eRx
-          const HGCalElectronicsId id(sLink, captureBlock, econd, erx, channel);
+          const HGCalElectronicsId id(zside,false,sLink, captureBlock, econd, erx, channel);
           commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
           channelData_[channelDataSize_] =
               HGCROCChannelDataFrame<HGCalElectronicsId>(logicalMapping(id), inputArray[iword]);
