@@ -26,7 +26,6 @@ int main(int argc, char** argv) {
 
   // init static values
   bool zside(false);
-  bool cmflag(false);
   uint16_t fedid(0);
   uint8_t captureblock(0), econdidx(0), econderx(0), halfrocch(0);
 
@@ -44,8 +43,8 @@ int main(int argc, char** argv) {
     econdidx = myrand() % 12;
     econderx = myrand() % 12;
     halfrocch = myrand() % 39;
-    cmflag = ((halfrocch==37) || (halfrocch==38)) ? true : false;
-    uint8_t croppedHalfRocCh(cmflag ? (halfrocch-37)%2 : halfrocch);
+    bool cmflag = ((halfrocch==37) || (halfrocch==38));
+
     
     HGCalElectronicsId eid(zside,fedid, captureblock, econdidx, econderx, halfrocch);
     assert(zside == eid.zSide());
@@ -54,8 +53,7 @@ int main(int argc, char** argv) {
     assert(captureblock == eid.captureBlock());
     assert(econdidx == eid.econdIdx());
     assert(econderx == eid.econdeRx());
-    assert(halfrocch == eid.sequentialHalfrocChannel());
-    assert(croppedHalfRocCh == eid.halfrocChannel());
+    assert(halfrocch == eid.halfrocChannel());
 
     if (verbosity > 0)
       eid.print(std::cout);

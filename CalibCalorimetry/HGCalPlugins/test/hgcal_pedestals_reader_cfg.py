@@ -31,8 +31,8 @@ for erx,ich in itertools.product(range(6),range(39)):
 
     #identifier
     cmflag=(ich>36)
-    ch=(ich-37)%2 if cmflag else ich
-    id=(cmflag << 28) | ((erx & 0xf)<<6) | (ch & 0x3f)
+    ch=ich%39
+    id=((erx & 0xf)<<6) | (ch & 0x3f)
 
     #random values
     np.random.shuffle(consts)

@@ -41,7 +41,7 @@ private:
       bool cmflag=id.isCM();
       uint32_t eRx=(uint32_t) id.econdeRx();
       uint32_t roc=(uint32_t) eRx/2;
-      uint32_t seqch=id.sequentialHalfrocChannel();
+      uint32_t ch=id.halfrocChannel();
 
       HGCalPedestals table(it.second);
       float pedestal = MiniFloatConverter::float16to32(table.pedestal);
@@ -50,7 +50,7 @@ private:
       float kappa_bxm1 = MiniFloatConverter::float16to32(table.kappa_bxm1);
             
       std::cout << std::hex << id.raw() << " "
-                << std::dec << eRx << " " << roc << " " << seqch << " " << cmflag << " "
+                << std::dec << eRx << " " << roc << " " << ch << " " << cmflag << " "
                 << std::setprecision(3)  << " " << pedestal << " " << cm_slope << " " << cm_offset << " " << kappa_bxm1 << std::endl;
     }
     

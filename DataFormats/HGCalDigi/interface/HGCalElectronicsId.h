@@ -10,7 +10,7 @@
    @short wrapper for a 32b data word identifying a readout channel in the raw data
    The format is the following:
    Reserved: b'[29,31]
-   Common mode: b'[28]
+   z side: b'[28]
    FED ID: b'[18,27]
    Capture Block ID: b'[14,17]
    ECON-D idx: b'[10,13]
@@ -22,7 +22,6 @@ class HGCalElectronicsId {
 public:
   enum HGCalElectronicsIdMask {
     kZsideMask = 0x1,
-    kCommonModeMask = 0x1,
     kFEDIDMask = 0x3ff,
     kCaptureBlockMask = 0xf,
     kECONDIdxMask = 0xf,
@@ -30,8 +29,7 @@ public:
     kHalfROCChannelMask = 0x3f
   };
   enum HGCalElectronicsIdShift {
-    kZsideShift = 29,
-    kCommonModeShift = 28,
+    kZsideShift = 28,
     kFEDIDShift = 18,
     kCaptureBlockShift = 14,
     kECONDIdxShift = 10,
@@ -43,7 +41,6 @@ public:
      @short CTOR
   */
   HGCalElectronicsId() : value_(0) {}
-  HGCalElectronicsId(bool zside, bool cmflag,uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
   HGCalElectronicsId(bool zside, uint16_t fedid, uint8_t captureblock, uint8_t econdidx, uint8_t econderx, uint8_t halfrocch);
   HGCalElectronicsId(uint32_t value) : value_(value) {}
   HGCalElectronicsId(const HGCalElectronicsId& o) : value_(o.value_) {}
@@ -62,13 +59,13 @@ public:
   uint8_t econdIdx() const;
   uint8_t econdeRx() const;
   uint8_t halfrocChannel() const;
-  uint8_t sequentialHalfrocChannel() const;
+  uint8_t cmWord() const;
   bool isCM() const;
   void print(std::ostream& out = std::cout) const {
     out << "Raw=0x" << std::hex << raw() << std::dec << std::endl
         << "\tFED-ID: " << (uint32_t)fedId() << " Capture Block: " << (uint32_t)captureBlock()
         << " ECON-D idx: " << (uint32_t)econdIdx() << " eRx: " << (uint32_t)econdeRx()
-        << " 1/2 ROC ch.: " << (uint32_t)halfrocChannel() << " (" << (uint32_t) sequentialHalfrocChannel() << ") "
+        << " 1/2 ROC ch.: " << (uint32_t)halfrocChannel()
         << " isCM=" << isCM() << " zSide=" << zSide() << std::endl;
   }
 
