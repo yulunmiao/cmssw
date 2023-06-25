@@ -17,18 +17,7 @@ process.DQMStore = cms.Service("DQMStore")
 
 process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
-process.dqmSaver.path = './eos/'
+#process.dqmSaver.path = './eos/'
 process.dqmSaver.runNumber = 123480
 
 process.p = cms.Path(process.playgrounddqmedanalyzer + process.dqmSaver)
-
-# process.output = cms.OutputModule("PoolOutputModule",
-#     fileName = cms.untracked.string("./testRecHit.root"),
-# )
-# 
-# process.outpath = cms.EndPath(process.output)
-# 
-# process.hgcalRecHits = cms.EDProducer('HGCalDigiToRecHit',
-#   Digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-# )
-
