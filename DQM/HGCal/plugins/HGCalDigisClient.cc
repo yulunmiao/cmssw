@@ -111,8 +111,8 @@ void HGCalDigisClient::export_calibration_parameters() {
         RunningStatistics rs = mRs[channelId];
         // Note: need CM info
         // bool isCM = ( channelId%39==37 || channelId%39==38 );
-        // HGCalElectronicsId id (isCM, 0, 0, 0, int(channelId/39), channelId%39);
-        HGCalElectronicsId id (0, 0, 0, int(channelId/39), channelId%39);
+        HGCalElectronicsId id (1, 0, 0, 0, int(channelId/39), channelId%39);
+        //HGCalElectronicsId id (0, 0, 0, int(channelId/39), channelId%39);
         myfile << Form("%d %f %f %f %f\n", id.raw(), rs.get_mean_adc(), rs.get_slope(), rs.get_intercept(), kappa_BXm1);
     }
     myfile.close();
