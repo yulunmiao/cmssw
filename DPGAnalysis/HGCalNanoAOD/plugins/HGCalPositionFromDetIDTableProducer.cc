@@ -18,13 +18,33 @@ class HGCalPositionFromDetIDTableProducer : public HitInfoTableProducer<edm::Vie
     caloGeoToken_(esConsumes<edm::Transition::BeginRun>()) {
   }
   ~HGCalPositionFromDetIDTableProducer() override {}
+
+  std::pair<int, int> wafer(const CaloRecHit& hit) {
+    return tools_.getWafer(hit.detid());
+  }
   
   std::pair<int, int> uv(const CaloRecHit& hit) {
     return tools_.getCell(hit.detid());
   }
 
+  unsigned int siThickIndex(const CaloRecHit& hit) {
+    return tools_.getSiThickness(hit.detid());
+  }
+
   unsigned int layer(const CaloRecHit& hit) {
     return tools_.getLayer(hit.detid());
+  }
+
+  unsigned int zside(const CaloRecHit& hit) {
+    return tools_.zside(hit.detid());
+  }
+
+  float eta(const CaloRecHit& hit) {
+    return tools_.getEta(hit.detid());
+  }
+
+  float phi(const CaloRecHit& hit) {
+    return tools_.getPhi(hit.detid());
   }
 
   void beginRun(const edm::Run&, const edm::EventSetup& iSetup) override {
