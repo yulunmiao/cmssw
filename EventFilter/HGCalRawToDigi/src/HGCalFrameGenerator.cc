@@ -50,8 +50,9 @@ namespace hgcal {
 
   HGCalFrameGenerator::HGCalFrameGenerator(const edm::ParameterSet& iConfig) {
 
-    inputfile_key_=iConfig.getUntrackedParameter<std::string>("treeName");
-    inputfile_list_=iConfig.getUntrackedParameter<std::vector<std::string>>("inputs");
+    inputfile_key_= iConfig.exists("treeName") ? iConfig.getUntrackedParameter<std::string>("treeName") : "";
+    if(iConfig.exists("inputs"))
+      inputfile_list_= iConfig.getUntrackedParameter<std::vector<std::string>>("inputs");
     
     const auto slink_config = iConfig.getParameter<edm::ParameterSet>("slinkParams");
 
@@ -203,14 +204,14 @@ namespace hgcal {
   //--------------------------------------------------
 
   std::vector<uint64_t> HGCalFrameGenerator::produceECONEvent(unsigned int econd_id, unsigned int cb_id) const {
-    if (!emul_)
+    if (!emulator_)
       throw cms::Exception("HGCalFrameGenerator")
           << "ECON-D emulator was not properly set to the frame generator. Please ensure you are calling the "
              "HGCalFrameGenerator::setEmulator method.";
 
     std::vector<uint64_t> econd_event;
 
-    const auto event = emul_->next();
+    const auto event = emulator_->next();
     const auto& econd_params = econd_params_.at(econd_id);
     auto header_bits = generateStatusBits(econd_id);
     std::vector<econd::ERxChannelEnable> enabled_ch_per_erx;

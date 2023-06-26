@@ -4,7 +4,7 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 process = cms.Process("TEST")
 
 options = VarParsing.VarParsing('standard')
-options.register('mode', 'hgcmodule', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+options.register('mode', 'trivial', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'type of emulation')
 options.register('fedId', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'emulated FED id')
@@ -20,9 +20,9 @@ options.register('numChannelsPerERx', 37, VarParsing.VarParsing.multiplicity.sin
                  'number of channels enabled per ERx')
 options.register('numERxsPerECOND', 12, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'number of ERxs enabled per ECON-D')
-options.register('activeECONDs', [], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
+options.register('activeECONDs', [0], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
                  'list of ECON-Ds enabled')
-options.register('ECONDsInPassthrough', [], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
+options.register('ECONDsInPassthrough', [0], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
                  'list of ECON-Ds in passthrough mode')
 options.register('ECONDsInCharacterisation', [], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
                  'list of ECON-Ds in characterisation mode')
@@ -67,6 +67,7 @@ process.hgcalEmulatedSlinkRawData.emulatorType = options.mode
 if process.hgcalEmulatedSlinkRawData.emulatorType == 'hgcmodule':
     process.hgcalEmulatedSlinkRawData.inputs = cms.untracked.vstring(options.inputFiles)
 process.hgcalEmulatedSlinkRawData.storeEmulatorInfo = bool(options.storeEmulatorInfo)
+print(process.hgcalEmulatedSlinkRawData.emulatorType)
 
 # steer the number of capture blocks
 if options.randomActiveCaptureBlocks:
