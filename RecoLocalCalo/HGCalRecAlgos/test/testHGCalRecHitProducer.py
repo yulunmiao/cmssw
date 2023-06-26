@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
-run_on_gpu = True
+run_on_gpu = False
 
-n_hits_scale_value = 100000
+n_hits_scale_value = 50000 #100000
 
 if run_on_gpu:
     n_blocks_value=4096
@@ -17,6 +17,7 @@ process.source = cms.Source("PoolSource",
 process.load('Configuration.StandardSequences.Accelerators_cff')
 process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
+process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi')
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1)
 process.MessageLogger.cerr.INFO.limit = cms.untracked.int32(10000000)
 # This doesn't work for some reason, so using a switch "run_on_gpu" for now
@@ -30,6 +31,7 @@ process.producerGpu = cms.EDProducer(
     n_blocks = cms.int32(n_blocks_value),
     n_threads = cms.int32(n_threads_value),
     n_hits_scale = cms.int32(n_hits_scale_value),
+    pedestal_label = cms.string(''), # for hgCalPedestalsESSource
 )
 process.producerCpu = cms.EDProducer(
     'alpaka_serial_sync::HGCalRecHitProducer',
@@ -37,7 +39,9 @@ process.producerCpu = cms.EDProducer(
     n_blocks = cms.int32(n_blocks_value),
     n_threads = cms.int32(n_threads_value),
     n_hits_scale = cms.int32(n_hits_scale_value),
+    pedestal_label = cms.string(''), # for hgCalPedestalsESSource
 )
+process.hgCalPedestalsESSource.filename = '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt'
 process.output = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string("./recHits.root"),
 #     outputCommands = cms.untracked.vstring(

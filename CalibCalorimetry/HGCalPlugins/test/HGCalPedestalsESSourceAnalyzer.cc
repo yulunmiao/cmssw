@@ -10,6 +10,7 @@
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
+#include <iomanip> // for std::setw
 
 class HGCalPedestalsESSourceAnalyzer : public edm::one::EDAnalyzer<> {
 public:
@@ -27,31 +28,33 @@ private:
   
   void analyze(const edm::Event&, const edm::EventSetup& iSetup) override {
 
-    //check if there are new conditions and read them
+    // check if there are new conditions and read them
     if (!cfgWatcher_.check(iSetup)) return;
-    auto conds=iSetup.getData(tokenConds_);
-    size_t nconds=conds.params_.size();
+    auto conds = iSetup.getData(tokenConds_);
+    size_t nconds = conds.params_.size();
     edm::LogInfo("HGCalPedestalsESSourceAnalyzer") << "Conditions retrieved:\n" << nconds;
 
-    //print out all conditions readout
-    std::cout << "ID\teRx\tROC\tChannel\tIs CM?\tPedestal\tCM slope\tCM offset\tkappa(BX-1)" << std::endl;
+    // print out all conditions readout
+    std::cout << "   ID  eRx  ROC  Channel  isCM?  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
     for(auto it : conds.params_) {
 
       HGCalElectronicsId id(it.first);
-      bool cmflag=id.isCM();
-      uint32_t eRx=(uint32_t) id.econdeRx();
-      uint32_t roc=(uint32_t) eRx/2;
-      uint32_t ch=id.halfrocChannel();
+      bool cmflag = id.isCM();
+      uint32_t eRx = (uint32_t) id.econdeRx();
+      uint32_t roc = (uint32_t) eRx/2;
+      uint32_t ch = id.halfrocChannel();
 
       HGCalPedestals table(it.second);
       float pedestal = MiniFloatConverter::float16to32(table.pedestal);
       float cm_slope = MiniFloatConverter::float16to32(table.cm_slope);
       float cm_offset = MiniFloatConverter::float16to32(table.cm_offset);
       float kappa_bxm1 = MiniFloatConverter::float16to32(table.kappa_bxm1);
-            
-      std::cout << std::hex << id.raw() << " "
-                << std::dec << eRx << " " << roc << " " << ch << " " << cmflag << " "
-                << std::setprecision(3)  << " " << pedestal << " " << cm_slope << " " << cm_offset << " " << kappa_bxm1 << std::endl;
+
+      std::cout << std::setw(5) << std::hex << id.raw() << " " << std::setw(4) << std::dec << eRx << " "
+                << std::setw(4) << roc << " " << std::setw(8) << ch << " " << std::setw(6) << cmflag << " "
+                << std::setw(9) << std::setprecision(3) << pedestal << " " << std::setw(9) << cm_slope << " "
+                << std::setw(10) << cm_offset << " " << std::setw(12) << kappa_bxm1 << std::endl;
+
     }
     
   }

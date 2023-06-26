@@ -29,12 +29,16 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     // convert to device rechits on device
     // std::unique_ptr<HGCalRecHitDeviceCollection> calibrate(Queue& queue, const std::unique_ptr<HGCalDigiDeviceCollection> &digis);
 
+    typedef std::map<HGCalElectronicsId,float> CalibParams; // ID -> pedestal
+    void loadCalibParams(CalibParams& newCalibParams);
+
   private:
     void print(Queue& queue, HGCalRecHitDeviceCollection const& recHits, int max = -1) const;
     void print(HGCalDigiHostCollection const& digis, int max = -1) const;
 
     int n_blocks;
     int n_threads;
+    CalibParams calibParams; // ID -> pedestal
 
   };
 

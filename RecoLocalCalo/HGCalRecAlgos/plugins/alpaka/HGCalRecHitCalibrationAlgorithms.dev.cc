@@ -18,7 +18,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   class HGCalRecHitCalibrationKernel_digisToRecHits {
   public:
+
     template <typename TAcc>
+    
     ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::ConstView digis, HGCalRecHitDeviceCollection::View recHits) const {
       auto ToA_to_time = [&](uint32_t ToA) { return float(ToA); };
       auto ADC_to_energy = [&](uint32_t ADC) { return float(ADC); };
@@ -39,6 +41,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalRecHitDeviceCollection::View recHits, float pedestalValue) const {
       for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
         if ((recHits[index].flags() >> kPedestalCorrection) & 1){
+          //calibParams[recHits[index].detId()]; // detId = electronicsId for the moment
           recHits[index].energy() -= pedestalValue;
         }
       }
@@ -73,6 +76,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       printf("\n");
     }
   };
+
+  void HGCalRecHitCalibrationAlgorithms::loadCalibParams(CalibParams& newCalibParams) {
+    std::cout << "\nINFO -- HGCalRecHitCalibrationAlgorithms::loadCalibParams: " << newCalibParams.size() << " elements" << std::endl;
+    calibParams = newCalibParams;
+  }
 
   std::unique_ptr<HGCalRecHitDeviceCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection const& digis) {
     std::cout << "\n\nINFO -- Start of calibrate\n\n" << std::endl;

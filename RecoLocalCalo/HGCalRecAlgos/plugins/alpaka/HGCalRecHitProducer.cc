@@ -14,6 +14,17 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/CopyToDevice.h"
 #include "RecoLocalCalo/HGCalRecAlgos/plugins/alpaka/HGCalRecHitCalibrationAlgorithms.h"
 
+// includes for loading pedestal txt file
+#include <iomanip> // for std::setw
+#include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/ESWatcher.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
+#include "DataFormats/Math/interface/libminifloat.h"
+
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableGenericConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableGenericConfig.h"
+
 #include <future>
 
 template<class T> double duration(T t0,T t1)
@@ -41,6 +52,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     void produce(device::Event&, device::EventSetup const&) override;
 
+    edm::ESWatcher<HGCalCondSerializablePedestalsRcd> cfgWatcher_;
+    edm::ESGetToken<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd> tokenConds_;
     const edm::EDGetTokenT<HGCalDigiHostCollection> digisToken_;
     const device::EDPutToken<HGCalRecHitDeviceCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
@@ -48,22 +61,58 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   };
 
   HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
-      : digisToken_{consumes<HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
+      : tokenConds_(esConsumes<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd>(
+          edm::ESInputTag(iConfig.getParameter<std::string>("pedestal_label")))),
+        digisToken_{consumes<HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
         recHitsToken_{produces()},
         calibrator_{HGCalRecHitCalibrationAlgorithms(
           iConfig.getParameter<int>("n_blocks"),
           iConfig.getParameter<int>("n_threads"))},
-          n_hits_scale{iConfig.getParameter<int>("n_hits_scale")} {}
+        n_hits_scale{iConfig.getParameter<int>("n_hits_scale")}
+    {}
 
   void HGCalRecHitProducer::produce(device::Event& iEvent, device::EventSetup const& iSetup) {
     auto queue = iEvent.queue();
 
     std::cout << "\n\nINFO -- Start of produce\n\n" << std::endl;
+    
     // Read digis
     auto const& hostDigisIn = iEvent.get(digisToken_);
     int oldSize = hostDigisIn.view().metadata().size();
     int newSize = oldSize * n_hits_scale;
     auto hostDigis = HGCalDigiHostCollection(newSize, queue);
+
+    // Check if there are new conditions and read them
+    if (cfgWatcher_.check(iSetup)){
+
+      auto conds = iSetup.getData(tokenConds_);
+      size_t nconds = conds.params_.size();
+      edm::LogInfo("HGCalPedestalsESSourceAnalyzer") << "Conditions retrieved:\n" << nconds;
+
+      // Print out all conditions readout
+      HGCalRecHitCalibrationAlgorithms::CalibParams calibParams;
+      std::cout << "   ID  eRx  ROC  Channel  isCM?  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
+      for(auto it : conds.params_) {
+        HGCalElectronicsId id(it.first);
+        bool cmflag = id.isCM();
+        uint32_t eRx = (uint32_t) id.econdeRx();
+        uint32_t roc = (uint32_t) eRx/2;
+        uint32_t ch = id.halfrocChannel();
+        HGCalPedestals table(it.second);
+        float pedestal = MiniFloatConverter::float16to32(table.pedestal);
+        float cm_slope = MiniFloatConverter::float16to32(table.cm_slope);
+        float cm_offset = MiniFloatConverter::float16to32(table.cm_offset);
+        float kappa_bxm1 = MiniFloatConverter::float16to32(table.kappa_bxm1);
+        calibParams[id] = pedestal;
+        std::cout << std::setw(5) << std::hex << id.raw() << " " << std::setw(4) << std::dec << eRx << " "
+                  << std::setw(4) << roc << " " << std::setw(8) << ch << " " << std::setw(6) << cmflag << " "
+                  << std::setw(9) << std::setprecision(3) << pedestal << " " << std::setw(9) << cm_slope << " "
+                  << std::setw(10) << cm_offset << " " << std::setw(12) << kappa_bxm1 << std::endl;
+      }
+
+      calibrator_.loadCalibParams(calibParams); // TODO: load map: electronicsID -> vector { pedestal }
+
+    }
 
     for(int i=0; i<newSize;i++){
       hostDigis.view()[i].electronicsId() = hostDigisIn.view()[i%oldSize].electronicsId();
@@ -93,8 +142,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     desc.add<int>("n_blocks", -1);
     desc.add<int>("n_threads", -1);
     desc.add<int>("n_hits_scale", -1);
+    desc.add<std::string>("pedestal_label", "");
     descriptions.addWithDefaultLabel(desc);
   }
+
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
 // define this as a plug-in
