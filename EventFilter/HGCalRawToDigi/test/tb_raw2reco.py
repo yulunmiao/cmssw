@@ -14,7 +14,7 @@ options.register('dumpFRD', False, VarParsing.VarParsing.multiplicity.singleton,
                  'also dump the FEDRawData content')
 options.register('numCaptureBlocks', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'number of capture blocks to emulate')
-options.register('numECONDs', -1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('numECONDs', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'number of ECON-Ds to emulate')
 options.register('numChannelsPerERx', 37, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'number of channels enabled per ERx')
@@ -32,7 +32,7 @@ options.register('randomActiveCaptureBlocks', False, VarParsing.VarParsing.multi
                  'randomly activate capture blocks on emulation')
 options.register('randomActiveECOND', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'randomly activate ECOn-Ds on emulation')
-options.register('storeOutput', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('storeOutput', True, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the output into an EDM file')
 options.register('storeRAWOutput', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the RAW output into a streamer file')
@@ -42,7 +42,7 @@ options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'input TB file')
-options.maxEvents = 1  # number of events to emulate
+options.maxEvents = 100  # number of events to emulate
 options.output = 'output.root'  # output EDM file
 options.secondaryOutput = 'output.raw'  # output streamer file
 options.parseArguments()
