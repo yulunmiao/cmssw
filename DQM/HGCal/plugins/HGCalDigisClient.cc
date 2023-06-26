@@ -31,6 +31,7 @@ private:
   void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
   void analyze(const edm::Event&, const edm::EventSetup&) override;
   const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
+  const edm::EDGetTokenT<std::vector<int> > metadataToken_;
 
   MonitorElement* p_adc_minus_adcm1;
   MonitorElement* hex_adc_minus_adcm1;
@@ -54,37 +55,46 @@ private:
 
 
 HGCalDigisClient::HGCalDigisClient(const edm::ParameterSet& iConfig)
-    : elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis")))
+  : elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
+    metadataToken_(consumes<std::vector<int> >(iConfig.getParameter<edm::InputTag>("MetaData")))
 {}
 
 HGCalDigisClient::~HGCalDigisClient() {
     // TODO: is the destructor a proper place to export calibration parameters?
     // export_calibration_parameters();
-    printf("[INFO] This is the end of the job\n");
+  LogDebug("HGCalDigisClient") << "End of the job" << std::endl;
 }
 
 // ------------ method called for each event  ------------
 void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
     using namespace edm;
 
+    //read trigtime
+    const auto& metadata = iEvent.get(metadataToken_);
+    int trigtime(-999);
+    if(metadata.size()>0) trigtime=metadata.at(0);
+    LogDebug("HGCalDigisClient") << "trigtime=" << trigtime;
+    
+    //read digis
     const auto& elecDigis = iEvent.get(elecDigisToken_);
     for (auto& elecDigi : elecDigis) {
-        std::cout<<"Electronics Id="<<elecDigi.id().raw()<<std::endl;
-        elecDigi.id().print();
-        elecDigi.print();
-        std::cout << "adc = " << elecDigi.adc() << ", "
-                  << "adcm1 = " << elecDigi.adcm1() << ", "
-                  << "tot = " << elecDigi.tot() << ", "
-                  << "halfrocChannel = " << (uint32_t) elecDigi.id().halfrocChannel() << ", "
-                  //<< "sequentialHalfrocChannel = " << (uint32_t) elecDigi.id().sequentialHalfrocChannel()
-                  << std::endl;
-        
-        // Note: need logial mapping / electronics mapping
-        uint16_t adc_diff = elecDigi.adc() - elecDigi.adcm1(); 
-        p_adc_minus_adcm1->Fill( (uint32_t)elecDigi.id().halfrocChannel(), adc_diff);
-
-        // Note: need CM info
-        //myRunStatCollection.add_entry(globalChannelId_, adc_double_, adc_channel_CM);
+      
+      bool isCM=elecDigi.id().isCM();
+      int ch=elecDigi.id().rocChannel();
+      
+      LogDebug("HGCalDigisClient") << "Electronics Id= 0x" << std::hex << elecDigi.id().raw() << std::dec << std::endl
+                                   << "adc = " << elecDigi.adc() << ", "
+                                   << "adcm1 = " << elecDigi.adcm1() << ", "
+                                   << "tot = " << elecDigi.tot() << ", "
+                                   << "halfrocChannel = " << (uint32_t) elecDigi.id().halfrocChannel() << ", "
+                                   << "channel = " << ch << ", CM=" << isCM;
+      
+      // Note: need logial mapping / electronics mapping
+      uint16_t adc_diff = elecDigi.adc() - elecDigi.adcm1(); 
+      p_adc_minus_adcm1->Fill( (uint32_t)elecDigi.id().halfrocChannel(), adc_diff);
+      
+      // Note: need CM info
+      //myRunStatCollection.add_entry(globalChannelId_, adc_double_, adc_channel_CM);
     }
 }
 
@@ -116,13 +126,14 @@ void HGCalDigisClient::export_calibration_parameters() {
         myfile << Form("%d %f %f %f %f\n", id.raw(), rs.get_mean_adc(), rs.get_slope(), rs.get_intercept(), kappa_BXm1);
     }
     myfile.close();
-    printf("[INFO] export CM parameters: %s\n", csv_file_name.Data());
+    LogDebug("HGCalDigisClient") << "Export CM parameters @ " << csv_file_name << std::endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void HGCalDigisClient::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
-    desc.add<edm::InputTag>("Digis",edm::InputTag("hgcalDigis","DIGI","TEST"));
+    desc.add<edm::InputTag>("Digis",edm::InputTag("hgcalDigis"));
+    desc.add<edm::InputTag>("MetaData",edm::InputTag("hgcalMetaData"));
 }
 
 // define this as a plug-in

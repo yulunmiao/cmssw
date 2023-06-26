@@ -58,8 +58,8 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
       store_emul_info_(iConfig.getParameter<bool>("storeEmulatorInfo")),
       store_fed_header_trailer_(iConfig.getParameter<bool>("fedHeaderTrailer")),
       emul_type_(iConfig.getParameter<std::string>("emulatorType")),
-      fedRawToken_(produces<FEDRawDataCollection>()),
-      metadataToken_(produces<std::vector<int> >("metadata")),
+      fedRawToken_(produces<FEDRawDataCollection>("hgcalFEDRawData")),
+      metadataToken_(produces<std::vector<int> >("hgcalMetaData")),
       frame_gen_(iConfig) {
   
   if (emul_type_=="slinkfromraw") {

@@ -32,8 +32,13 @@ uint8_t HGCalElectronicsId::econdIdx() const { return (value_ >> kECONDIdxShift)
 uint8_t HGCalElectronicsId::econdeRx() const { return (value_ >> kECONDeRxShift) & kECONDeRxMask; }
 
 //
-
 uint8_t HGCalElectronicsId::halfrocChannel() const { return (value_ >> kHalfROCChannelShift) & kHalfROCChannelMask; }
 
 //
 uint8_t HGCalElectronicsId::cmWord() const { return halfrocChannel()-37; }
+
+//
+uint8_t HGCalElectronicsId::rocChannel() const {
+  if(isCM()) return cmWord();
+  return halfrocChannel()+36*(econdeRx()%2);
+}

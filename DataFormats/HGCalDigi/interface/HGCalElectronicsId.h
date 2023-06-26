@@ -59,6 +59,7 @@ public:
   uint8_t econdIdx() const;
   uint8_t econdeRx() const;
   uint8_t halfrocChannel() const;
+  uint8_t rocChannel() const;
   uint8_t cmWord() const;
   bool isCM() const;
   void print(std::ostream& out = std::cout) const {

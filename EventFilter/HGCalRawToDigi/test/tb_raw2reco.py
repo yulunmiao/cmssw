@@ -105,7 +105,7 @@ for econd in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs:
     econd_id += 1
 
 # steer the unpacker
-process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData')
+process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData')
 process.hgcalDigis.fedIds = cms.vuint32(options.fedId)
 process.hgcalDigis.maxCaptureBlock = process.hgcalEmulatedSlinkRawData.slinkParams.numCaptureBlocks
 process.hgcalDigis.numERxsInECOND = options.numERxsPerECOND
@@ -113,7 +113,16 @@ process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventi
     process.hgcalDigis.captureBlockECONDMax,
     len([ec for ec in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs if ec.active]))
 
-process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis)
+# DQM
+process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
+                                         Digis = cms.InputTag('hgcalDigis'),
+                                         MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'), )
+process.DQMStore = cms.Service("DQMStore")
+process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
+process.dqmSaver.tag = 'HGCAL'
+process.dqmSaver.runNumber = 123480
+
+process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver)
 
 if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",
