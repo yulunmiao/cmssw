@@ -31,7 +31,7 @@ private:
   const std::vector<unsigned int> fedIds_;
   const unsigned int badECONDMax_;
   const unsigned int numERxsInECOND_;
-  const std::unique_ptr<HGCalUnpacker<HGCalElectronicsId> > unpacker_;
+  const std::unique_ptr<HGCalUnpacker> unpacker_;
 };
 
 HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
@@ -42,7 +42,7 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
-      unpacker_(new HGCalUnpacker<HGCalElectronicsId>(
+      unpacker_(new HGCalUnpacker(
           HGCalUnpackerConfig{.sLinkBOE = iConfig.getParameter<unsigned int>("slinkBOE"),
                               .captureBlockReserved = iConfig.getParameter<unsigned int>("captureBlockReserved"),
                               .econdHeaderMarker = iConfig.getParameter<unsigned int>("econdHeaderMarker"),
@@ -68,15 +68,16 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     std::vector<uint32_t> data_32bit;
     auto* ptr = fed_data.data();
     size_t fed_size = fed_data.size();
-    for (size_t i = 0; i < fed_size; i += 4)
+    LogDebug("HGCalRawToDigi")<<"32-bit raw data";
+    for (size_t i = 0; i < fed_size; i += 4){
       data_32bit.emplace_back(((*(ptr + i) & 0xff) << 0) + (((i + 1) < fed_size) ? ((*(ptr + i + 1) & 0xff) << 8) : 0) +
                               (((i + 2) < fed_size) ? ((*(ptr + i + 2) & 0xff) << 16) : 0) +
                               (((i + 3) < fed_size) ? ((*(ptr + i + 3) & 0xff) << 24) : 0));
+    }
 
     unpacker_->parseSLink(
         data_32bit,
-        [this](uint16_t /*sLink*/, uint8_t /*captureBlock*/, uint8_t /*econd*/) { return (1 << numERxsInECOND_) - 1; },
-        [](HGCalElectronicsId elecID) -> HGCalElectronicsId { return elecID; });
+        [this](uint16_t /*sLink*/, uint8_t /*captureBlock*/, uint8_t /*econd*/) { return (1 << numERxsInECOND_) - 1; });
     const auto elecid_to_detid = [](const HGCalElectronicsId& id) -> HGCalDetId {
       return HGCalDetId(id.raw());
     };  //TODO: implement something more relevant
@@ -93,6 +94,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       digis.push_back(HGCROCChannelDataFrameSpec(elecid_to_detid(id), data.raw()));
       elec_digis.push_back(data);
     }
+
 
     if (const auto& bad_econds = unpacker_->badECOND(); !bad_econds.empty()) {
       if (bad_econds.size() > badECONDMax_)

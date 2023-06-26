@@ -13,18 +13,15 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
-template <class D>
-HGCalUnpacker<D>::HGCalUnpacker(HGCalUnpackerConfig config)
+HGCalUnpacker::HGCalUnpacker(HGCalUnpackerConfig config)
     : config_(config),
       channelData_(config_.channelMax),
       commonModeIndex_(config_.channelMax),
       commonModeData_(config_.commonModeMax) {}
 
-template <class D>
-void HGCalUnpacker<D>::parseSLink(
+void HGCalUnpacker::parseSLink(
     const std::vector<uint32_t>& inputArray,
-    const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
-    const std::function<D(HGCalElectronicsId elecID)>& logicalMapping) {
+    const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping) {
   uint16_t sLink = 0;
   bool zside(false); //fixme: this should be based on slink number (fedId)
   channelDataSize_ = 0;
@@ -161,8 +158,8 @@ void HGCalUnpacker<D>::parseSLink(
                                  : (inputArray[tempIndex] << tempBit) | (inputArray[tempIndex + 1] >> (32 - tempBit));
               const uint8_t code = temp >> 28;
               // use if and else here
-              channelData_[channelDataSize_] = HGCROCChannelDataFrame<D>(
-                  logicalMapping(id),
+              channelData_[channelDataSize_] = HGCROCChannelDataFrame<HGCalElectronicsId>(
+                  id,
                   ((temp << erxBodyLeftShift_[code]) >> erxBodyRightShift_[code]) & erxBodyMask_[code]);
               bitCounter += erxBodyBits_[code];
               if (code == 0b0010)
@@ -225,7 +222,7 @@ void HGCalUnpacker<D>::parseSLink(
               const HGCalElectronicsId id(zside, sLink, captureBlock, econd, erx, channel);
               commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
               channelData_[channelDataSize_] =
-                  HGCROCChannelDataFrame<HGCalElectronicsId>(logicalMapping(id), inputArray[iword]);
+                  HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
               LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                       << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw()
                                       << ", assigned common mode index=" << commonModeIndex_.at(channelDataSize_)
@@ -275,11 +272,9 @@ void HGCalUnpacker<D>::parseSLink(
   return;
 }
 
-template <class D>
-void HGCalUnpacker<D>::parseCaptureBlock(
+void HGCalUnpacker::parseCaptureBlock(
     const std::vector<uint32_t>& inputArray,
-    const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
-    const std::function<D(HGCalElectronicsId elecID)>& logicalMapping) {
+    const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping) {
   uint16_t sLink = 0;
   bool zside(false); //fixme me this should be based on the slink id
   uint8_t captureBlock = 0;
@@ -406,8 +401,8 @@ void HGCalUnpacker<D>::parseCaptureBlock(
                                : (inputArray[tempIndex] << tempBit) | (inputArray[tempIndex + 1] >> (32 - tempBit));
             const uint8_t code = temp >> 28;
             // use if and else here
-            channelData_[channelDataSize_] = HGCROCChannelDataFrame<D>(
-                logicalMapping(id),
+            channelData_[channelDataSize_] = HGCROCChannelDataFrame<HGCalElectronicsId>(
+                id,
                 ((temp << erxBodyLeftShift_[code]) >> erxBodyRightShift_[code]) & erxBodyMask_[code]);
             bitCounter += erxBodyBits_[code];
             if (code == 0b0010)
@@ -469,7 +464,7 @@ void HGCalUnpacker<D>::parseCaptureBlock(
             const HGCalElectronicsId id(zside, sLink, captureBlock, econd, erx, channel);
             commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
             channelData_[channelDataSize_] =
-                HGCROCChannelDataFrame<HGCalElectronicsId>(logicalMapping(id), inputArray[iword]);
+                HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
             LogDebug("HGCalUnpack") << "Word" << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                     << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw()
                                     << ", assigned common mode index=" << commonModeIndex_[channelDataSize_] << "\n"
@@ -507,11 +502,9 @@ void HGCalUnpacker<D>::parseCaptureBlock(
   return;
 }
 
-template <class D>
-void HGCalUnpacker<D>::parseECOND(
+void HGCalUnpacker::parseECOND(
     const std::vector<uint32_t>& inputArray,
-    const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
-    const std::function<D(HGCalElectronicsId elecID)>& logicalMapping) {
+    const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping) {
   uint16_t sLink = 0;
   bool zside(false); //fixme this should be based on the slink id
   uint8_t captureBlock = 0;
@@ -615,8 +608,9 @@ void HGCalUnpacker<D>::parseECOND(
                              : (inputArray[tempIndex] << tempBit) | (inputArray[tempIndex + 1] >> (32 - tempBit));
           const uint8_t code = temp >> 28;
           // use if and else here
-          channelData_[channelDataSize_] = HGCROCChannelDataFrame<D>(
-              logicalMapping(id), ((temp << erxBodyLeftShift_[code]) >> erxBodyRightShift_[code]) & erxBodyMask_[code]);
+          channelData_[channelDataSize_] = HGCROCChannelDataFrame<HGCalElectronicsId>(
+              id, 
+              ((temp << erxBodyLeftShift_[code]) >> erxBodyRightShift_[code]) & erxBodyMask_[code]);
           bitCounter += erxBodyBits_[code];
           if (code == 0b0010)
             channelData_[channelDataSize_].fillFlag1(1);
@@ -676,7 +670,7 @@ void HGCalUnpacker<D>::parseECOND(
           const HGCalElectronicsId id(zside, sLink, captureBlock, econd, erx, channel);
           commonModeIndex_[channelDataSize_] = commonModeDataSize_ / 4 * 4;
           channelData_[channelDataSize_] =
-              HGCROCChannelDataFrame<HGCalElectronicsId>(logicalMapping(id), inputArray[iword]);
+              HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
           LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                   << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw() << "\n"
                                   << "  assigned common mode index=" << commonModeIndex_.at(channelDataSize_) << "\n"
@@ -705,6 +699,3 @@ void HGCalUnpacker<D>::parseECOND(
   commonModeData_.resize(commonModeDataSize_);
   return;
 }
-
-// class specialisation for the electronics ID indexing
-template class HGCalUnpacker<HGCalElectronicsId>;

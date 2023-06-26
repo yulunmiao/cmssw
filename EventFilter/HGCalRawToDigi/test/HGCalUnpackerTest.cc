@@ -12,8 +12,6 @@ uint16_t enabledERXMapping(uint16_t sLink, uint8_t captureBlock, uint8_t econd) 
   return 0b11;
 }
 
-HGCalElectronicsId logicalMapping(HGCalElectronicsId elecID) { return elecID; }
-
 int main(int argc, char* argv[]) {
   std::vector<uint32_t> testInput;
   if (argc > 1) {
@@ -40,8 +38,8 @@ int main(int argc, char* argv[]) {
 
   HGCalUnpackerConfig config;
   config.sLinkCaptureBlockMax = 2;
-  HGCalUnpacker<HGCalElectronicsId> unpacker(config);
-  unpacker.parseSLink(testInput, enabledERXMapping, logicalMapping);
+  HGCalUnpacker unpacker(config);
+  unpacker.parseSLink(testInput, enabledERXMapping);
 
   auto channeldata = unpacker.channelData();
   auto cms = unpacker.commonModeIndex();

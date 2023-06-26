@@ -32,7 +32,6 @@ struct HGCalUnpackerConfig {
 };
 
 /// This class is designed to unpack raw data from HGCal, formatted as S-Links, capture blocks, and ECON-Ds, to HGCROC channel data.
-template <class D>
 class HGCalUnpacker {
 public:
   enum SLinkHeaderShift {
@@ -82,28 +81,22 @@ public:
   /// parse input in S-Link format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from S-Link indices to enabled eRx in this ECON-D
-  /// \param[in] logicalMapping logical mapping from HGCalElectronicsId to class D as ID
   void parseSLink(const std::vector<uint32_t>& inputArray,
-                  const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
-                  const std::function<D(HGCalElectronicsId elecID)>& logicalMapping);
+                  const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping);
   /// parse input in capture block format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from capture block indices to enabled eRx in this ECON-D
-  /// \param[in] logicalMapping logical mapping from HGCalElectronicsId to class D as ID
   void parseCaptureBlock(
       const std::vector<uint32_t>& inputArray,
-      const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
-      const std::function<D(HGCalElectronicsId elecID)>& logicalMapping);
+      const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping);
   /// parse input in ECON-D format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from ECON-D indices to enabled eRx in this ECON-D
-  /// \param[in] logicalMapping logical mapping from HGCalElectronicsId to class D as ID
   void parseECOND(const std::vector<uint32_t>& inputArray,
-                  const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
-                  const std::function<D(HGCalElectronicsId elecID)>& logicalMapping);
+                  const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping);
 
   /// \return vector of HGCROCChannelDataFrame<D>(ID, value)
-  const std::vector<HGCROCChannelDataFrame<D> >& channelData() const { return channelData_; }
+  const std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> >& channelData() const { return channelData_; }
   /// \return vector of 32-bit index, the length is the same as channelData(), link from channel data to the first common mode on ROC (+0,+1,+2,+3 for all four common modes)
   const std::vector<uint32_t>& commonModeIndex() const { return commonModeIndex_; }
   /// \return vector of 16-bit common mode data, lowest 10 bits is the ADC of the common mode, padding to 4 for half ROC turned on
@@ -133,7 +126,7 @@ private:
   HGCalUnpackerConfig config_;
   size_t channelDataSize_{0};                            ///< Size of unpacked channels
   size_t commonModeDataSize_{0};                         ///< Size of unpacked common modes
-  std::vector<HGCROCChannelDataFrame<D> > channelData_;  ///< Array for unpacked channels
+  std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> > channelData_;  ///< Array for unpacked channels
   std::vector<uint32_t> commonModeIndex_;  ///< Array for logicalMapping between unpacked channels to first common mode
   std::vector<uint16_t> commonModeData_;   ///< Array for unpacked common modes
   std::vector<uint32_t> badECOND_;         ///< Array of indices of bad ECON-Ds
