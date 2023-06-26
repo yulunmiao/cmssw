@@ -24,6 +24,9 @@ namespace hgcal {
 
     /// get the configuration parameters
     const C &config() { return params_; }
+
+    /// get metadata for this event
+    virtual std::vector<int> nextMetaData() { return {}; }
     
   protected:
     const C params_;

@@ -44,6 +44,7 @@ private:
   std::string emul_type_;
   
   const edm::EDPutTokenT<FEDRawDataCollection> fedRawToken_;
+  const edm::EDPutTokenT<std::vector<int> > metadataToken_;
 
   edm::Service<edm::RandomNumberGenerator> rng_;
   edm::EDPutTokenT<HGCalSlinkEmulatorInfo> fedEmulInfoToken_;
@@ -58,13 +59,14 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
       store_fed_header_trailer_(iConfig.getParameter<bool>("fedHeaderTrailer")),
       emul_type_(iConfig.getParameter<std::string>("emulatorType")),
       fedRawToken_(produces<FEDRawDataCollection>()),
+      metadataToken_(produces<std::vector<int> >("metadata")),
       frame_gen_(iConfig) {
   
   if (emul_type_=="slinkfromraw") {
     raw_reader_ = std::make_unique<hgcal::SlinkFromRaw>(iConfig);
   } else {  
     frame_gen_.setEmulator(emul_type_);
-
+    
     // ensure the random number generator service is present in configuration
     if (!rng_.isAvailable())
       throw cms::Exception("HGCalSlinkEmulator") << "The HGCalSlinkEmulator module requires the "
@@ -81,7 +83,7 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
 
 //
 void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
-
+                                                                                     
   //raw s-link can be put directly to the event
   if(emul_type_=="slinkfromraw") {
     FEDRawDataCollection raw_data = raw_reader_->next();
@@ -89,6 +91,10 @@ void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSet
     return;
   }
 
+  //add metadata
+  auto metadata = frame_gen_.produceMetaData();
+  iEvent.emplace(metadataToken_, std::move(metadata));
+  
   //otherwise generate a new frame
   frame_gen_.setRandomEngine(rng_->getEngine(iEvent.streamID()));
 

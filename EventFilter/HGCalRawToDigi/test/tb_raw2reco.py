@@ -4,9 +4,9 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 process = cms.Process("TEST")
 
 options = VarParsing.VarParsing('standard')
-options.register('mode', 'trivial', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+options.register('mode', 'hgcmodule', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'type of emulation')
-options.register('fedId', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('fedId', 0, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'emulated FED id')
 options.register('debug', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'debugging mode')
@@ -18,7 +18,7 @@ options.register('numECONDs', 1, VarParsing.VarParsing.multiplicity.singleton, V
                  'number of ECON-Ds to emulate')
 options.register('numChannelsPerERx', 37, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'number of channels enabled per ERx')
-options.register('numERxsPerECOND', 12, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('numERxsPerECOND', 6, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'number of ERxs enabled per ECON-D')
 options.register('activeECONDs', [0], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
                  'list of ECON-Ds enabled')
@@ -85,7 +85,7 @@ if options.numECONDs > 0:
     process.hgcalEmulatedSlinkRawData.slinkParams.checkECONDsLimits = False  # allows to mess with unconventional, high number
                                                                              # of ECON-Ds per capture block
 
-econd_id = 0
+econd_id=0
 for econd in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs:
     # must use 'cms.' python configuration types
     if options.randomActiveECOND:  # randomly turn on/off any ECON-D in capture block

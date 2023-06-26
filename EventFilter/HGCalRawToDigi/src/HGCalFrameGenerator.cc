@@ -332,4 +332,11 @@ namespace hgcal {
 
     return to128bit(slink_event);
   }
+
+  //
+  std::vector<int> HGCalFrameGenerator::produceMetaData() {
+    return emulator_->nextMetaData();
+  }
+  
+
 }  // namespace hgcal

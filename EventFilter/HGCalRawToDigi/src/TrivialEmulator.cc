@@ -15,8 +15,7 @@ ECONDInput TrivialEmulator::next() {
         .adc = std::vector<uint16_t>(params_.num_channels_per_erx, 0),
         .adcm = std::vector<uint16_t>(params_.num_channels_per_erx, 0),
         .toa = std::vector<uint16_t>(params_.num_channels_per_erx, 0),
-        .tot = std::vector<uint16_t>(params_.num_channels_per_erx, 0),
-        .meta = std::vector<uint32_t>{}};
+        .tot = std::vector<uint16_t>(params_.num_channels_per_erx, 0)};
     evt[id] = dummy_data;
   }
   return ECONDInput{evt_id, evt};

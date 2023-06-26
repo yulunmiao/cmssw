@@ -32,9 +32,12 @@ namespace hgcal::econd {
     };
     ECONDInput next() override;
 
+    std::vector<int> nextMetaData() override;
+    
   private:
     ECONDInputColl data_;
     ECONDInputColl::const_iterator it_data_;
+    std::map<hgcal::econd::EventId,std::vector<int> > metadata_;
   };
 
 }  // namespace hgcal::econd

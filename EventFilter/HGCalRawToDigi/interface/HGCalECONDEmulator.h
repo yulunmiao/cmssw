@@ -16,7 +16,7 @@ namespace hgcal::econd {
     using ECONDEmulatorBase::ECONDEmulatorBase;
 
     ECONDInput next() override;
-
+    
   private:
     uint32_t event_id_{1}, bx_id_{2}, orbit_id_{3};
   };

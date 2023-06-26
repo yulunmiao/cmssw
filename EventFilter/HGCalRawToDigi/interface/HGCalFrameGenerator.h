@@ -66,6 +66,11 @@ namespace hgcal {
     /// List of ECON-D operational parameters for emulation
     const std::map<unsigned int, econd::EmulatorParameters>& econdParams() const { return econd_params_; }
 
+    /**
+       @short retriever for event metadata
+    */
+    std::vector<int> produceMetaData();
+    
   private:
     
     std::unique_ptr<ECONDEmulatorBase> emulator_;
