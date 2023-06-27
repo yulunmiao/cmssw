@@ -21,7 +21,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     template <typename TAcc>
     
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::ConstView digis, HGCalRecHitDeviceCollection::View recHits) const {
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, HGCalRecHitDeviceCollection::View recHits) const {
       auto ToA_to_time = [&](uint32_t ToA) { return float(ToA); };
       auto ADC_to_energy = [&](uint32_t ADC) { return float(ADC); };
       // auto ToT_to_energy = [&](uint16_t ToT){return float(ToT);};
@@ -29,8 +29,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       // dummy digis -> rechits conversion (to be replaced by the actual formula)
       for (auto index : elements_with_stride(acc, digis.metadata().size())) {
         recHits[index].detid() = static_cast<uint32_t>(digis[index].electronicsId());
-        recHits[index].energy() = ADC_to_energy(digis[index].raw());
-        recHits[index].time() = ToA_to_time(digis[index].cm());
+        recHits[index].energy() = ADC_to_energy(digis[index].adc());
+        recHits[index].time() = ToA_to_time(digis[index].toa());
         recHits[index].flags() = digis[index].flags();
       }
     }
@@ -38,11 +38,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   struct HGCalRecHitCalibrationKernel_pedestalCorrection {
     template <typename TAcc>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalRecHitDeviceCollection::View recHits, float pedestalValue) const {
-      for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
-        if ((recHits[index].flags() >> kPedestalCorrection) & 1){
-          //calibParams[recHits[index].detId()]; // detId = electronicsId for the moment
-          recHits[index].energy() -= pedestalValue;
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, float pedestalValue) const {
+      for (auto index : elements_with_stride(acc, digis.metadata().size())) {
+        if ((digis[index].flags() >> kPedestalCorrection) & 1){
+          //calibParams[digis[index].electronicsId()];
+          digis[index].adc() -= pedestalValue;
         }
       }
     }
@@ -50,18 +50,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   struct HGCalRecHitCalibrationKernel_commonModeCorrection {
     template <typename TAcc>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalRecHitDeviceCollection::View recHits, float commonModeValue) const {
-      for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
-        recHits[index].energy() -= commonModeValue;
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, float commonModeValue) const {
+      for (auto index : elements_with_stride(acc, digis.metadata().size())) {
+        digis[index].adc() -= commonModeValue;
       }
     }
   };
 
   struct HGCalRecHitCalibrationKernel_ADCmCorrection {
     template <typename TAcc>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalRecHitDeviceCollection::View recHits, float ADCmValue) const {
-      for (auto index : elements_with_stride(acc, recHits.metadata().size())) {
-        recHits[index].energy() -= ADCmValue;
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, float ADCmValue) const {
+      for (auto index : elements_with_stride(acc, digis.metadata().size())) {
+        digis[index].adc() -= ADCmValue;
       }
     }
   };
@@ -82,13 +82,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     calibParams = newCalibParams;
   }
 
-  std::unique_ptr<HGCalRecHitDeviceCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection const& digis) {
+  std::unique_ptr<HGCalRecHitDeviceCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection & digis) {
     std::cout << "\n\nINFO -- Start of calibrate\n\n" << std::endl;
 
     std::cout<<"N blocks: "<<n_blocks<<"\tN threads: "<<n_threads<<std::endl;
     auto grid = make_workdiv<Acc1D>(n_blocks, n_threads);
 
-    bool verbose = false;
+    bool verbose = true;
     int n_hits_to_print = 10;
     
     if(verbose) std::cout << "Input digis: " << std::endl;
@@ -98,31 +98,28 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     HGCalDigiDeviceCollection device_digis(digis.view().metadata().size(), queue);
     alpaka::memcpy(queue, device_digis.buffer(), digis.const_buffer());
 
+    float pedestalValue = n_hits_to_print; // dummy value
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, digis.view(), pedestalValue);
+    if(verbose) std::cout << "Digis after pedestal calibration: " << std::endl;
+    if(verbose) print(digis, n_hits_to_print);
+
+    float commonModeValue = n_hits_to_print; // dummy value
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, digis.view(), commonModeValue);
+    if(verbose) std::cout << "Digis after CM calibration: " << std::endl;
+    if(verbose) print(digis, n_hits_to_print);
+
+    float ADCmValue = n_hits_to_print; // dummy value
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, digis.view(), ADCmValue);
+    if(verbose) std::cout << "Digis after ADCm calibration: " << std::endl;
+    if(verbose) print(digis, n_hits_to_print);
+
     if(verbose) std::cout << "\n\nINFO -- allocating rechits buffer" << std::endl;
     auto recHits = std::make_unique<HGCalRecHitDeviceCollection>(digis.view().metadata().size(), queue);
     
     if(verbose) std::cout << "\n\nINFO -- converting digis to rechits" << std::endl;
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.const_view(), recHits->view());
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.view(), recHits->view());
     
-    if(verbose) std::cout << "RecHits before calibration: " << std::endl;
-    if(verbose) print(queue, *recHits, n_hits_to_print);
-
-    float pedestalValue = n_hits_to_print;
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, recHits->view(), pedestalValue);
-
-    if(verbose) std::cout << "RecHits after pedestal calibration: " << std::endl;
-    print(queue, *recHits, n_hits_to_print);
-
-    float commonModeValue = n_hits_to_print;
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, recHits->view(), commonModeValue);
-
-    if(verbose) std::cout << "RecHits after CM calibration: " << std::endl;
-    if(verbose) print(queue, *recHits, n_hits_to_print);
-
-    float ADCmValue = n_hits_to_print;
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, recHits->view(), ADCmValue);
-
-    if(verbose) std::cout << "RecHits after ADCm calibration: " << std::endl;
+    if(verbose) std::cout << "RecHits after calibration: " << std::endl;
     if(verbose) print(queue, *recHits, n_hits_to_print);
 
     return recHits;
