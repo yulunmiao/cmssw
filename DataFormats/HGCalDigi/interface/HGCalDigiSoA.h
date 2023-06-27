@@ -14,8 +14,8 @@ namespace hgcaldigi {
   GENERATE_SOA_LAYOUT(HGCalDigiSoALayout,
                       // columns: one value per element
                       SOA_COLUMN(uint32_t, electronicsId),
-                      SOA_COLUMN(uint32_t, raw),
-                      SOA_COLUMN(uint16_t, adcm),
+                      SOA_COLUMN(uint8_t, tctp),
+                      SOA_COLUMN(uint16_t, adcm1),
                       SOA_COLUMN(uint16_t, adc),
                       SOA_COLUMN(uint16_t, tot),
                       SOA_COLUMN(uint16_t, toa),

@@ -116,8 +116,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     for(int i=0; i<newSize;i++){
       hostDigis.view()[i].electronicsId() = hostDigisIn.view()[i%oldSize].electronicsId();
-      // hostDigis.view()[i].raw() = hostDigisIn.view()[i%oldSize].raw();
-      hostDigis.view()[i].raw() = i;
+      hostDigis.view()[i].tctp() = hostDigisIn.view()[i%oldSize].tctp();
+      hostDigis.view()[i].adcm1() = hostDigisIn.view()[i%oldSize].adcm1();
+      hostDigis.view()[i].adc() = hostDigisIn.view()[i%oldSize].adc();
+      hostDigis.view()[i].tot() = hostDigisIn.view()[i%oldSize].tot();
+      hostDigis.view()[i].toa() = hostDigisIn.view()[i%oldSize].toa();
       hostDigis.view()[i].cm() = hostDigisIn.view()[i%oldSize].cm();
       hostDigis.view()[i].flags() = hostDigisIn.view()[i%oldSize].flags();
     }

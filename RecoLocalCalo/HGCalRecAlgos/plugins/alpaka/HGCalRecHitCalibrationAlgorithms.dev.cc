@@ -130,7 +130,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     for (int i = 0; i < max_; i++) {
       std::cout << i;
       std::cout << "\t" << digis.view()[i].electronicsId();
-      std::cout << "\t" << digis.view()[i].raw();
+      std::cout << "\t" << digis.view()[i].tctp();
+      std::cout << "\t" << digis.view()[i].adcm1();
+      std::cout << "\t" << digis.view()[i].adc();
+      std::cout << "\t" << digis.view()[i].tot();
+      std::cout << "\t" << digis.view()[i].toa();
       std::cout << "\t" << digis.view()[i].cm();
       std::cout << "\t" << digis.view()[i].flags();
       std::cout << std::endl;

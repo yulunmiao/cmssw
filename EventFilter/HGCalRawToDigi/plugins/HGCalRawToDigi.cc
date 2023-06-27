@@ -62,7 +62,11 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   HGCalElecDigiCollection elec_digis;
   HGCalElecDigiCollection elec_cms;
   std::vector<uint32_t> elecid;
-  std::vector<uint32_t> digi;
+  std::vector<uint8_t> tctp;
+  std::vector<uint16_t> adcm1;
+  std::vector<uint16_t> adc;
+  std::vector<uint16_t> tot;
+  std::vector<uint16_t> toa;
   std::vector<uint16_t> cm; 
   for (const auto& fed_id : fedIds_) {
     const auto& fed_data = raw_data.FEDData(fed_id);
@@ -92,7 +96,11 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       LogDebug("HGCalRawToDigi:produce") << "channel data, id=" << idraw << ", raw=" << raw;
       elec_digis.push_back(data);
       elecid.push_back(id.raw());
-      digi.push_back(data.raw());
+      tctp.push_back(data.tctp());
+      adcm1.push_back(data.adcm1());
+      adc.push_back(data.adc());
+      tot.push_back(data.tot());
+      toa.push_back(data.toa());
       cm.push_back(commonModeSum.at(i));
     }
 
@@ -125,7 +133,11 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   hgcaldigi::HGCalDigiHostCollection elec_digis_soa(elec_digis.size(),cms::alpakatools::host());
   for (unsigned int i = 0; i < elecid.size(); i++) {
       elec_digis_soa.view()[i].electronicsId() = elecid.at(i);
-      elec_digis_soa.view()[i].raw() = digi.at(i);
+      elec_digis_soa.view()[i].tctp() = tctp.at(i);
+      elec_digis_soa.view()[i].adcm1() = adcm1.at(i);
+      elec_digis_soa.view()[i].adc() = adc.at(i);
+      elec_digis_soa.view()[i].tot() = tot.at(i);
+      elec_digis_soa.view()[i].toa() = toa.at(i);
       elec_digis_soa.view()[i].cm() = cm.at(i);
       elec_digis_soa.view()[i].flags() = 0;
   }
