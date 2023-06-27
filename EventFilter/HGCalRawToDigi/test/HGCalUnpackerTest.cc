@@ -42,14 +42,12 @@ int main(int argc, char* argv[]) {
   unpacker.parseSLink(testInput, enabledERXMapping);
 
   auto channeldata = unpacker.channelData();
-  auto cms = unpacker.commonModeIndex();
   for (unsigned int i = 0; i < channeldata.size(); i++) {
     auto data = channeldata.at(i);
-    auto cm = cms.at(i);
     auto id = data.id();
     auto idraw = id.raw();
     auto raw = data.raw();
-    std::cout << "id=" << idraw << ", raw=" << raw << ", common mode index=" << cm << std::endl;
+    std::cout << "id=" << idraw << ", raw=" << raw << std::endl;
   }
   if (auto badECONDs = unpacker.badECOND(); !badECONDs.empty()) {
     std::cerr << "bad ECON-Ds: " << std::dec;

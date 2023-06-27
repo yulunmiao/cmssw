@@ -53,7 +53,11 @@ process.load('EventFilter.HGCalRawToDigi.hgcalDigis_cfi')
 process.load("FWCore.MessageService.MessageLogger_cfi")
 if options.debug:
     process.MessageLogger.cerr.threshold = "DEBUG"
-    process.MessageLogger.debugModules = ["hgcalEmulatedSlinkRawData", "hgcalDigis"]
+    process.MessageLogger.debugModules = ["*"]
+    process.MessageLogger.cerr.DEBUG = cms.untracked.PSet(
+        limit = cms.untracked.int32(-1)
+    )
+
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(options.maxEvents))
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
@@ -123,9 +127,9 @@ process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventi
 
 # DQM
 process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
-                                         Digis = cms.InputTag('hgcalDigis'),
-                                         MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'),
-                                         ModuleMapping = cms.string('') )
+                                         Digis = cms.InputTag('hgcalDigis','DIGI'),
+                                         MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'), )
+
 process.DQMStore = cms.Service("DQMStore")
 process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
@@ -140,7 +144,7 @@ process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * pr
 
 if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",
-        label = cms.untracked.InputTag('hgcalEmulatedSlinkRawData'),
+        label = cms.untracked.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData'),
         feds = cms.untracked.vint32(options.fedId),
         dumpPayload = cms.untracked.bool(True)
     )

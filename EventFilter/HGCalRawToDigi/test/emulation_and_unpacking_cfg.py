@@ -6,7 +6,7 @@ process = cms.Process("TEST")
 options = VarParsing.VarParsing('standard')
 options.register('mode', 'trivial', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'type of emulation')
-options.register('fedId', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('fedId', 0, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'emulated FED id')
 options.register('debug', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'debugging mode')
@@ -53,7 +53,13 @@ process.load('EventFilter.HGCalRawToDigi.hgcalDigis_cfi')
 process.load("FWCore.MessageService.MessageLogger_cfi")
 if options.debug:
     process.MessageLogger.cerr.threshold = "DEBUG"
-    process.MessageLogger.debugModules = ["hgcalEmulatedSlinkRawData", "hgcalDigis"]
+    process.MessageLogger.debugModules = ["*"]
+    process.MessageLogger.cerr.DEBUG = cms.untracked.PSet(
+        limit = cms.untracked.int32(-1)
+    )
+
+
+
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(options.maxEvents))
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
@@ -104,7 +110,7 @@ for econd in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs:
     econd_id += 1
 
 # steer the unpacker
-process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData')
+process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData')
 process.hgcalDigis.fedIds = cms.vuint32(options.fedId)
 process.hgcalDigis.maxCaptureBlock = process.hgcalEmulatedSlinkRawData.slinkParams.numCaptureBlocks
 process.hgcalDigis.numERxsInECOND = options.numERxsPerECOND
@@ -116,7 +122,7 @@ process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis)
 
 if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",
-        label = cms.untracked.InputTag('hgcalEmulatedSlinkRawData'),
+        label = cms.untracked.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData'),
         feds = cms.untracked.vint32(options.fedId),
         dumpPayload = cms.untracked.bool(True)
     )

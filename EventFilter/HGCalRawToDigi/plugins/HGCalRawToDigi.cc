@@ -24,8 +24,8 @@ private:
   void produce(edm::Event&, const edm::EventSetup&) override;
 
   const edm::EDGetTokenT<FEDRawDataCollection> fedRawToken_;
-  const edm::EDPutTokenT<HGCalDigiCollection> digisToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecDigisToken_;
+  const edm::EDPutTokenT<HGCalElecDigiCollection> elecCMsToken_;
   const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
 
   const std::vector<unsigned int> fedIds_;
@@ -36,8 +36,8 @@ private:
 
 HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
     : fedRawToken_(consumes<FEDRawDataCollection>(iConfig.getParameter<edm::InputTag>("src"))),
-      digisToken_(produces<HGCalDigiCollection>()),
-      elecDigisToken_(produces<HGCalElecDigiCollection>()),
+      elecDigisToken_(produces<HGCalElecDigiCollection>("DIGI")),
+      elecCMsToken_(produces<HGCalElecDigiCollection>("CM")),
       elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
@@ -60,6 +60,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   // prepare the output
   HGCalDigiCollection digis;
   HGCalElecDigiCollection elec_digis;
+  HGCalElecDigiCollection elec_cms;
   for (const auto& fed_id : fedIds_) {
     const auto& fed_data = raw_data.FEDData(fed_id);
     if (fed_data.size() == 0)
@@ -68,7 +69,6 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     std::vector<uint32_t> data_32bit;
     auto* ptr = fed_data.data();
     size_t fed_size = fed_data.size();
-    LogDebug("HGCalRawToDigi")<<"32-bit raw data";
     for (size_t i = 0; i < fed_size; i += 4){
       data_32bit.emplace_back(((*(ptr + i) & 0xff) << 0) + (((i + 1) < fed_size) ? ((*(ptr + i + 1) & 0xff) << 8) : 0) +
                               (((i + 2) < fed_size) ? ((*(ptr + i + 2) & 0xff) << 16) : 0) +
@@ -78,23 +78,26 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     unpacker_->parseSLink(
         data_32bit,
         [this](uint16_t /*sLink*/, uint8_t /*captureBlock*/, uint8_t /*econd*/) { return (1 << numERxsInECOND_) - 1; });
-    const auto elecid_to_detid = [](const HGCalElectronicsId& id) -> HGCalDetId {
-      return HGCalDetId(id.raw());
-    };  //TODO: implement something more relevant
 
     auto channeldata = unpacker_->channelData();
-    auto cms = unpacker_->commonModeIndex();
     for (unsigned int i = 0; i < channeldata.size(); i++) {
       auto data = channeldata.at(i);
-      auto cm = cms.at(i);
       const auto& id = data.id();
       auto idraw = id.raw();
       auto raw = data.raw();
-      LogDebug("HGCalRawToDigi:produce") << "id=" << idraw << ", raw=" << raw << ", common mode index=" << cm << ".";
-      digis.push_back(HGCROCChannelDataFrameSpec(elecid_to_detid(id), data.raw()));
+      LogDebug("HGCalRawToDigi:produce") << "channel data, id=" << idraw << ", raw=" << raw;
       elec_digis.push_back(data);
     }
 
+    auto commonmode = unpacker_->commonModeData();
+    for (unsigned int i = 0; i < commonmode.size(); i++) {
+      auto cm = commonmode.at(i);
+      const auto& id = cm.id();
+      auto idraw = id.raw();
+      auto raw = cm.raw();
+      LogDebug("HGCalRawToDigi:produce") << "common modes, id=" << idraw << ", raw=" << raw;
+      elec_cms.push_back(cm);
+    }
 
     if (const auto& bad_econds = unpacker_->badECOND(); !bad_econds.empty()) {
       if (bad_econds.size() > badECONDMax_)
@@ -119,8 +122,8 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       elec_digis_soa.view()[i].flags() = 0;
   }
 
-  iEvent.emplace(digisToken_, std::move(digis));
   iEvent.emplace(elecDigisToken_, std::move(elec_digis));
+  iEvent.emplace(elecCMsToken_, std::move(elec_cms));
   iEvent.emplace(elecDigisSoAToken_, std::move(elec_digis_soa));
 }
 
