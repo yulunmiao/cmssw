@@ -27,9 +27,9 @@
 
 class HGCalDigisClient : public DQMEDAnalyzer {
 public:
-  
-  typedef std::tuple<bool,int,int,int> MonitorKey_t;
 
+  typedef HGCalCondSerializableModuleInfo::ModuleInfoKey_t MonitorKey_t;
+  
   explicit HGCalDigisClient(const edm::ParameterSet&);
   ~HGCalDigisClient() override;
 
@@ -98,7 +98,6 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       
       bool isCM=elecDigi.id().isCM();
       int ch=elecDigi.id().rocChannel();
-      
       LogDebug("HGCalDigisClient") << "Electronics Id= 0x" << std::hex << elecDigi.id().raw() << std::dec << std::endl
                                    << "adc = " << elecDigi.adc() << ", "
                                    << "adcm1 = " << elecDigi.adcm1() << ", "
@@ -119,12 +118,8 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
 
   //create module keys
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
-  for(auto m : moduleInfo.params_) {
-    MonitorKey_t logiKey(m.zside,m.fedid,m.captureblock,m.econdidx);
-    MonitorKey_t geomKey(m.zside,m.plane,m.u,m.v);
-    module_keys_[logiKey]=geomKey;
-  }
-  LogDebug("HGCalDigisClient") << "Read module info with " << moduleInfo.params_.size() << " entries";
+  module_keys_ = moduleInfo.getAsSimplifiedModuleLocatorMap(true);
+  LogDebug("HGCalDigisClient") << "Read module info with " << module_keys_.size() << " entries";
 
   ibook.setCurrentFolder("HGCAL/Digis");
   for(auto kit : module_keys_) {

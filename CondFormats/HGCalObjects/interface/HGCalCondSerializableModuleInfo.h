@@ -24,6 +24,8 @@ struct HGCalModuleInfo {
 class HGCalCondSerializableModuleInfo {
   
 public:
+
+  typedef std::tuple<bool,int,int,int> ModuleInfoKey_t;
   
   HGCalCondSerializableModuleInfo() {}
   virtual ~HGCalCondSerializableModuleInfo() {}
@@ -61,8 +63,18 @@ public:
   */
   std::tuple<int,int,int> getModuleElectronicsIdentifiers(int ,int ,int ,bool , bool ) const;
 
+  /**
+     @short retrieves a map elecId <-> geomId
+     (zside,fedid,captureblock,econd) <-> (zside, plane, u, v)
+     elecidAsKey - if false the geomId is used as the key
+   */
+  std::map<ModuleInfoKey_t,ModuleInfoKey_t> getAsSimplifiedModuleLocatorMap(bool elecAsKey=true) const;
+  
   //parameters to serialize
   std::vector<HGCalModuleInfo> params_;
+
+
+
   
   COND_SERIALIZABLE;
 };
