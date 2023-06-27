@@ -125,6 +125,11 @@ process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventi
     process.hgcalDigis.captureBlockECONDMax,
     len([ec for ec in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs if ec.active]))
 
+# TESTERS
+process.hgCalSoATester = cms.EDAnalyzer('HGCalSoATester',
+                                        Digis = cms.InputTag('hgcalDigis','DIGI'),
+                                        SoADigis = cms.InputTag('hgcalDigis',''),)
+
 # DQM
 process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
                                          Digis = cms.InputTag('hgcalDigis','DIGI'),
@@ -140,7 +145,7 @@ process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
 process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
 
 
-process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver)
+process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
 
 if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",
