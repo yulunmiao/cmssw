@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <functional>
 #include <vector>
-#define ML_DEBUG
+
 struct HGCalUnpackerConfig {
   uint32_t sLinkBOE{0x0};               ///< S-Link BOE pattern
   uint32_t captureBlockReserved{0x3f};  ///< Capture block reserved pattern
@@ -36,9 +36,11 @@ class HGCalUnpacker {
 public:
   enum SLinkHeaderShift {
     kSLinkBOEShift = 24,
+    kSLinkFEDIdShift = 0,
   };
   enum SLinkHeaderMask {
     kSLinkBOEMask = 0b11111111,
+    kSLinkFEDIdMask = 0b1111111111,
   };
   enum CaptureBlockHeaderShift {
     kCaptureBlockReservedShift = 26,
@@ -97,6 +99,8 @@ public:
 
   /// \return vector of HGCROCChannelDataFrame<ElecID>(ID, value) for digis
   const std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> >& channelData() const { return channelData_; }
+  /// \return vector of sum of two common modes on the half roc of the channel
+  const std::vector<uint16_t>& commonModeSum() const{ return commonModeSum_; }
   /// \return vector of HGCROCChannelDataFrame<ElecID>(ID, value) for common modes
   const std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> >& commonModeData() const { return commonModeData_; }
   /// \return vector of badECOND index in 32-bit array
@@ -126,6 +130,7 @@ private:
   size_t channelDataSize_{0};                            ///< Size of unpacked channels
   size_t commonModeDataSize_{0};                         ///< Size of unpacked common modes
   std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> > channelData_;  ///< Array for unpacked channels
+  std::vector<uint16_t> commonModeSum_;
   std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> > commonModeData_;   ///< Array for unpacked common modes
   std::vector<uint32_t> badECOND_;         ///< Array of indices of bad ECON-Ds
 };

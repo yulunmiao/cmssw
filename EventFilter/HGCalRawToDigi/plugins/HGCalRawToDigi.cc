@@ -61,6 +61,9 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   HGCalDigiCollection digis;
   HGCalElecDigiCollection elec_digis;
   HGCalElecDigiCollection elec_cms;
+  std::vector<uint32_t> elecid;
+  std::vector<uint32_t> digi;
+  std::vector<uint16_t> cm; 
   for (const auto& fed_id : fedIds_) {
     const auto& fed_data = raw_data.FEDData(fed_id);
     if (fed_data.size() == 0)
@@ -80,6 +83,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
         [this](uint16_t /*sLink*/, uint8_t /*captureBlock*/, uint8_t /*econd*/) { return (1 << numERxsInECOND_) - 1; });
 
     auto channeldata = unpacker_->channelData();
+    auto commonModeSum=unpacker_->commonModeSum();
     for (unsigned int i = 0; i < channeldata.size(); i++) {
       auto data = channeldata.at(i);
       const auto& id = data.id();
@@ -87,6 +91,9 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       auto raw = data.raw();
       LogDebug("HGCalRawToDigi:produce") << "channel data, id=" << idraw << ", raw=" << raw;
       elec_digis.push_back(data);
+      elecid.push_back(id.raw());
+      digi.push_back(data.raw());
+      cm.push_back(commonModeSum.at(i));
     }
 
     auto commonmode = unpacker_->commonModeData();
@@ -110,15 +117,16 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
           log << prefix << badECOND, prefix = ", ";
         log << ".";
       });
+
     }
   }
 
   //auto elec_digis_soa = std::make_unique<hgcaldigi::HGCalDigiHostCollection>(elec_digis.size(), cms::alpakatools::host());
   hgcaldigi::HGCalDigiHostCollection elec_digis_soa(elec_digis.size(),cms::alpakatools::host());
-  for (unsigned int i = 0; i < elec_digis.size(); i++) {
-      elec_digis_soa.view()[i].electronicsId() = elec_digis[i].id().raw();
-      elec_digis_soa.view()[i].raw() = elec_digis[i].raw();
-      elec_digis_soa.view()[i].cm() = 0;
+  for (unsigned int i = 0; i < elecid.size(); i++) {
+      elec_digis_soa.view()[i].electronicsId() = elecid.at(i);
+      elec_digis_soa.view()[i].raw() = digi.at(i);
+      elec_digis_soa.view()[i].cm() = cm.at(i);
       elec_digis_soa.view()[i].flags() = 0;
   }
 

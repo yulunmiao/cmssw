@@ -16,6 +16,7 @@
 HGCalUnpacker::HGCalUnpacker(HGCalUnpackerConfig config)
     : config_(config),
       channelData_(config_.channelMax),
+      commonModeSum_(config_.channelMax),
       commonModeData_(config_.commonModeMax) {}
 
 void HGCalUnpacker::parseSLink(
@@ -34,10 +35,10 @@ void HGCalUnpacker::parseSLink(
           << "Expected a S-Link header at word " << std::dec << iword << "/0x" << std::hex << iword << " (BOE: 0x"
           << config_.sLinkBOE << "), got 0x" << inputArray[iword] << ".";
 
-    iword += 4;  // length of the S-Link header (128 bits)
-
-    sLink=0; //TODO: Get sLink from SLink header
+    sLink=((inputArray[iword+3]>>kSLinkFEDIdShift)&kSLinkFEDIdMask); 
     LogDebug("HGCalUnpack") << "SLink=" << sLink;
+
+    iword += 4;  // length of the S-Link header (128 bits)
 
     //----- parse the S-Link body
     for (uint8_t captureBlock = 0; captureBlock < config_.sLinkCaptureBlockMax;
@@ -127,6 +128,7 @@ void HGCalUnpacker::parseSLink(
             commonModeData_[commonModeDataSize_ + 1] = HGCROCChannelDataFrame<HGCalElectronicsId>(
                 cm1id,
                 ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
+            uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);
             if (commonModeDataSize_ + 1 > config_.commonModeMax)
               throw cms::Exception("HGCalUnpack") << "Too many common mode data unpacked: " << (commonModeDataSize_ + 1)
                                                   << " >= " << config_.commonModeMax << ".";
@@ -161,6 +163,7 @@ void HGCalUnpacker::parseSLink(
               bitCounter += erxBodyBits_[code];
               if (code == 0b0010)
                 channelData_[channelDataSize_].fillFlag1(1);
+              commonModeSum_[channelDataSize_]=cmSum;
               LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                       << (int)erx << ":" << (int)channel << "\n"
                                       << "  full word readout=0x" << std::hex << temp << std::dec << ", code=0x"
@@ -200,6 +203,7 @@ void HGCalUnpacker::parseSLink(
             commonModeData_[commonModeDataSize_ + 1] = HGCROCChannelDataFrame<HGCalElectronicsId>(
                 cm1id,
                 ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
+            uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);
             if (commonModeDataSize_ + 1 > config_.commonModeMax)
               throw cms::Exception("HGCalUnpack") << "Too many common mode data unpacked: " << (commonModeDataSize_ + 1)
                                                   << " >= " << config_.commonModeMax << ".";
@@ -211,6 +215,7 @@ void HGCalUnpacker::parseSLink(
               const HGCalElectronicsId id(zside, sLink, captureBlock, econd, erx, channel);
               channelData_[channelDataSize_] =
                   HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
+              commonModeSum_[channelDataSize_]=cmSum;
               LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                       << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw()
                                       << "\n"
@@ -249,6 +254,7 @@ void HGCalUnpacker::parseSLink(
     iword += 4;  // length of the S-Link trailer (128 bits)
   }
   channelData_.resize(channelDataSize_);
+  commonModeSum_.resize(channelDataSize_);
   commonModeData_.resize(commonModeDataSize_);
   return;
 }
@@ -346,7 +352,8 @@ void HGCalUnpacker::parseCaptureBlock(
               ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask)<<10);
           commonModeData_[commonModeDataSize_ + 1] = HGCROCChannelDataFrame<HGCalElectronicsId>(
               cm1id,
-              ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);  
+              ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
+          uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);  
           if (commonModeDataSize_ + 1 > config_.commonModeMax)
             throw cms::Exception("HGCalUnpack") << "Too many common mode data unpacked: " << (commonModeDataSize_ + 1)
                                                 << " >= " << config_.commonModeMax << ".";
@@ -383,6 +390,7 @@ void HGCalUnpacker::parseCaptureBlock(
             bitCounter += erxBodyBits_[code];
             if (code == 0b0010)
               channelData_[channelDataSize_].fillFlag1(1);
+            commonModeSum_[channelDataSize_]=cmSum;
             LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                     << (int)erx << ":" << (int)channel
                                     << "  full word readout=0x" << std::hex << temp << std::dec << ", code=0x"
@@ -421,6 +429,7 @@ void HGCalUnpacker::parseCaptureBlock(
           commonModeData_[commonModeDataSize_ + 1] = HGCROCChannelDataFrame<HGCalElectronicsId>(
               cm1id,
               ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
+          uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);
           if (commonModeDataSize_ + 1 > config_.commonModeMax)
             throw cms::Exception("HGCalUnpack") << "Too many common mode data unpacked: " << (commonModeDataSize_ + 1)
                                                 << " >= " << config_.commonModeMax << ".";
@@ -432,6 +441,7 @@ void HGCalUnpacker::parseCaptureBlock(
             const HGCalElectronicsId id(zside, sLink, captureBlock, econd, erx, channel);
             channelData_[channelDataSize_] =
                 HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
+            commonModeSum_[channelDataSize_]=cmSum;
             LogDebug("HGCalUnpack") << "Word" << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                     << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw()
                                     << "extracted channel data=0x" << std::hex << channelData_[channelDataSize_].raw();
@@ -459,6 +469,7 @@ void HGCalUnpacker::parseCaptureBlock(
     captureBlock++;  // the capture block has no trailer to parse
   }
   channelData_.resize(channelDataSize_);
+  commonModeSum_.resize(channelDataSize_);
   commonModeData_.resize(commonModeDataSize_);
   return;
 }
@@ -537,6 +548,7 @@ void HGCalUnpacker::parseECOND(
         commonModeData_[commonModeDataSize_ + 1] = HGCROCChannelDataFrame<HGCalElectronicsId>(
             cm1id,
             ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
+        uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);
         if (commonModeDataSize_ + 1 > config_.commonModeMax)
           throw cms::Exception("HGCalUnpack") << "Too many common mode data unpacked: " << (commonModeDataSize_ + 1)
                                               << " >= " << config_.commonModeMax << ".";
@@ -573,6 +585,7 @@ void HGCalUnpacker::parseECOND(
           bitCounter += erxBodyBits_[code];
           if (code == 0b0010)
             channelData_[channelDataSize_].fillFlag1(1);
+          commonModeSum_[channelDataSize_]=cmSum;
           LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                   << (int)erx << ":" << (int)channel << "\n"
                                   << "  full word readout=0x" << std::hex << temp << std::dec << ", code=0x" << std::hex
@@ -610,13 +623,14 @@ void HGCalUnpacker::parseECOND(
         commonModeData_[commonModeDataSize_ + 1] = HGCROCChannelDataFrame<HGCalElectronicsId>(
             cm1id,
             ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
-
+        uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);
         iword += 2;  // length of the standard eRx header (2 * 32 bits)
 
         for (uint8_t channel = 0; channel < config_.erxChannelMax; channel++) {  // loop through all channels in eRx
           const HGCalElectronicsId id(zside, sLink, captureBlock, econd, erx, channel);
           channelData_[channelDataSize_] =
               HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
+          commonModeSum_[channelDataSize_]=cmSum;
           LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                   << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw() << "\n"
                                   << "extracted channel data=0x" << std::hex << channelData_.at(channelDataSize_).raw();
@@ -640,6 +654,7 @@ void HGCalUnpacker::parseECOND(
           << "  expected payload length=" << payloadLength;
   }
   channelData_.resize(channelDataSize_);
+  commonModeSum_.resize(channelDataSize_);
   commonModeData_.resize(commonModeDataSize_);
   return;
 }
