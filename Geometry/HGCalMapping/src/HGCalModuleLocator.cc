@@ -12,12 +12,15 @@ void HGCalModuleLocator::buildLocatorFrom(std::string path,bool usefip)
   std::ifstream file(path);
 
   std::string line;
+  size_t iline(0);
   while(std::getline(file, line))
   {
+    iline++;
+    if(iline==1) continue;
     std::istringstream stream(line);
     int zside;
     HGCalModuleInfo m;
-    stream >> m.plane >> m.u >> m.v >> m.isSiPM >> m.isHD >> m.modtype >> m.econdidx >> m.captureblock >> m.slink >> m.captureblockidx >> m.fedid >> m.DAQ >> zside;
+    stream >> m.plane >> m.u >> m.v >> m.isSiPM >> m.isHD >> m.modtype >> m.econdidx >> m.captureblock >> m.slink >> m.captureblockidx >> m.fedid >> zside;
     m.zside = (zside>0);
     mod2loc_.addParameter(m);
   }

@@ -39,6 +39,6 @@ uint8_t HGCalElectronicsId::cmWord() const { return halfrocChannel()-37; }
 
 //
 uint8_t HGCalElectronicsId::rocChannel() const {
-  if(isCM()) return cmWord();
+  if(isCM()) return cmWord()+2*(econdeRx()%2);
   return halfrocChannel()+36*(econdeRx()%2);
 }

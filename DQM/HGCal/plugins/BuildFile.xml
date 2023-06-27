@@ -3,4 +3,7 @@
 <use name="FWCore/ParameterSet"/>
 <use name="DataFormats/HGCalDigi"/>
 <use name="DQMServices/Core"/>
+<use name="CondFormats/DataRecord"/>
+<use name="CondFormats/HGCalObjects"/>
+
 <flags EDM_PLUGIN="1"/>

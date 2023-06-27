@@ -60,7 +60,15 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
     hgcalEmulatedSlinkRawData = cms.PSet(initialSeed = cms.untracked.uint32(42))
 )
 
-process.source = cms.Source("EmptySource")
+#process.source = cms.Source("EmptySource")
+process.source = cms.Source('EmptyIOVSource',
+    timetype = cms.string('runnumber'),
+    firstValue = cms.uint64(1),
+    lastValue = cms.uint64(1),
+    interval = cms.uint64(1)
+)
+
+
 
 # steer the emulator part
 process.hgcalEmulatedSlinkRawData.emulatorType = options.mode
@@ -116,11 +124,17 @@ process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventi
 # DQM
 process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
                                          Digis = cms.InputTag('hgcalDigis'),
-                                         MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'), )
+                                         MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'),
+                                         ModuleMapping = cms.string('') )
 process.DQMStore = cms.Service("DQMStore")
 process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
 process.dqmSaver.runNumber = 123480
+
+# CONDITIONS, ETC
+process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
+process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
+
 
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver)
 

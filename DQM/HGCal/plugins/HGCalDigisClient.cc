@@ -10,11 +10,16 @@
 #include "DataFormats/HGCalDigi/interface/HGCROCChannelDataFrame.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
 
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+
 #include <TString.h>
 
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <tuple>
 
 //#include "DQM/HGCal/interface/hgcalhit.h" // define DetectorId
 #include "DQM/HGCal/interface/RunningCollection.h"
@@ -22,6 +27,9 @@
 
 class HGCalDigisClient : public DQMEDAnalyzer {
 public:
+  
+  typedef std::tuple<bool,int,int,int> MonitorKey_t;
+
   explicit HGCalDigisClient(const edm::ParameterSet&);
   ~HGCalDigisClient() override;
 
@@ -33,10 +41,10 @@ private:
   const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
   const edm::EDGetTokenT<std::vector<int> > metadataToken_;
 
-  MonitorElement* p_adc_minus_adcm1;
-  MonitorElement* hex_adc_minus_adcm1;
-  MonitorElement* hex_tot_median;
-  MonitorElement* hex_beam_center;
+  std::map<MonitorKey_t, MonitorElement*> p_adc_minus_adcm1;
+  std::map<MonitorKey_t, MonitorElement*> hex_adc_minus_adcm1;
+  std::map<MonitorKey_t, MonitorElement*> hex_tot_median;
+  std::map<MonitorKey_t, MonitorElement*> hex_beam_center;
 
   virtual void     export_calibration_parameters();
 
@@ -51,12 +59,15 @@ private:
   CalibrationParameterLoader calib_loader;
   RunningCollection myRunStatCollection;
   RunningStatistics myRecorder;
+  edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
+  std::map<MonitorKey_t,MonitorKey_t> module_keys_;
 };
 
 
 HGCalDigisClient::HGCalDigisClient(const edm::ParameterSet& iConfig)
   : elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
-    metadataToken_(consumes<std::vector<int> >(iConfig.getParameter<edm::InputTag>("MetaData")))
+    metadataToken_(consumes<std::vector<int> >(iConfig.getParameter<edm::InputTag>("MetaData"))),
+    moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(edm::ESInputTag(iConfig.getParameter<std::string>("ModuleMapping"))))
 {}
 
 HGCalDigisClient::~HGCalDigisClient() {
@@ -78,6 +89,12 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     //read digis
     const auto& elecDigis = iEvent.get(elecDigisToken_);
     for (auto& elecDigi : elecDigis) {
+
+      MonitorKey_t logiKey(elecDigi.id().zSide(),
+                           elecDigi.id().fedId(),
+                           elecDigi.id().captureBlock(),
+                           elecDigi.id().econdIdx());
+      MonitorKey_t geomKey = module_keys_[logiKey];
       
       bool isCM=elecDigi.id().isCM();
       int ch=elecDigi.id().rocChannel();
@@ -91,7 +108,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       
       // Note: need logial mapping / electronics mapping
       uint16_t adc_diff = elecDigi.adc() - elecDigi.adcm1(); 
-      p_adc_minus_adcm1->Fill( (uint32_t)elecDigi.id().halfrocChannel(), adc_diff);
+      p_adc_minus_adcm1[geomKey]->Fill( (uint32_t)elecDigi.id().halfrocChannel(), adc_diff);
       
       // Note: need CM info
       //myRunStatCollection.add_entry(globalChannelId_, adc_double_, adc_channel_CM);
@@ -99,13 +116,32 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 }
 
 void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& run, edm::EventSetup const& iSetup) {
-    ibook.setCurrentFolder("HGCAL/Digis");
-    p_adc_minus_adcm1   = ibook.bookProfile("p_adc_minus_adcm1"   , ";channel;ADC #minux ADC_{-1}", 234 , 0 , 234 , 175 , -25 , 150 );
 
-    ibook.setCurrentFolder("HGCAL/Maps");
-    hex_adc_minus_adcm1 = ibook.book2DPoly ("hex_adc_minus_adcm1" , "hex_adc_minus_adcm1;x (arb. unit); y (arb. unit)" , -22 , 22 , -24 , 20);
-    hex_tot_median      = ibook.book2DPoly ("hex_tot_median"      , "hex_tot_median;x (arb. unit); y (arb. unit)"      , -22 , 22 , -24 , 20);
-    hex_beam_center     = ibook.book2DPoly ("hex_beam_center"     , "hex_beam_center;x (arb. unit); y (arb. unit)"     , -22 , 22 , -24 , 20);
+  //create module keys
+  auto moduleInfo = iSetup.getData(moduleInfoToken_);
+  for(auto m : moduleInfo.params_) {
+    MonitorKey_t logiKey(m.zside,m.fedid,m.captureblock,m.econdidx);
+    MonitorKey_t geomKey(m.zside,m.plane,m.u,m.v);
+    module_keys_[logiKey]=geomKey;
+  }
+  LogDebug("HGCalDigisClient") << "Read module info with " << moduleInfo.params_.size() << " entries";
+
+  ibook.setCurrentFolder("HGCAL/Digis");
+  for(auto kit : module_keys_) {
+    MonitorKey_t k(kit.second);
+    TString tag=Form("%d_%d_%d_%d",std::get<0>(k),std::get<1>(k),std::get<2>(k),std::get<3>(k));
+    p_adc_minus_adcm1[k]   = ibook.bookProfile("p_adc_minus_adcm1_"+tag   , ";channel;ADC #minux ADC_{-1}", 234 , 0 , 234 , 175 , -25 , 150 );
+  }
+
+  ibook.setCurrentFolder("HGCAL/Maps");
+  for(auto kit : module_keys_) {
+    MonitorKey_t k(kit.second);
+    TString tag=Form("%d_%d_%d_%d",std::get<0>(k),std::get<1>(k),std::get<2>(k),std::get<3>(k));
+    hex_adc_minus_adcm1[k] = ibook.book2DPoly ("hex_adc_minus_adcm1_"+tag , "hex_adc_minus_adcm1;x (arb. unit); y (arb. unit)" , -22 , 22 , -24 , 20);
+    hex_tot_median[k]      = ibook.book2DPoly ("hex_tot_median_"+tag      , "hex_tot_median;x (arb. unit); y (arb. unit)"      , -22 , 22 , -24 , 20);
+    hex_beam_center[k]     = ibook.book2DPoly ("hex_beam_center_"+tag     , "hex_beam_center;x (arb. unit); y (arb. unit)"     , -22 , 22 , -24 , 20);
+  }
+  
 }
 
 void HGCalDigisClient::export_calibration_parameters() {

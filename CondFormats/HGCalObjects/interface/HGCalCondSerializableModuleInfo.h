@@ -15,7 +15,6 @@ struct HGCalModuleInfo {
   bool zside,isSiPM,isHD;
   int plane, u, v, modtype;
   int econdidx, captureblock, slink, captureblockidx, fedid;
-  std::string DAQ;  
   COND_SERIALIZABLE;
 };
 
