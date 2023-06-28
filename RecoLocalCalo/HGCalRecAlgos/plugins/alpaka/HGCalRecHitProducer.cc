@@ -54,8 +54,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     edm::ESWatcher<HGCalCondSerializablePedestalsRcd> cfgWatcher_;
     edm::ESGetToken<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd> tokenConds_;
-    const edm::EDGetTokenT<HGCalDigiHostCollection> digisToken_;
-    const device::EDPutToken<HGCalRecHitDeviceCollection> recHitsToken_;
+    const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
+    const edm::EDPutTokenT<hgcalrechit::HGCalRecHitHostCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
     int n_hits_scale;
   };
@@ -63,7 +63,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
       : tokenConds_(esConsumes<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd>(
           edm::ESInputTag(iConfig.getParameter<std::string>("pedestal_label")))),
-        digisToken_{consumes<HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
+        digisToken_{consumes<hgcaldigi::HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
         recHitsToken_{produces()},
         calibrator_{HGCalRecHitCalibrationAlgorithms(
           iConfig.getParameter<int>("n_blocks"),
@@ -131,12 +131,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     auto start = now();
     auto recHits = calibrator_.calibrate(queue, hostDigis);
+    alpaka::wait(queue);
     auto stop = now();
 
     std::cout<<"Time: "<< duration(start, stop) <<std::endl;
 
     std::cout << "\n\nINFO -- storing rec hits in the event" << std::endl;
-    // iEvent.put(recHitsToken_, std::move(recHits));
+    iEvent.emplace(recHitsToken_, std::move(*recHits));
   }
 
   void HGCalRecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
