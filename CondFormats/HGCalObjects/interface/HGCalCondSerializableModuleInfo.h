@@ -14,8 +14,7 @@
 struct HGCalModuleInfo {
   bool zside,isSiPM,isHD;
   int plane, u, v;
-  uint8_t wafType;
-  int econdidx, captureblock, slink, captureblockidx, fedid;
+  uint8_t wafType,captureblock,fedid,econdidx, slink, captureblockidx;
   COND_SERIALIZABLE;
 };
 

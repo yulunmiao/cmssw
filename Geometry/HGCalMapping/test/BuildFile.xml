@@ -3,6 +3,7 @@
   <use name="CondFormats/HGCalObjects"/>
   <use name="FWCore/Framework"/>
   <use name="FWCore/ParameterSet"/>
+  <use name="Geometry/HGCalMapping"/>
   <flags EDM_PLUGIN="1"/>
 </library>
 

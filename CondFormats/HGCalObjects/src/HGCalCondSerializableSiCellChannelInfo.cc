@@ -10,6 +10,5 @@ std::vector<HGCalSiCellChannelInfo> HGCalCondSerializableSiCellChannelInfo::getA
      return (v.isHD == isHD) && (v.wafType == wafType);
   });
   
-  std::cout << wafers.size() << std::endl;
   return wafers;
 }

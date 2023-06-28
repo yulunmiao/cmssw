@@ -11,6 +11,7 @@
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableSiCellChannelInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiCellChannelInfo.h"
+#include "Geometry/HGCalMapping/interface/HGCalElectronicsMappingTools.h"
 
 #include <iostream>
 
@@ -68,21 +69,15 @@ private:
 
 //
 void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm::EventSetup& iSetup) {
+
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
   auto siCellInfo = iSetup.getData(siModuleInfoToken_);
-
-  for(auto m : moduleInfo.params_){
-    if(m.isSiPM) continue;    
-    bool isHD=m.isHD;
-    uint8_t wafType=m.wafType;
-    std::vector<HGCalSiCellChannelInfo> cells=siCellInfo.getAllCellsInModule(isHD,wafType);
-    std::cout << isHD << " " << (int) wafType << " has " << cells.size() << std::endl;
-  }
+  std::map<uint32_t,uint32_t> ele2geo=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,false);
+  std::map<uint32_t,uint32_t> geo2ele=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,true);
 
   std::cout << "Read module info with " << moduleInfo.params_.size() << " entries" << std::endl
-            << "Read si cell info with " << siCellInfo.params_.size() << " entries" << std::endl;
-
-  
+            << "Read si cell info with " << siCellInfo.params_.size() << " entries" << std::endl
+            << "ID maps #ele2geo=" << ele2geo.size() << " #geo2ele=" << geo2ele.size() << std::endl;
 }
 
 
