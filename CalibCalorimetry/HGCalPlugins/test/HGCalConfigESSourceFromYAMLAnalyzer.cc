@@ -15,13 +15,13 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "CondFormats/DataRecord/interface/HGCalCondSerializableGenericConfigRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableGenericConfig.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
 class HGCalConfigESSourceFromYAMLAnalyzer : public edm::one::EDAnalyzer<> {
 public:
   explicit HGCalConfigESSourceFromYAMLAnalyzer(const edm::ParameterSet& iConfig)
-      : tokenConds_(esConsumes<HGCalCondSerializableGenericConfig, HGCalCondSerializableGenericConfigRcd>(
+      : tokenConds_(esConsumes<HGCalCondSerializableConfig, HGCalCondSerializableConfigRcd>(
             edm::ESInputTag(iConfig.getParameter<std::string>("label")))) {}
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
@@ -37,8 +37,8 @@ private:
       edm::LogInfo("HGCalConfigESSourceFromYAMLAnalyzer") << "Conditions retrieved:\n" << iSetup.getData(tokenConds_);
   }
 
-  edm::ESWatcher<HGCalCondSerializableGenericConfigRcd> cfgWatcher_;
-  edm::ESGetToken<HGCalCondSerializableGenericConfig, HGCalCondSerializableGenericConfigRcd> tokenConds_;
+  edm::ESWatcher<HGCalCondSerializableConfigRcd> cfgWatcher_;
+  edm::ESGetToken<HGCalCondSerializableConfig, HGCalCondSerializableConfigRcd> tokenConds_;
 };
 
 DEFINE_FWK_MODULE(HGCalConfigESSourceFromYAMLAnalyzer);

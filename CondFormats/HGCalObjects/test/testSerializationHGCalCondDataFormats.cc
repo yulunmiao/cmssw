@@ -4,7 +4,7 @@
 int main()
 {
   //generic configurables
-  testSerialization<HGCalCondSerializableGenericConfig>();
+  testSerialization<HGCalCondSerializableConfig>();
 
   //si cell
   testSerialization<HGCalSiCellChannelInfo>();

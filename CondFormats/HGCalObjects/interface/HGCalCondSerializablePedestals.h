@@ -17,7 +17,7 @@ struct HGCalPedestals {
 };
 
 /**
-   @holder for the si cell channel mappeing
+   @holder for the si cell channel mapping
  */
 class HGCalCondSerializablePedestals {
   

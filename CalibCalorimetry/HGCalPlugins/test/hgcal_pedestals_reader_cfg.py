@@ -9,6 +9,7 @@ options.register('inputFile',None,mytype=VarParsing.varType.string,
                       " e.g. CalibCalorimetry/HGCalPlugins/test/pedestals_test.txt")
 options.parseArguments()
 infname = options.inputFile
+#infname = '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt'
 
 process.MessageLogger = cms.Service("MessageLogger",
     cerr = cms.untracked.PSet(

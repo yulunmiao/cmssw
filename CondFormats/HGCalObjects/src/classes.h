@@ -5,7 +5,7 @@ namespace CondFormats_HGCalObjects {
   std::vector<int> v_i;
   std::pair<std::string, std::vector<int> > p_s_v_i;
   std::map<std::string, std::vector<int> > m_s_v_i;
-  HGCalCondSerializableGenericConfig h_csgc();
+  HGCalCondSerializableConfig h_csgc();
   
   HGCalSiCellChannelInfo hscci;
   std::vector<HGCalSiCellChannelInfo> v_hscci;

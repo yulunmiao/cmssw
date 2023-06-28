@@ -17,18 +17,18 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-#include "CondFormats/DataRecord/interface/HGCalCondSerializableGenericConfigRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableGenericConfig.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
 class HGCalConfigESSourceFromYAML : public edm::ESProducer, public edm::EventSetupRecordIntervalFinder {
 public:
   explicit HGCalConfigESSourceFromYAML(const edm::ParameterSet& iConfig)
       : filename_(iConfig.getParameter<std::string>("filename")) {
     setWhatProduced(this);
-    findingRecord<HGCalCondSerializableGenericConfigRcd>();
+    findingRecord<HGCalCondSerializableConfigRcd>();
   }
 
-  std::unique_ptr<HGCalCondSerializableGenericConfig> produce(const HGCalCondSerializableGenericConfigRcd&) { return parseYAML(filename_); }
+  std::unique_ptr<HGCalCondSerializableConfig> produce(const HGCalCondSerializableConfigRcd&) { return parseYAML(filename_); }
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
@@ -37,6 +37,7 @@ public:
   }
 
 private:
+
   void setIntervalFor(const edm::eventsetup::EventSetupRecordKey&,
                       const edm::IOVSyncValue&,
                       edm::ValidityInterval& oValidity) override {
@@ -45,7 +46,7 @@ private:
 
   void parseNode(const std::string& node_name,
                  const YAML::Node& node,
-                 std::unique_ptr<HGCalCondSerializableGenericConfig>& cond) const {
+                 std::unique_ptr<HGCalCondSerializableConfig>& cond) const {
     switch (node.Type()) {
       case YAML::NodeType::Null: {
         cond->addParameter(node_name, {});
@@ -70,8 +71,8 @@ private:
     }
   }
 
-  std::unique_ptr<HGCalCondSerializableGenericConfig> parseYAML(const std::string& filename) {
-    auto cond = std::make_unique<HGCalCondSerializableGenericConfig>();
+  std::unique_ptr<HGCalCondSerializableConfig> parseYAML(const std::string& filename) {
+    auto cond = std::make_unique<HGCalCondSerializableConfig>();
     try {
       const auto yaml_file = YAML::LoadFile(filename);
       if (const auto config = yaml_file["metaData"]; config.IsDefined())

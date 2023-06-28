@@ -1,6 +1,6 @@
 <lcgdict>
 
-  <class name="HGCalCondSerializableGenericConfig" class_version="0">
+  <class name="HGCalCondSerializableConfig" class_version="0">
     <field name="params_" mapping="blob"/>
   </class>
   <class name="std::vector<int>"/>

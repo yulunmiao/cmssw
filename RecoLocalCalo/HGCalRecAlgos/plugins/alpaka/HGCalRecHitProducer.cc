@@ -22,8 +22,8 @@
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
 #include "DataFormats/Math/interface/libminifloat.h"
 
-#include "CondFormats/DataRecord/interface/HGCalCondSerializableGenericConfigRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableGenericConfig.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
 #include <future>
 
