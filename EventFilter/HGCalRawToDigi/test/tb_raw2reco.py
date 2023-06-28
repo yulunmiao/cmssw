@@ -42,6 +42,8 @@ options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'input TB file')
+options.register('GPU', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+                 'run on GPU')
 options.maxEvents = 100  # number of events to emulate
 options.output = 'output.root'  # output EDM file
 options.secondaryOutput = 'output.raw'  # output streamer file
@@ -49,8 +51,12 @@ options.parseArguments()
 
 process.load('EventFilter.HGCalRawToDigi.hgcalEmulatedSlinkRawData_cfi')
 process.load('EventFilter.HGCalRawToDigi.hgcalDigis_cfi')
+process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi')
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
+
+process.load('Configuration.StandardSequences.Accelerators_cff')
+process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 if options.debug:
     process.MessageLogger.cerr.threshold = "DEBUG"
     process.MessageLogger.debugModules = ["*"]
@@ -130,6 +136,29 @@ process.hgCalSoATester = cms.EDAnalyzer('HGCalSoATester',
                                         Digis = cms.InputTag('hgcalDigis','DIGI'),
                                         SoADigis = cms.InputTag('hgcalDigis',''),)
 
+# RecHit producer
+process.hgCalPedestalsESSource.filename = '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt'
+
+if options.GPU:
+    process.hgcalRecHit = cms.EDProducer(
+        'alpaka_cuda_async::HGCalRecHitProducer',
+        digis = cms.InputTag('hgcalDigis', '', 'TEST'),
+        n_hits_scale = cms.int32(50000),
+        pedestal_label = cms.string(''),
+        n_blocks = cms.int32(4096),
+        n_threads = cms.int32(1024),
+    )
+else:
+    process.hgcalRecHit = cms.EDProducer(
+        'alpaka_serial_sync::HGCalRecHitProducer',
+        digis = cms.InputTag('hgcalDigis', '', 'TEST'),
+        n_hits_scale = cms.int32(50000),
+        pedestal_label = cms.string(''),
+        n_blocks = cms.int32(1024),
+        n_threads = cms.int32(4096),
+    )
+
+
 # DQM
 process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
                                          Digis = cms.InputTag('hgcalDigis','DIGI'),
@@ -145,7 +174,8 @@ process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
 process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
 
 
-process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
+# process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
+process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.hgcalRecHit * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
 
 if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",
@@ -164,6 +194,7 @@ if options.storeOutput:
             'drop *',
             'keep *_hgcalEmulatedSlinkRawData_*_*',
             'keep *_hgcalDigis_*_*',
+            'keep *_hgcalRecHit_*_*',
         )
     )
     process.outpath += process.output
