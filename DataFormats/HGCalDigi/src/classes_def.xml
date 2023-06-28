@@ -3,6 +3,9 @@
    <version ClassVersion="3" checksum="2587023721"/>
    </class>
 
+   <class name="HGCalTestSystemMetaData">
+   </class>
+   
    <class name="edm::Wrapper<HGCalTestSystemMetaData>">
    </class>
    

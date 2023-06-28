@@ -7,7 +7,7 @@
 #include "DQMServices/Core/interface/MonitorElement.h"
 
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
-#include "DataFormats/HGCalDigi/interface/HGCalTestSystemMetaData.h"
+#include "DataFormats/HGCalDigi/interface/HGCalTestSystemMetadata.h"
 #include "DataFormats/HGCalDigi/interface/HGCROCChannelDataFrame.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
 
