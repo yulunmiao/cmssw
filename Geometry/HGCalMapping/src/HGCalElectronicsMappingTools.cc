@@ -29,7 +29,7 @@ namespace hgcal {
         //build the detector id
         DetId::Detector det = m.plane<=26 ? DetId::Detector::HGCalEE : DetId::Detector::HGCalHSi;
         int zp(m.zside ?  1 : -1);
-        int celltype(0);
+        int celltype(0); //fix me... this is related to thickness...
         uint32_t geoid = HGCSiliconDetId(det,zp,celltype,m.plane,m.u,m.v,c.iu,c.iv).rawId();
 
         //map

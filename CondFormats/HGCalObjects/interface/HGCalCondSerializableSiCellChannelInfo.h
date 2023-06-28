@@ -10,7 +10,7 @@
 */
 struct HGCalSiCellChannelInfo {
   bool isHD,iscalib;
-  uint8_t wafType, chip, half;
+  uint16_t wafType, chip, half;
   uint16_t seq,rocpin;
   int sicell,triglink,trigcell,iu,iv,t;
   float trace;
@@ -30,7 +30,7 @@ public:
     params_.push_back(i);
     return *this;
   }
-  std::vector<HGCalSiCellChannelInfo> getAllCellsInModule(bool isHD,uint8_t wafType) const;
+  std::vector<HGCalSiCellChannelInfo> getAllCellsInModule(bool isHD,uint16_t wafType) const;
   std::vector<HGCalSiCellChannelInfo> params_;
   
   COND_SERIALIZABLE;

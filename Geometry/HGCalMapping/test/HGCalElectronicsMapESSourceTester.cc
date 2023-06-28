@@ -71,13 +71,34 @@ private:
 void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm::EventSetup& iSetup) {
 
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
+  std::tuple<uint16_t,uint8_t,uint8_t,uint8_t> denseIdxMax = moduleInfo.getMaxValuesForDenseIndex();
   auto siCellInfo = iSetup.getData(siModuleInfoToken_);
   std::map<uint32_t,uint32_t> ele2geo=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,false);
   std::map<uint32_t,uint32_t> geo2ele=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,true);
 
   std::cout << "Read module info with " << moduleInfo.params_.size() << " entries" << std::endl
+            << "Max values for dense indexing are" << std::endl
+            << "\tmax fed=" << (uint32_t)(std::get<0>(denseIdxMax)) << std::endl
+            << "\tmax capture=" << (uint32_t)(std::get<1>(denseIdxMax)) << std::endl
+            << "\tmax econd=" << (uint32_t)(std::get<2>(denseIdxMax)) << std::endl
+            << "\tmax eRx=" << (uint32_t)(std::get<3>(denseIdxMax)) << std::endl
             << "Read si cell info with " << siCellInfo.params_.size() << " entries" << std::endl
             << "ID maps #ele2geo=" << ele2geo.size() << " #geo2ele=" << geo2ele.size() << std::endl;
+  
+  assert(ele2geo.size()==geo2ele.size());
+
+  for(auto it : ele2geo) {
+    assert(geo2ele.count(it.second)==1);
+    assert(geo2ele[it.second]==it.first);
+  }
+  
+  for(auto it : geo2ele) {
+    assert(ele2geo.count(it.second)==1);
+    assert(ele2geo[it.second]==it.first);
+  }
+
+  std::cout << "1:1 correspondences found for physical cells" << std::endl;
+
 }
 
 

@@ -3,7 +3,7 @@
 #include <iostream>
 
 //
-std::vector<HGCalSiCellChannelInfo> HGCalCondSerializableSiCellChannelInfo::getAllCellsInModule(bool isHD, uint8_t wafType) const {
+std::vector<HGCalSiCellChannelInfo> HGCalCondSerializableSiCellChannelInfo::getAllCellsInModule(bool isHD, uint16_t wafType) const {
 
   std::vector<HGCalSiCellChannelInfo> wafers;
   std::copy_if(params_.begin(), params_.end(), std::back_inserter(wafers), [&](HGCalSiCellChannelInfo v) {
