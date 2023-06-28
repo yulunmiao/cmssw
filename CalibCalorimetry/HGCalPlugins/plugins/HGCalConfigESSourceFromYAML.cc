@@ -17,7 +17,6 @@
 #include "FWCore/Framework/interface/ESProducts.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
@@ -96,18 +95,19 @@ private:
       if (const auto config = yaml_file["metaData"]; config.IsDefined()) {
         int charMode = yaml_file["metaData"]["characMode"].as<int>();
         assert(charMode==0 or charMode==1);
-        cond->moduleConfigs[0].charMode = (bool) charMode;
+        cond->moduleConfigs[0].charMode = 0; //(bool) charMode;
         //for (const auto& params : config)
         //  parseNode(params.first.as<std::string>(), params.second, cond);
       } else {
         edm::LogWarning("HGCalConfigESSourceFromYAML")
-            << "The YAML configuration is missing a 'metaData' node. The conditions format may hence be invalid.";
+            << "The YAML configuration is missing a 'metaData' node. The conditions format may hence be invalid.\n"
+            << filename;
       }
       
-      // PARSE ROC NODES
-      for (const auto& params : yaml_file) { // loop through nodes
-        std::cout << "HGCalConfigESSourceFromYAML::parseYAML: Found key " << params.first.as<std::string>() << std::endl;
-      }
+      //// PARSE ROC NODES
+      //for (const auto& params : yaml_file) { // loop through nodes
+      //  std::cout << "HGCalConfigESSourceFromYAML::parseYAML: Found key " << params.first.as<std::string>() << std::endl;
+      //}
       
     } catch (const YAML::BadFile& err) {
       throw cms::Exception("HGCalConfigESSourceFromYAML") << "Bad file error: " << err.msg;

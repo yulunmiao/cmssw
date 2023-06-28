@@ -38,6 +38,14 @@ options.register('storeRAWOutput', False, VarParsing.VarParsing.multiplicity.sin
                  'also store the RAW output into a streamer file')
 options.register('storeEmulatorInfo', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the emulator metadata')
+options.register('configFile',
+                 '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
+                 VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+                 'config yaml file')
+options.register('pedestalFile',
+                 '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt',
+                 VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+                 'pedestal txt file')
 options.register('inputFiles',
                  #'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/160fC/160fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_141543/pedestal_run0.root',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
@@ -52,10 +60,9 @@ options.parseArguments()
 
 process.load('EventFilter.HGCalRawToDigi.hgcalEmulatedSlinkRawData_cfi')
 process.load('EventFilter.HGCalRawToDigi.hgcalDigis_cfi')
-process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi')
-
+process.load('CalibCalorimetry.HGCalPlugins.hgCalConfigESSourceFromYAML_cfi') # read yaml config file(s)
+process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # read txt pedestal file for calibration
 process.load("FWCore.MessageService.MessageLogger_cfi")
-
 process.load('Configuration.StandardSequences.Accelerators_cff')
 process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
 if options.debug:
@@ -78,7 +85,6 @@ process.source = cms.Source('EmptyIOVSource',
     lastValue = cms.uint64(1),
     interval = cms.uint64(1)
 )
-
 
 
 # steer the emulator part
@@ -132,21 +138,25 @@ process.hgcalDigis.numERxsInECOND = options.numERxsPerECOND
 process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventional, high number of ECON-Ds per capture block
     process.hgcalDigis.captureBlockECONDMax,
     len([ec for ec in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs if ec.active]))
+process.hgcalDigis.config_label = cms.string('') # for HGCalConfigESSourceFromYAML
 
 # TESTERS
 process.hgCalSoATester = cms.EDAnalyzer('HGCalSoATester',
                                         Digis = cms.InputTag('hgcalDigis','DIGI'),
                                         SoADigis = cms.InputTag('hgcalDigis',''),)
 
-# RecHit producer
-process.hgCalPedestalsESSource.filename = '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt'
+# Configuration from YAML files
+process.hgCalConfigESSourceFromYAML.filename = options.configFile
+
+# RecHit producer: pedestal txt file for DIGI -> RECO calibration
+process.hgCalPedestalsESSource.filename = options.pedestalFile
 
 if options.GPU:
     process.hgcalRecHit = cms.EDProducer(
         'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
         n_hits_scale = cms.int32(50000),
-        pedestal_label = cms.string(''),
+        pedestal_label = cms.string(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(4096),
         n_threads = cms.int32(1024),
     )
@@ -155,7 +165,7 @@ else:
         'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
         n_hits_scale = cms.int32(50000),
-        pedestal_label = cms.string(''),
+        pedestal_label = cms.string(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(1024),
         n_threads = cms.int32(4096),
     )

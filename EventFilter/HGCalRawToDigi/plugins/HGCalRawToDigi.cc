@@ -4,6 +4,7 @@
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/ESWatcher.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 
@@ -13,6 +14,9 @@
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiHostCollection.h"
+
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
 class HGCalRawToDigi : public edm::stream::EDProducer<> {
 public:
@@ -27,11 +31,15 @@ private:
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecDigisToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecCMsToken_;
   const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
+  edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
+  edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
 
   const std::vector<unsigned int> fedIds_;
   const unsigned int badECONDMax_;
   const unsigned int numERxsInECOND_;
   const std::unique_ptr<HGCalUnpacker> unpacker_;
+  HGCalModuleConfig moduleConfig_; // current module
+  
 };
 
 HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
@@ -39,6 +47,8 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       elecDigisToken_(produces<HGCalElecDigiCollection>("DIGI")),
       elecCMsToken_(produces<HGCalElecDigiCollection>("CM")),
       elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
+      configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
+            edm::ESInputTag(iConfig.getParameter<std::string>("config_label")))),
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
@@ -55,8 +65,23 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
                               .commonModeMax = iConfig.getParameter<unsigned int>("commonModeMax")})) {}
 
 void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+
   // retrieve the FED raw data
   const auto& raw_data = iEvent.get(fedRawToken_);
+
+  // retrieve configuration from YAML files
+  if (configWatcher_.check(iSetup)) {
+    auto conds = iSetup.getData(configToken_);
+    size_t nmods = conds.moduleConfigs.size();
+    edm::LogInfo("HGCalRawToDigi") << "Conditions retrieved for " << nmods << " modules:\n" << conds;
+    for (auto it : conds.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
+      HGCalModuleConfig moduleConfig(it.second);
+      edm::LogInfo("HGCalRawToDigi")
+        << "  Module " << it.first << ": charMode=" << moduleConfig.charMode;
+    }
+    moduleConfig_ = conds.moduleConfigs[0]; // for now use module with electronicsId = 0 as placeholder
+  } // else: use previously loaded module configuration
+
   // prepare the output
   HGCalDigiCollection digis;
   HGCalElecDigiCollection elec_digis;
@@ -97,9 +122,9 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       elec_digis.push_back(data);
       elecid.push_back(id.raw());
       tctp.push_back(data.tctp());
-      adcm1.push_back(data.adcm1());
-      adc.push_back(data.adc());
-      tot.push_back(data.tot());
+      adcm1.push_back(data.adcm1(moduleConfig_.charMode));
+      adc.push_back(data.adc(moduleConfig_.charMode));
+      tot.push_back(data.tot(moduleConfig_.charMode));
       toa.push_back(data.toa());
       cm.push_back(commonModeSum.at(i));
     }
@@ -163,6 +188,7 @@ void HGCalRawToDigi::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<unsigned int>("badECONDMax", 200)->setComment("maximum number of bad ECON-D's");
   desc.add<std::vector<unsigned int> >("fedIds", {});
   desc.add<unsigned int>("numERxsInECOND", 12)->setComment("number of eRxs in each ECON-D payload");
+  desc.add<std::string>("config_label", "")->setComment("label for HGCalConfigESSourceFromYAML reader");
   descriptions.add("hgcalDigis", desc);
 }
 
