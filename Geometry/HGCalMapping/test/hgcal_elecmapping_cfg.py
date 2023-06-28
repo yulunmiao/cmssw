@@ -19,9 +19,13 @@ process.source = cms.Source('EmptyIOVSource',
 )
 
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
-process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator.txt'
+process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
+process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
+process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
+
 process.analyzer = cms.EDAnalyzer("HGCalElectronicsMapESSourceTester",
-                                  label = cms.string(''))
+                                  ModuleInfo = cms.ESInputTag(''),
+                                  SiModuleInfo = cms.ESInputTag(''), )
 
 process.source = cms.Source('EmptySource')
 

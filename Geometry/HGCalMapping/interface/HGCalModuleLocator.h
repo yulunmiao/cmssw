@@ -9,8 +9,8 @@
 #ifndef Geometry_HGCalMapping_HGCalModuleLocator_H
 #define Geometry_HGCalMapping_HGCalModuleLocator_H
 
-#include "DataFormats/ForwardDetId/interface/HGCScintillatorDetId.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+#include "Geometry/HGCalMapping/interface/HGCalEntityLocatorBase.h"
 
 #include <string>
 #include <iostream>
@@ -18,21 +18,24 @@
 #include <sstream>
 #include <vector>
 
-class HGCalModuleLocator {
+/**
+   @short this class steers the parsing and the filling of the module info from txt files
+ */
+class HGCalModuleLocator : public HGCalEntityLocatorBase<HGCalCondSerializableModuleInfo> {
 
-  public:
-
-    HGCalModuleLocator(){};
-
-    void buildLocatorFrom(std::string path,bool usefip=false);
-
-    //returns the info
-    HGCalCondSerializableModuleInfo getInfo() {return mod2loc_; }
+public:
   
-  private:
+  HGCalModuleLocator(){};
   
-    //object holding all module info
-    HGCalCondSerializableModuleInfo mod2loc_;
+  void buildLocatorFrom(std::string path,bool usefip=false) override {
+    buildModuleLocatorFrom(path,usefip);
+  }
+  
+  void buildModuleLocatorFrom(std::string path,bool usefip=false);
+
+  ~HGCalModuleLocator(){};
+  
+private:
 
 };
 

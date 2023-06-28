@@ -4,20 +4,26 @@
 #include <string>
 #include <vector>
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiCellChannelInfo.h"
+#include "Geometry/HGCalMapping/interface/HGCalEntityLocatorBase.h"
 
-class HGCalSiCellLocator
+class HGCalSiCellLocator : public HGCalEntityLocatorBase<HGCalCondSerializableSiCellChannelInfo>
 {
 
 public:
 
-  HGCalSiCellLocator();
-  void buildLocatorFrom(std::string url,bool append=false,bool usefip=false);
+  HGCalSiCellLocator(){};
+
+  void buildLocatorFrom(std::string path,bool usefip=false) override {
+    buildLocatorFrom(path,false,usefip);
+  }
+
+  void buildLocatorFrom(std::string url,bool append,bool usefip);  
+
   HGCalSiCellChannelInfo locateCellByGeom(int iu,int iv,uint8_t wafType, bool isHD);
-  ~HGCalSiCellLocator();
+
+  ~HGCalSiCellLocator(){};
 
 private:
-
-  HGCalCondSerializableSiCellChannelInfo cellColl_;
 
 };
 

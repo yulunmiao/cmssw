@@ -3,10 +3,9 @@
    <version ClassVersion="3" checksum="2587023721"/>
    </class>
 
-   <class name="HGCROCChannelDataFrame<HGCalDetId>" ClassVersion="3">
-   <version ClassVersion="3" checksum="2026905296"/>
+   <class name="edm::Wrapper<HGCalTestSystemMetaData>">
    </class>
-
+   
    <class name="HGCROCChannelDataFrame<HGCalElectronicsId>" ClassVersion="3">
    <version ClassVersion="3" checksum="2054618736"/>
    </class>

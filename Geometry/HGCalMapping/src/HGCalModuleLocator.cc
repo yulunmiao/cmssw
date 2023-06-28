@@ -3,7 +3,7 @@
 #include "FWCore/Utilities/interface/Exception.h"
 
 //
-void HGCalModuleLocator::buildLocatorFrom(std::string path,bool usefip)
+void HGCalModuleLocator::buildModuleLocatorFrom(std::string path,bool usefip)
 {
   if(usefip) {
     edm::FileInPath fip(path);
@@ -20,9 +20,9 @@ void HGCalModuleLocator::buildLocatorFrom(std::string path,bool usefip)
     std::istringstream stream(line);
     int zside;
     HGCalModuleInfo m;
-    stream >> m.plane >> m.u >> m.v >> m.isSiPM >> m.isHD >> m.modtype >> m.econdidx >> m.captureblock >> m.slink >> m.captureblockidx >> m.fedid >> zside;
+    stream >> m.plane >> m.u >> m.v >> m.isSiPM >> m.isHD >> m.wafType >> m.econdidx >> m.captureblock >> m.slink >> m.captureblockidx >> m.fedid >> zside;
     m.zside = (zside>0);
-    mod2loc_.addParameter(m);
+    getInfo().addParameter(m);
   }
 }
 

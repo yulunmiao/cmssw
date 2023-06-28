@@ -44,7 +44,7 @@ private:
   std::string emul_type_;
   
   const edm::EDPutTokenT<FEDRawDataCollection> fedRawToken_;
-  const edm::EDPutTokenT<std::vector<int> > metadataToken_;
+  const edm::EDPutTokenT<HGCalTestSystemMetaData> metadataToken_;
 
   edm::Service<edm::RandomNumberGenerator> rng_;
   edm::EDPutTokenT<HGCalSlinkEmulatorInfo> fedEmulInfoToken_;
@@ -59,7 +59,7 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
       store_fed_header_trailer_(iConfig.getParameter<bool>("fedHeaderTrailer")),
       emul_type_(iConfig.getParameter<std::string>("emulatorType")),
       fedRawToken_(produces<FEDRawDataCollection>("hgcalFEDRawData")),
-      metadataToken_(produces<std::vector<int> >("hgcalMetaData")),
+      metadataToken_(produces<HGCalTestSystemMetaData>("hgcalMetaData")),
       frame_gen_(iConfig) {
   
   if (emul_type_=="slinkfromraw") {

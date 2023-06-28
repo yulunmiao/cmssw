@@ -69,7 +69,7 @@ namespace hgcal {
     /**
        @short retriever for event metadata
     */
-    std::vector<int> produceMetaData();
+    HGCalTestSystemMetaData produceMetaData();
     
   private:
     

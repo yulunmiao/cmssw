@@ -7,6 +7,7 @@
 #include "EventFilter/HGCalRawToDigi/interface/ECONDTypes.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
+#include "DataFormats/HGCalDigi/interface/HGCalTestSystemMetadata.h"
 
 namespace hgcal {
 
@@ -26,7 +27,7 @@ namespace hgcal {
     const C &config() { return params_; }
 
     /// get metadata for this event
-    virtual std::vector<int> nextMetaData() { return {}; }
+    virtual HGCalTestSystemMetaData nextMetaData() { return HGCalTestSystemMetaData(); }
     
   protected:
     const C params_;

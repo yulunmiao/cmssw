@@ -334,7 +334,7 @@ namespace hgcal {
   }
 
   //
-  std::vector<int> HGCalFrameGenerator::produceMetaData() {
+  HGCalTestSystemMetaData HGCalFrameGenerator::produceMetaData() {
     return emulator_->nextMetaData();
   }
   

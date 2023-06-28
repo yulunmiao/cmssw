@@ -7,6 +7,7 @@
 #include "DQMServices/Core/interface/MonitorElement.h"
 
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
+#include "DataFormats/HGCalDigi/interface/HGCalTestSystemMetaData.h"
 #include "DataFormats/HGCalDigi/interface/HGCROCChannelDataFrame.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
 
@@ -39,7 +40,7 @@ private:
   void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
   void analyze(const edm::Event&, const edm::EventSetup&) override;
   const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
-  const edm::EDGetTokenT<std::vector<int> > metadataToken_;
+  const edm::EDGetTokenT<HGCalTestSystemMetaData> metadataToken_;
 
   std::map<MonitorKey_t, MonitorElement*> p_adc_minus_adcm1;
   std::map<MonitorKey_t, MonitorElement*> hex_adc_minus_adcm1;
@@ -66,7 +67,7 @@ private:
 
 HGCalDigisClient::HGCalDigisClient(const edm::ParameterSet& iConfig)
   : elecDigisToken_(consumes<HGCalElecDigiCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
-    metadataToken_(consumes<std::vector<int> >(iConfig.getParameter<edm::InputTag>("MetaData"))),
+    metadataToken_(consumes<HGCalTestSystemMetaData>(iConfig.getParameter<edm::InputTag>("MetaData"))),
     moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(edm::ESInputTag(iConfig.getParameter<std::string>("ModuleMapping"))))
 {}
 
@@ -82,9 +83,8 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
     //read trigtime
     const auto& metadata = iEvent.get(metadataToken_);
-    int trigtime(-999);
-    if(metadata.size()>0) trigtime=metadata.at(0);
-    LogDebug("HGCalDigisClient") << "trigtime=" << trigtime;
+    int trigTime = metadata.trigTime_;
+    LogDebug("HGCalDigisClient") << "trigTime=" << trigTime;
     
     //read digis
     const auto& elecDigis = iEvent.get(elecDigisToken_);

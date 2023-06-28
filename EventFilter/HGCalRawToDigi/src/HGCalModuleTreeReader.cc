@@ -49,7 +49,8 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
     if (data_[key].count(erxKey) == 0) {
       data_[key][erxKey] = ERxData{};
       //add metadata
-      metadata_[key]={event.trigtime,event.trigwidth};
+      HGCalTestSystemMetaData md(0,event.trigtime,event.trigwidth);
+      metadata_[key]=md;
     }
     
     // daqdata: header, CM, 37 ch, CRC32, idle
@@ -98,8 +99,8 @@ ECONDInput HGCalModuleTreeReader::next() {
 }
 
 //
-std::vector<int> HGCalModuleTreeReader::nextMetaData() {
+HGCalTestSystemMetaData HGCalModuleTreeReader::nextMetaData() {
   auto key=it_data_->first;
-  if(metadata_.count(key)==0) return {};
+  if(metadata_.count(key)==0) return HGCalTestSystemMetaData();
   return metadata_[key];
 }
