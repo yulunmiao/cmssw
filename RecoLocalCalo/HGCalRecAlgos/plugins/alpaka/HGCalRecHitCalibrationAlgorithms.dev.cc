@@ -78,70 +78,89 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   };
 
   void HGCalRecHitCalibrationAlgorithms::loadCalibParams(CalibParams& newCalibParams) {
-    std::cout << "\nINFO -- HGCalRecHitCalibrationAlgorithms::loadCalibParams: " << newCalibParams.size() << " elements" << std::endl;
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\nINFO -- HGCalRecHitCalibrationAlgorithms::loadCalibParams: " << newCalibParams.size() << " elements" << std::endl;
     calibParams = newCalibParams;
   }
 
-  std::unique_ptr<HGCalRecHitDeviceCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection & digis) {
-    std::cout << "\n\nINFO -- Start of calibrate\n\n" << std::endl;
+  std::unique_ptr<HGCalRecHitHostCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection const& host_digis) {
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- Start of calibrate\n\n" << std::endl;
 
-    std::cout<<"N blocks: "<<n_blocks<<"\tN threads: "<<n_threads<<std::endl;
+    LogDebug("HGCalRecHitCalibrationAlgorithms")<<"N blocks: "<<n_blocks<<"\tN threads: "<<n_threads<<std::endl;
     auto grid = make_workdiv<Acc1D>(n_blocks, n_threads);
 
-    bool verbose = true;
     int n_hits_to_print = 10;
     
-    if(verbose) std::cout << "Input digis: " << std::endl;
-    if(verbose) print(digis, n_hits_to_print);
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "Input digis: " << std::endl;
+    print(host_digis, n_hits_to_print);
     
-    if(verbose) std::cout << "\n\nINFO -- copying the digis to the device\n\n" << std::endl;
-    HGCalDigiDeviceCollection device_digis(digis.view().metadata().size(), queue);
-    alpaka::memcpy(queue, device_digis.buffer(), digis.const_buffer());
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- copying the digis to the device\n\n" << std::endl;
+    HGCalDigiDeviceCollection device_digis(host_digis.view().metadata().size(), queue);
+    alpaka::memcpy(queue, device_digis.buffer(), host_digis.const_buffer());
 
     float pedestalValue = n_hits_to_print; // dummy value
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, digis.view(), pedestalValue);
-    if(verbose) std::cout << "Digis after pedestal calibration: " << std::endl;
-    if(verbose) print(digis, n_hits_to_print);
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, device_digis.view(), pedestalValue);
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "Digis after pedestal calibration: " << std::endl;
+    print_digi_device(device_digis, n_hits_to_print);
 
     float commonModeValue = n_hits_to_print; // dummy value
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, digis.view(), commonModeValue);
-    if(verbose) std::cout << "Digis after CM calibration: " << std::endl;
-    if(verbose) print(digis, n_hits_to_print);
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, device_digis.view(), commonModeValue);
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "Digis after CM calibration: " << std::endl;
+    print_digi_device(device_digis, n_hits_to_print);
 
     float ADCmValue = n_hits_to_print; // dummy value
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, digis.view(), ADCmValue);
-    if(verbose) std::cout << "Digis after ADCm calibration: " << std::endl;
-    if(verbose) print(digis, n_hits_to_print);
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, device_digis.view(), ADCmValue);
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "Digis after ADCm calibration: " << std::endl;
+    print_digi_device(device_digis, n_hits_to_print);
 
-    if(verbose) std::cout << "\n\nINFO -- allocating rechits buffer" << std::endl;
-    auto recHits = std::make_unique<HGCalRecHitDeviceCollection>(digis.view().metadata().size(), queue);
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- allocating rechits buffer" << std::endl;
+    auto device_recHits = std::make_unique<HGCalRecHitDeviceCollection>(device_digis.view().metadata().size(), queue);
     
-    if(verbose) std::cout << "\n\nINFO -- converting digis to rechits" << std::endl;
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.view(), recHits->view());
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- converting digis to rechits" << std::endl;
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.view(), device_recHits->view());
     
-    if(verbose) std::cout << "RecHits after calibration: " << std::endl;
-    if(verbose) print(queue, *recHits, n_hits_to_print);
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after calibration: " << std::endl;
+    print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
-    return recHits;
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- copying the rechits from device to the host\n\n" << std::endl;
+    auto host_recHits = std::make_unique<HGCalRecHitHostCollection>(device_recHits->view().metadata().size(), queue);
+    alpaka::memcpy(queue, host_recHits->buffer(), device_recHits->buffer());
+
+    return host_recHits;
   }
 
   void HGCalRecHitCalibrationAlgorithms::print(HGCalDigiHostCollection const& digis, int max) const {
     int max_ = max > 0 ? max : digis.view().metadata().size();
     for (int i = 0; i < max_; i++) {
-      std::cout << i;
-      std::cout << "\t" << digis.view()[i].electronicsId();
-      std::cout << "\t" << digis.view()[i].tctp();
-      std::cout << "\t" << digis.view()[i].adcm1();
-      std::cout << "\t" << digis.view()[i].adc();
-      std::cout << "\t" << digis.view()[i].tot();
-      std::cout << "\t" << digis.view()[i].toa();
-      std::cout << "\t" << digis.view()[i].cm();
-      std::cout << "\t" << digis.view()[i].flags();
-      std::cout << std::endl;
+      LogDebug("HGCalRecHitCalibrationAlgorithms") << i
+        << "\t" << digis.view()[i].electronicsId()
+        << "\t" << digis.view()[i].tctp()
+        << "\t" << digis.view()[i].adcm1()
+        << "\t" << digis.view()[i].adc()
+        << "\t" << digis.view()[i].tot()
+        << "\t" << digis.view()[i].toa()
+        << "\t" << digis.view()[i].cm()
+        << "\t" << digis.view()[i].flags()
+        << std::endl;
     }
   }
 
-  void HGCalRecHitCalibrationAlgorithms::print(Queue& queue, HGCalRecHitDeviceCollection const& recHits, int max) const {
+  void HGCalRecHitCalibrationAlgorithms::print_digi_device(HGCalDigiDeviceCollection const& digis, int max) const {
+    int max_ = max > 0 ? max : digis.view().metadata().size();
+    for (int i = 0; i < max_; i++) {
+      LogDebug("HGCalRecHitCalibrationAlgorithms") << i
+        << "\t" << digis.view()[i].electronicsId()
+        << "\t" << digis.view()[i].tctp()
+        << "\t" << digis.view()[i].adcm1()
+        << "\t" << digis.view()[i].adc()
+        << "\t" << digis.view()[i].tot()
+        << "\t" << digis.view()[i].toa()
+        << "\t" << digis.view()[i].cm()
+        << "\t" << digis.view()[i].flags()
+        << std::endl;
+    }
+  }
+
+  void HGCalRecHitCalibrationAlgorithms::print_recHit_device(Queue& queue, HGCalRecHitDeviceCollection const& recHits, int max) const {
     auto grid = make_workdiv<Acc1D>(1, 1);
     auto size = max > 0 ? max : recHits.view().metadata().size();
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_printRecHits{}, recHits.view(), size);

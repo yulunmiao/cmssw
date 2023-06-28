@@ -8,6 +8,7 @@
   <use name="DataFormats/Math"/>
   <use name="DataFormats/TestObjects"/>
   <use name="FWCore/Framework"/>
+  <use name="FWCore/MessageLogger"/>
   <use name="FWCore/ParameterSet"/>
   <use name="FWCore/Utilities"/>
   <use name="HeterogeneousCore/AlpakaCore"/>
