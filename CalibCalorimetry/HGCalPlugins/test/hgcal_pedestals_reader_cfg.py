@@ -4,7 +4,7 @@ process = cms.Process("Calib")
 # argument parser
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('python')
-options.register('inputFile',"none",mytype=VarParsing.varType.string,
+options.register('inputFile',None,mytype=VarParsing.varType.string,
                  info="Path to input file. Absolute, or relative to CMSSW src directory,"
                       " e.g. CalibCalorimetry/HGCalPlugins/test/pedestals_test.txt")
 options.parseArguments()
@@ -28,6 +28,7 @@ process.source = cms.Source('EmptyIOVSource',
 )
 
 process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi')
+print(f">>> inputFile={infname}")
 if infname:
   process.hgCalPedestalsESSource.filename = infname
 else: # create test file with dummy variables

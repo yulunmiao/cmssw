@@ -1,6 +1,15 @@
 import FWCore.ParameterSet.Config as cms
 process = cms.Process("Calib")
 
+# argument parser
+from FWCore.ParameterSet.VarParsing import VarParsing
+infname = '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.yaml'
+options = VarParsing('python')
+options.register('inputFile',infname,mytype=VarParsing.varType.string,info="Path to input file")
+options.parseArguments()
+infname = options.inputFile
+print(f">>> inputFile={infname}")
+
 process.MessageLogger = cms.Service("MessageLogger",
     cerr = cms.untracked.PSet(
         enable = cms.untracked.bool(False)
@@ -19,7 +28,7 @@ process.source = cms.Source('EmptyIOVSource',
 )
 
 process.load('CalibCalorimetry.HGCalPlugins.hgCalConfigESSourceFromYAML_cfi')
-process.hgCalConfigESSourceFromYAML.filename = '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.yaml'
+process.hgCalConfigESSourceFromYAML.filename = infname
 process.analyzer = cms.EDAnalyzer("HGCalConfigESSourceFromYAMLAnalyzer",
                                   label = cms.string(''))
 
