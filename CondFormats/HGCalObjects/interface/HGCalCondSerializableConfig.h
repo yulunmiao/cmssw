@@ -15,10 +15,10 @@
 
 #include "CondFormats/Serialization/interface/Serializable.h"
 
-/**
-   @short global Module settings read from YAML, same for all ROCs
-*/
-//typedef std::map<HGCalElectronicsId,bool> HGCALROCConfig; // ID -> readout mode
+///**
+//   @short global Module settings read from YAML, same for all ROCs
+//*/
+////typedef std::map<HGCalElectronicsId,bool> HGCALROCConfig; // ID -> readout mode
 struct HGCalModuleConfig {
   bool charMode; // characterization/readout mode
   char gain;     // gain settings
@@ -28,6 +28,8 @@ struct HGCalModuleConfig {
 
 class HGCalCondSerializableConfig {
 public:
+  std::map<uint32_t,HGCalModuleConfig> moduleConfigs;
+  
   HGCalCondSerializableConfig();
   ~HGCalCondSerializableConfig();
 

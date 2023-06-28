@@ -7,6 +7,7 @@
  ****************************************************************************/
 
 #include <yaml-cpp/yaml.h>
+#include <iostream> // for std::cout
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/SourceFactory.h"
@@ -28,7 +29,9 @@ public:
     findingRecord<HGCalCondSerializableConfigRcd>();
   }
 
-  std::unique_ptr<HGCalCondSerializableConfig> produce(const HGCalCondSerializableConfigRcd&) { return parseYAML(filename_); }
+  std::unique_ptr<HGCalCondSerializableConfig> produce(const HGCalCondSerializableConfigRcd&) {
+    return parseYAML(filename_);
+  }
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
@@ -71,16 +74,41 @@ private:
     }
   }
 
+  //void parseMetaDataNode(const std::string& node_name,
+  //               const YAML::Node& node,
+  //               std::unique_ptr<HGCalCondSerializableConfig>& cond) const {
+  //  
+  //}
+
+  //void parseRunNode(const std::string& node_name,
+  //               const YAML::Node& node,
+  //               std::unique_ptr<HGCalCondSerializableConfig>& cond) const {
+  //  
+  //}
+
   std::unique_ptr<HGCalCondSerializableConfig> parseYAML(const std::string& filename) {
     auto cond = std::make_unique<HGCalCondSerializableConfig>();
     try {
-      const auto yaml_file = YAML::LoadFile(filename);
-      if (const auto config = yaml_file["metaData"]; config.IsDefined())
-        for (const auto& params : config)
-          parseNode(params.first.as<std::string>(), params.second, cond);
-      else
+      const auto yaml_file =  YAML::LoadFile(filename);
+      cond->moduleConfigs[0] = HGCalModuleConfig();
+      
+      // PARSE META DATA NODE
+      if (const auto config = yaml_file["metaData"]; config.IsDefined()) {
+        int charMode = yaml_file["metaData"]["characMode"].as<int>();
+        assert(charMode==0 or charMode==1);
+        cond->moduleConfigs[0].charMode = (bool) charMode;
+        //for (const auto& params : config)
+        //  parseNode(params.first.as<std::string>(), params.second, cond);
+      } else {
         edm::LogWarning("HGCalConfigESSourceFromYAML")
             << "The YAML configuration is missing a 'metaData' node. The conditions format may hence be invalid.";
+      }
+      
+      // PARSE ROC NODES
+      for (const auto& params : yaml_file) { // loop through nodes
+        std::cout << "HGCalConfigESSourceFromYAML::parseYAML: Found key " << params.first.as<std::string>() << std::endl;
+      }
+      
     } catch (const YAML::BadFile& err) {
       throw cms::Exception("HGCalConfigESSourceFromYAML") << "Bad file error: " << err.msg;
     } catch (const YAML::ParserException& err) {
