@@ -142,10 +142,9 @@ process.hgcalDigis.module_info_label = cms.ESInputTag('') # for HGCalModuleInfoE
 #
 # TESTERS
 #
-process.hgCalSoATester = cms.EDAnalyzer('HGCalSoATester',
-                                        Digis = cms.InputTag('hgcalDigis','DIGI'),
-                                        SoADigis = cms.InputTag('hgcalDigis',''),)
-
+process.load('EventFilter.HGCalRawToDigi.hgCalSoATester_cfi')
+process.hgCalSoATester.Digis=cms.InputTag('hgcalDigis','DIGI')
+process.load('RecoLocalCalo.HGCalRecAlgos.hgCalSoARecHitTester_cfi')
 
 #
 # CONDITIONS AND CONFIGURATIONS
@@ -195,8 +194,11 @@ process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
 process.dqmSaver.runNumber = 123480
 
-
-process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.hgcalRecHit * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
+process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis   #RAW->DIGI
+                     * process.hgcalRecHit                                    #DIGI->RECO
+                     * process.tbdqmedanalyzer * process.dqmSaver             #DQM
+                     * process.hgCalSoATester * process.hgCalSoARecHitTester  #TESTERS
+)
 
 if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",

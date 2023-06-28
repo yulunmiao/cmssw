@@ -13,9 +13,6 @@
 #include <iostream>
 #include <algorithm>
 
-/**
-   @short a tester for the logical mapping as ESsource
- */
 class HGCalSoATester : public edm::one::EDAnalyzer<> {
 
 public:
@@ -34,9 +31,6 @@ public:
 
 private:
 
-  /**
-     @short the main analysis method to check what has been parsed from the files
-   */
   void analyze(const edm::Event&, const edm::EventSetup& iSetup) override;
 
   //tokens to access collections in ROOT file
