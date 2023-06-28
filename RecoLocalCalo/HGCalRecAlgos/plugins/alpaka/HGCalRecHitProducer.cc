@@ -20,8 +20,6 @@
 #include "FWCore/Framework/interface/ESWatcher.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
-#include "DataFormats/Math/interface/libminifloat.h"
-
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
@@ -98,20 +96,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         uint32_t eRx = (uint32_t) id.econdeRx();
         uint32_t roc = (uint32_t) eRx/2;
         uint32_t ch = id.halfrocChannel();
-        HGCalPedestals table(it.second);
-        float pedestal = MiniFloatConverter::float16to32(table.pedestal);
-        float cm_slope = MiniFloatConverter::float16to32(table.cm_slope);
-        float cm_offset = MiniFloatConverter::float16to32(table.cm_offset);
-        float kappa_bxm1 = MiniFloatConverter::float16to32(table.kappa_bxm1);
-        calibParams[id] = pedestal;
+        HGCalFloatPedestals table = conds.getFloatPedestals(it.second);
+        calibParams[id] = table.pedestal;
         std::cout << std::setw(5) << std::hex << id.raw() << " " << std::setw(4) << std::dec << eRx << " "
                   << std::setw(4) << roc << " " << std::setw(8) << ch << " " << std::setw(6) << cmflag << " "
-                  << std::setw(9) << std::setprecision(3) << pedestal << " " << std::setw(9) << cm_slope << " "
-                  << std::setw(10) << cm_offset << " " << std::setw(12) << kappa_bxm1 << std::endl;
+                  << std::setw(9) << std::setprecision(3) << table.pedestal << " " << std::setw(9) << table.cm_slope << " "
+                  << std::setw(10) << table.cm_offset << " " << std::setw(12) << table.kappa_bxm1 << std::endl;
       }
 
       calibrator_.loadCalibParams(calibParams); // TODO: load map: electronicsID -> vector { pedestal }
-
     }
 
     for(int i=0; i<newSize;i++){

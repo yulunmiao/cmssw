@@ -45,7 +45,7 @@ private:
   /**
      @short check what has been put in the event setup at start of the run
    */
-  void beginRun(edm::Run const& iEvent, edm::EventSetup const&) override;
+  void beginRun(edm::Run const& , edm::EventSetup const&) override;
 
   /**
      @short do something event-by-event
@@ -55,7 +55,7 @@ private:
   /**
      @short do another thing end of the run
   */
-  void endRun(edm::Run const& iEvent, edm::EventSetup const&) override {}
+  void endRun(edm::Run const& , edm::EventSetup const&) override {}
 
   /**
      @short do something end of the job

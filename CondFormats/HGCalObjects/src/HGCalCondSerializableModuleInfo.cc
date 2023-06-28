@@ -63,3 +63,14 @@ std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> HGCalCondSerializableModuleInfo:
 
   return std::tuple<uint16_t,uint16_t,uint16_t,uint16_t>(maxfedid,maxcaptureblock,maxecondidx,maxerx);
 }
+
+//
+HGCalCondSerializableModuleInfo::ERxBitPatternMap HGCalCondSerializableModuleInfo::getERxBitPattern() const {
+  HGCalCondSerializableModuleInfo::ERxBitPatternMap erxbit;
+  for(auto m : params_) {
+    std::tuple<uint16_t,uint16_t,uint16_t> key(m.fedid,m.captureblock,m.econdidx);
+    uint8_t nerx=6*(1+m.isHD);
+    erxbit[key]=(1<<nerx)-1;
+  }
+  return erxbit;
+}

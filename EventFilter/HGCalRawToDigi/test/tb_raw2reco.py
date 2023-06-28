@@ -60,8 +60,6 @@ options.parseArguments()
 
 process.load('EventFilter.HGCalRawToDigi.hgcalEmulatedSlinkRawData_cfi')
 process.load('EventFilter.HGCalRawToDigi.hgcalDigis_cfi')
-process.load('CalibCalorimetry.HGCalPlugins.hgCalConfigESSourceFromYAML_cfi') # read yaml config file(s)
-process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # read txt pedestal file for calibration
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.load('Configuration.StandardSequences.Accelerators_cff')
 process.load('HeterogeneousCore.AlpakaCore.ProcessAcceleratorAlpaka_cfi')
@@ -138,18 +136,33 @@ process.hgcalDigis.numERxsInECOND = options.numERxsPerECOND
 process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventional, high number of ECON-Ds per capture block
     process.hgcalDigis.captureBlockECONDMax,
     len([ec for ec in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs if ec.active]))
-process.hgcalDigis.config_label = cms.string('') # for HGCalConfigESSourceFromYAML
+process.hgcalDigis.config_label = cms.ESInputTag('') # for HGCalConfigESSourceFromYAML
+process.hgcalDigis.module_info_label = cms.ESInputTag('') # for HGCalModuleInfoESSource
 
+#
 # TESTERS
+#
 process.hgCalSoATester = cms.EDAnalyzer('HGCalSoATester',
                                         Digis = cms.InputTag('hgcalDigis','DIGI'),
                                         SoADigis = cms.InputTag('hgcalDigis',''),)
 
+
+#
+# CONDITIONS AND CONFIGURATIONS
+#
 # Configuration from YAML files
+process.load('CalibCalorimetry.HGCalPlugins.hgCalConfigESSourceFromYAML_cfi') # read yaml config file(s)
 process.hgCalConfigESSourceFromYAML.filename = options.configFile
 
 # RecHit producer: pedestal txt file for DIGI -> RECO calibration
+process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # read txt pedestal file for calibration
 process.hgCalPedestalsESSource.filename = options.pedestalFile
+
+# Logical mapping
+process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
+process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
+process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
+process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
 
 if options.GPU:
     process.hgcalRecHit = cms.EDProducer(
@@ -170,8 +183,9 @@ else:
         n_threads = cms.int32(4096),
     )
 
-
+#
 # DQM
+#
 process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
                                          Digis = cms.InputTag('hgcalDigis','DIGI'),
                                          MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'), )
@@ -181,12 +195,7 @@ process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
 process.dqmSaver.runNumber = 123480
 
-# CONDITIONS, ETC
-process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
-process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
 
-
-# process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis * process.hgcalRecHit * process.tbdqmedanalyzer * process.dqmSaver * process.hgCalSoATester)
 
 if options.dumpFRD:

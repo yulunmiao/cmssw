@@ -26,6 +26,7 @@ class HGCalCondSerializableModuleInfo {
 public:
 
   typedef std::tuple<bool,int,int,int> ModuleInfoKey_t;
+  typedef std::map<std::tuple<uint16_t,uint16_t,uint16_t>, uint16_t> ERxBitPatternMap;
   
   HGCalCondSerializableModuleInfo() {}
   virtual ~HGCalCondSerializableModuleInfo() {}
@@ -74,6 +75,11 @@ public:
      @short returns <max s-link, max capture block, max econ-d idx, max eRx> to build a dense index
    */
   std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> getMaxValuesForDenseIndex() const;
+
+  /**
+     @short returns eRxBitPattern
+   */
+  ERxBitPatternMap getERxBitPattern() const;
   
   //parameters to serialize
   std::vector<HGCalModuleInfo> params_;
