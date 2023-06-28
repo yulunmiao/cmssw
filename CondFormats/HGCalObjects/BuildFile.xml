@@ -1,5 +1,6 @@
 <use name="CondFormats/Serialization"/>
 <use name="DataFormats/HGCalDigi"/>
+<use name="DataFormats/Math"/>
 <use name="FWCore/Framework"/>
 <use name="FWCore/Utilities"/>
 <use name="Geometry/HGCalCommonData"/>
