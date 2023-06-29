@@ -155,17 +155,19 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   }
   
     //--------------------------------------------------
-    // load geometry
+    // load geometry for each module
     //--------------------------------------------------
     // Note: creating same wafer map for each polygonal monitor element for TB2023 in August
-    TString root_geometry = "/afs/cern.ch/work/y/ykao/public/raw_data_handling/hexagons_20230626.root";
-    TFile *fgeo = new TFile(root_geometry, "R");
-
-    TGraph *gr;
-    TKey *key;
-    TIter nextkey(fgeo->GetDirectory(nullptr)->GetListOfKeys());
+    int debug_mudule_keys_checker = 0;
     for(auto kit : module_keys_) {
       MonitorKey_t k(kit.second);
+      debug_mudule_keys_checker += 1;
+
+      TGraph *gr;
+      TKey *key;
+      TString root_geometry = "/afs/cern.ch/work/y/ykao/public/raw_data_handling/hexagons_20230626.root";
+      TFile *fgeo = new TFile(root_geometry, "R");
+      TIter nextkey(fgeo->GetDirectory(nullptr)->GetListOfKeys());
 
       hex_counter = 0;
       while ((key = (TKey*)nextkey())) {
@@ -180,6 +182,8 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
           }
       }
 
+      printf("debug_mudule_keys_checker = %d\n", debug_mudule_keys_checker);
+
       // fill info for channel Id
       for(int i=0; i<hex_counter; ++i) {
           if(i==0)
@@ -187,9 +191,10 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
           else
               hex_channelId[k]->setBinContent(i+1, i);
       }
+
+      fgeo->Close();
     } // end of module keys
 
-    fgeo->Close();
 }
 
 void HGCalDigisClient::export_calibration_parameters() {
