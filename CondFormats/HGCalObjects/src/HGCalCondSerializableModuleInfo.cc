@@ -61,7 +61,7 @@ std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> HGCalCondSerializableModuleInfo:
     maxerx=std::max(nerx,maxerx);
   }
 
-  return std::tuple<uint16_t,uint16_t,uint16_t,uint16_t>(maxfedid,maxcaptureblock,maxecondidx,maxerx);
+  return std::tuple<uint16_t,uint16_t,uint16_t,uint16_t>(maxfedid+1,maxcaptureblock+1,maxecondidx+1,maxerx);
 }
 
 //

@@ -11,3 +11,10 @@
   <flags TEST_RUNNER_ARGS=" 2000 Geometry/HGCalMapping/data/channels_sipmontile.hgcal.txt Geometry/HGCalMapping/data/modulelocator.txt"/>
   <use name="Geometry/HGCalMapping"/>
 </bin>
+
+<bin file="prepareLogicalYAMLMapper.cc" name="prepareLogicalYAMLMapper">
+  <flags TEST_RUNNER_ARGS=" Geometry/HGCalMapping/data/modulelocator_tb.txt"/>
+  <use name="Geometry/HGCalMapping"/>
+  <use name="root"/>
+  <use name="yaml-cpp"/>
+</bin>
