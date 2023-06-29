@@ -70,13 +70,11 @@ HGCalCondSerializableModuleInfo::ERxBitPatternMap HGCalCondSerializableModuleInf
   std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> maxValsForDenseIdx=getMaxValuesForDenseIndex();
   uint16_t maxCB=std::get<1>(maxValsForDenseIdx);
   uint16_t maxEcon=std::get<2>(maxValsForDenseIdx);
-  uint16_t maxERx=std::get<3>(maxValsForDenseIdx);
   
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxbit;
   for(auto m : params_) {
     uint32_t rtn = m.fedid * maxCB + m.captureblock;
     rtn = rtn * maxEcon + m.econdidx;
-    rtn = rtn * maxERx;
     uint8_t nerx=6*(1+m.isHD);
     erxbit[rtn]=(1<<nerx)-1;
   }
