@@ -167,7 +167,7 @@ if options.GPU:
     process.hgcalRecHit = cms.EDProducer(
         'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        n_hits_scale = cms.int32(50000),
+        n_hits_scale = cms.int32(1),
         pedestal_label = cms.string(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(4096),
         n_threads = cms.int32(1024),
@@ -176,7 +176,7 @@ else:
     process.hgcalRecHit = cms.EDProducer(
         'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        n_hits_scale = cms.int32(50000),
+        n_hits_scale = cms.int32(1),
         pedestal_label = cms.string(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(1024),
         n_threads = cms.int32(4096),
