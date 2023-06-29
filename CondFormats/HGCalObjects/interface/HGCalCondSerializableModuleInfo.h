@@ -26,7 +26,7 @@ class HGCalCondSerializableModuleInfo {
 public:
 
   typedef std::tuple<bool,int,int,int> ModuleInfoKey_t;
-  typedef std::map<std::tuple<uint16_t,uint16_t,uint16_t>, uint16_t> ERxBitPatternMap;
+  typedef std::map<uint32_t, uint16_t> ERxBitPatternMap;
   
   HGCalCondSerializableModuleInfo() {}
   virtual ~HGCalCondSerializableModuleInfo() {}

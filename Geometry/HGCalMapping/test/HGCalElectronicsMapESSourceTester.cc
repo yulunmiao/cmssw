@@ -72,6 +72,8 @@ void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm
 
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
   std::tuple<uint16_t,uint8_t,uint8_t,uint8_t> denseIdxMax = moduleInfo.getMaxValuesForDenseIndex();
+  HGCalCondSerializableModuleInfo::ERxBitPatternMap erxbitmap = moduleInfo.getERxBitPattern();
+
   auto siCellInfo = iSetup.getData(siModuleInfoToken_);
   std::map<uint32_t,uint32_t> ele2geo=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,false);
   std::map<uint32_t,uint32_t> geo2ele=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,true);
@@ -84,6 +86,10 @@ void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm
             << "\tmax eRx=" << (uint32_t)(std::get<3>(denseIdxMax)) << std::endl
             << "Read si cell info with " << siCellInfo.params_.size() << " entries" << std::endl
             << "ID maps #ele2geo=" << ele2geo.size() << " #geo2ele=" << geo2ele.size() << std::endl;
+  std::cout << "e-Rx enable bit patterns" << std::endl;
+  for(auto it : erxbitmap){
+    std::cout << "\t" << it.first << " : " << it.second << std::endl;
+  }
   
   assert(ele2geo.size()==geo2ele.size());
 

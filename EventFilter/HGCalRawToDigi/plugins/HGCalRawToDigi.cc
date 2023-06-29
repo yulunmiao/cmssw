@@ -81,13 +81,22 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
 
   // retrieve module info
   if(eleMapWatcher_.check(iSetup)){
-    //read default enabled e-Rx bits from module locator
+
     auto moduleInfo = iSetup.getData(moduleInfoToken_);
+
+    //get max values in the current run
+    std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> maxForDenseIdx=moduleInfo.getMaxValuesForDenseIndex();
+    std::cout << "Max values for dense-indexing "
+              << "max slink=" << (uint32_t)std::get<0>(maxForDenseIdx) << " "
+              << "max capture block=" << (uint32_t)std::get<1>(maxForDenseIdx) << " "
+              << "max econ-D=" << (uint32_t)std::get<2>(maxForDenseIdx) << " "
+              << "max eRx index=" << (uint32_t)std::get<3>(maxForDenseIdx) << std::endl;
+
+    //get enable patterns
     erxEnableBits_ = moduleInfo.getERxBitPattern();
     std::cout << "eRx enabled bits" << std::endl;
     for(auto it : erxEnableBits_)
-      edm::LogInfo("HGCalRawToDigi") << "(" << std::get<0>(it.first) << "," << std::get<1>(it.first) << "," << std::get<2>(it.first) << ") = "
-                                     << "0x" << std::hex << it.second << std::dec;
+      std::cout << it.first << " = " << "0x" << std::hex << (uint32_t)(it.second) << std::dec << std::endl;
   }
   
   
