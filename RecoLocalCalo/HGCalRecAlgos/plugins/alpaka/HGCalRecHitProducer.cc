@@ -23,6 +23,12 @@
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 
+// include for save calibration parameter
+#include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
+
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+
+
 #include <future>
 
 template<class T> double duration(T t0,T t1)
@@ -55,6 +61,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
     const edm::EDPutTokenT<hgcalrechit::HGCalRecHitHostCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
+    HGCalCalibrationParameterProvider calibrationParameterProvider_;
     int n_hits_scale;
   };
 
@@ -66,6 +73,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         calibrator_{HGCalRecHitCalibrationAlgorithms(
           iConfig.getParameter<int>("n_blocks"),
           iConfig.getParameter<int>("n_threads"))},
+        calibrationParameterProvider_(
+        HGCalCalibrationParameterProviderConfig{.EventSLinkMax=1,
+                                              .sLinkCaptureBlockMax=1,
+                                              .captureBlockECONDMax=2,
+                                              .econdERXMax=12,
+                                              .erxChannelMax=37+2,
+        }),
         n_hits_scale{iConfig.getParameter<int>("n_hits_scale")}
     {}
 
@@ -85,27 +99,27 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       auto conds = iSetup.getData(tokenConds_);
       size_t nconds = conds.params_.size();
-      edm::LogInfo("HGCalPedestalsESSourceAnalyzer") << "Conditions retrieved:\n" << nconds;
+      LogDebug("HGCalCalibrationParamter") << "Conditions retrieved:\n" << nconds;
 
       // Print out all conditions readout
       HGCalRecHitCalibrationAlgorithms::CalibParams calibParams;
-      std::cout << "   ID  eRx  ROC  Channel  isCM?  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
+      LogDebug("HGCalCalibrationParamter") << "   ID  eRx  Channel  isCM?  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
       for(auto it : conds.params_) {
         HGCalElectronicsId id(it.first);
-        bool cmflag = id.isCM();
-        uint32_t eRx = (uint32_t) id.econdeRx();
-        uint32_t roc = (uint32_t) eRx/2;
-        uint32_t ch = id.halfrocChannel();
         HGCalFloatPedestals table = conds.getFloatPedestals(it.second);
-        calibParams[id] = table.pedestal;
-        std::cout << std::setw(5) << std::hex << id.raw() << " " << std::setw(4) << std::dec << eRx << " "
-                  << std::setw(4) << roc << " " << std::setw(8) << ch << " " << std::setw(6) << cmflag << " "
-                  << std::setw(9) << std::setprecision(3) << table.pedestal << " " << std::setw(9) << table.cm_slope << " "
-                  << std::setw(10) << table.cm_offset << " " << std::setw(12) << table.kappa_bxm1 << std::endl;
+        calibrationParameterProvider_[id.raw()].pedestal = table.pedestal;
+        calibrationParameterProvider_[id.raw()].cm_slope = table.cm_slope;
+        calibrationParameterProvider_[id.raw()].cm_offset = table.cm_offset;
+        calibrationParameterProvider_[id.raw()].kappa_bxm1 = table.kappa_bxm1;
+
+        LogDebug("HGCalCalibrationParamter") << std::setw(5) << std::dec << (uint32_t)id.raw() << " " << std::setw(4) << std::dec << (uint32_t)id.econdeRx() << " "
+                  << std::setw(8) << (uint32_t)id.halfrocChannel() << " " << std::setw(6) << (uint32_t)id.isCM() << " "
+                  << std::setw(9) << std::setprecision(3) << calibrationParameterProvider_[id.raw()].pedestal << " " << std::setw(9) << calibrationParameterProvider_[id.raw()].cm_slope << " "
+                  << std::setw(10) << calibrationParameterProvider_[id.raw()].cm_offset << " " << std::setw(12) << calibrationParameterProvider_[id.raw()].kappa_bxm1;
       }
 
-      calibrator_.loadCalibParams(calibParams); // TODO: load map: electronicsID -> vector { pedestal }
-    }
+      
+      }
 
     for(int i=0; i<newSize;i++){
       hostDigis.view()[i].electronicsId() = hostDigisIn.view()[i%oldSize].electronicsId();
