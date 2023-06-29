@@ -1,43 +1,37 @@
 #! /usr/bin/env python3
 # Author: Izaak Neutelings (June 2023)
 # Description: Write simple YAML file with dummy value for testing HGCalConfigESSourceFromYAML
-import yaml
+import os, yaml
 
-def main():
-  channels = [
-    0, 1, #2, 3, 4, 5, 6, 7, 8, 9,
-    #10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-    #20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-    #30, 31, 32, 33, 34, 35, 36, 37, 38,
-    #64, 65, 66, 67, 68, 69,
-    #70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
-    #80, 81, 82, 83, 84, 85, 86, 87, 88, 89,
-    #90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
-    #100, 101, 102,
-    #128, 129,
-    #130, 131, 132, 133, 134, 135, 136, 137, 138, 139,
-    #140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-    #150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
-    #160, 161, 162, 163, 164, 165, 166,
-    #192, 193, 194, 195, 196, 197, 198, 199,
-    #200, 201, 202, 203, 204, 205, 206, 207, 208, 209,
-    #210, 211, 212, 213, 214, 215, 216, 217, 218, 219,
-    #220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230,
-    #256, 257, 258, 259,
-    #260, 261, 262, 263, 264, 265, 266, 267, 268, 269,
-    #270, 271, 272, 273, 274, 275, 276, 277, 278, 279,
-    #280, 281, 282, 283, 284, 285, 286, 287, 288, 289,
-    #290, 291, 292, 293, 294,
-    #320, 321, 322, 323, 324, 325, 326, 327, 328, 329,
-    #330, 331, 332, 333, 334, 335, 336, 337, 338, 339,
-    #340, 341, 342, 343, 344, 345, 346, 347, 348, 349,
-    #350, 351, 352, 353, 354, 355, 356, 357, 358, 
-  ]
-  rocs = [ # hexadecimal ElectronsId
-    hex(c) for c in channels
-  ]
-  halves = [ 0, 1 ] # channel halves
+
+def b2h(x):
+  """
+  Convert binary to hex.
+  E.g b2h(4) -> '0x4', b2h('100') -> '0x4'
+  """
+  return hex(x if isinstance(x,int) else int(x,2)) 
   
+
+def getmapper(econids,dname='',run=0):
+  """Create mapper to YAML config files."""
+  # https://github.com/CMS-HGCAL/cmssw/blob/hgcal-condformat-HGCalNANO-13_2_0_pre2/Geometry/HGCalMapping/data/modulelocator_tb.txt
+  mapper = {
+    'run': 0,
+    'ECONs': [
+      { 'id': econ,
+        'configs': {
+          'ECON': os.path.join(dname,f"Run_{run}.yaml"),
+          'ROCs': os.path.join(dname,"initial_full_config.yaml"),
+        }
+      } for econ in econids
+    ]
+  }
+  return mapper
+  
+
+def getconfig(rocs):
+  """Create YAML config file."""
+  halves = [ 0, 1 ] # ROC halves
   config = {
     'metaData': {
        ###'Channel_off': [],
@@ -57,8 +51,8 @@ def main():
       'run_type': 'pedestal_run',
     },
   }
-  for channel in channels:
-    rocname = f"roc_s{channel}"
+  for roc in rocs:
+    rocname = f"roc_s{roc}"
     config[rocname] = {
       'sc': {
         'DigitalHalf': {
@@ -69,11 +63,31 @@ def main():
         },
       },
     }
+  return config
   
+
+def main():
+  econids = [ # ECON IDs for mapper
+    '0x000',
+    '0x400',
+  ]
+  rocs = [
+    0, 1, 2,
+  ]
+  
+  # CONFIGs
   outfname = "test_hgcal_yamlconfig.yaml"
-  print(f">>> Writing {outfname}...")
+  config = getconfig(rocs)
+  print(f">>> Writing config {outfname}...")
   with open(outfname,'w') as outfile:
     yaml.dump(config,outfile,sort_keys=False)
+  
+  # MAPPER
+  mapper = getmapper(econids)
+  outfname = "test_hgcal_yamlmapper.yaml"
+  print(f">>> Writing mapper {outfname}...")
+  with open(outfname,'w') as outfile:
+    yaml.dump(mapper,outfile,sort_keys=False)
   
 
 if __name__=='__main__':
