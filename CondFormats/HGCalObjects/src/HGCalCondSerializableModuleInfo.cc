@@ -2,9 +2,9 @@
 #include <algorithm>
 
 //
-HGCalModuleInfo HGCalCondSerializableModuleInfo::getModule(int econdidx, int captureblockidx, int fedid, bool zside) const {
-  auto _electronicsMatch = [econdidx, captureblockidx, fedid, zside](HGCalModuleInfo m){ 
-    return m.econdidx == econdidx && m.captureblockidx == captureblockidx && m.fedid == fedid && m.zside==zside;
+HGCalModuleInfo HGCalCondSerializableModuleInfo::getModule(int econdidx, int captureblock, int slink, bool zside) const {
+  auto _electronicsMatch = [econdidx, captureblock, slink, zside](HGCalModuleInfo m){ 
+    return m.econdidx == econdidx && m.captureblock == captureblock && m.slink == slink && m.zside==zside;
   };
   auto it = std::find_if(begin(params_), end(params_), _electronicsMatch);
   return *it;
@@ -20,8 +20,8 @@ HGCalModuleInfo HGCalCondSerializableModuleInfo::getModuleFromGeometry(int plane
 }
   
 //
-std::tuple<int,int,int,bool> HGCalCondSerializableModuleInfo::getModuleLocation(int econdidx, int captureblockidx, int fedid,bool zside) const {
-  auto it = getModule(econdidx,captureblockidx,fedid,zside);
+std::tuple<int,int,int,bool> HGCalCondSerializableModuleInfo::getModuleLocation(int econdidx, int captureblock, int slink,bool zside) const {
+  auto it = getModule(econdidx,captureblock,slink,zside);
   return std::make_tuple(it.plane, it.u, it.v, it.isSiPM);
 }
   
@@ -33,7 +33,7 @@ std::tuple<int,int,int,bool> HGCalCondSerializableModuleInfo::getModuleLocation(
 //
 std::tuple<int,int,int> HGCalCondSerializableModuleInfo::getModuleElectronicsIdentifiers(int plane, int u, int v, bool isSiPM, bool zside) const {
   auto it = getModuleFromGeometry(plane,u,v,isSiPM,zside);
-  return std::make_tuple(it.fedid, it.captureblockidx, it.econdidx);
+  return std::make_tuple(it.slink, it.captureblock, it.econdidx);
 }
 
 //
@@ -41,7 +41,7 @@ std::map<HGCalCondSerializableModuleInfo::ModuleInfoKey_t,HGCalCondSerializableM
 
   std::map<ModuleInfoKey_t,ModuleInfoKey_t> module_keys;
   for(auto m : params_) {
-    ModuleInfoKey_t logiKey(m.zside,m.fedid,m.captureblock,m.econdidx);
+    ModuleInfoKey_t logiKey(m.zside,m.slink,m.captureblock,m.econdidx);
     ModuleInfoKey_t geomKey(m.zside,m.plane,m.u,m.v);
     module_keys[elecidAsKey ? logiKey : geomKey] = elecidAsKey ? geomKey : logiKey;
   }
@@ -52,16 +52,16 @@ std::map<HGCalCondSerializableModuleInfo::ModuleInfoKey_t,HGCalCondSerializableM
 //
 std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> HGCalCondSerializableModuleInfo::getMaxValuesForDenseIndex() const {
 
-  uint16_t maxfedid(0),maxcaptureblock(0),maxecondidx(0),maxerx(0);
+  uint16_t maxslink(0),maxcaptureblock(0),maxecondidx(0),maxerx(0);
   for(auto m : params_) {
-    maxfedid=std::max(m.fedid,maxfedid);
+    maxslink=std::max(m.slink,maxslink);
     maxcaptureblock=std::max(m.captureblock,maxcaptureblock);
     maxecondidx=std::max(m.econdidx,maxecondidx);
     uint16_t nerx=6*(1+m.isHD);
     maxerx=std::max(nerx,maxerx);
   }
 
-  return std::tuple<uint16_t,uint16_t,uint16_t,uint16_t>(maxfedid+1,maxcaptureblock+1,maxecondidx+1,maxerx);
+  return std::tuple<uint16_t,uint16_t,uint16_t,uint16_t>(maxslink+1,maxcaptureblock+1,maxecondidx+1,maxerx);
 }
 
 //
@@ -73,8 +73,7 @@ HGCalCondSerializableModuleInfo::ERxBitPatternMap HGCalCondSerializableModuleInf
   
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxbit;
   for(auto m : params_) {
-    uint32_t rtn = m.fedid * maxCB + m.captureblock;
-    rtn = rtn * maxEcon + m.econdidx;
+    uint32_t rtn = erxBitPatternMapDenseIndex(m.slink,m.captureblock,m.econdix,maxCB,maxEcon);
     uint8_t nerx=6*(1+m.isHD);
     erxbit[rtn]=(1<<nerx)-1;
   }

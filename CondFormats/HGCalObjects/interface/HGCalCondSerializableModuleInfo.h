@@ -66,7 +66,7 @@ public:
 
   /**
      @short retrieves a map elecId <-> geomId
-     (zside,fedid,captureblock,econd) <-> (zside, plane, u, v)
+     (zside,slink,captureblock,econd) <-> (zside, plane, u, v)
      elecidAsKey - if false the geomId is used as the key
    */
   std::map<ModuleInfoKey_t,ModuleInfoKey_t> getAsSimplifiedModuleLocatorMap(bool elecAsKey=true) const;
@@ -80,6 +80,14 @@ public:
      @short returns eRxBitPattern
    */
   ERxBitPatternMap getERxBitPattern() const;
+
+  /**
+     @short computes the dense index for the erx bit pattern
+   */
+  static uint32_t erxBitPatternMapDenseIndex(uint16_t slink, uint16_t captureblock, uint16_t econdidx, uint16_t maxCB,uint16_t maxEcon){
+    uint32_t rtn=slink * maxCB + captureblock;
+    rtn = rtn * maxEcon + econdidx;
+  }
   
   //parameters to serialize
   std::vector<HGCalModuleInfo> params_;

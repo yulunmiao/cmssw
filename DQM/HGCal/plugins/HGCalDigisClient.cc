@@ -41,6 +41,7 @@ public:
 private:
     void bookHistograms(DQMStore::IBooker&, edm::Run const&, edm::EventSetup const&) override;
     void analyze(const edm::Event&, const edm::EventSetup&) override;
+  
     const edm::EDGetTokenT<HGCalElecDigiCollection> elecDigisToken_;
     const edm::EDGetTokenT<HGCalTestSystemMetaData> metadataToken_;
 
@@ -214,6 +215,7 @@ void HGCalDigisClient::export_calibration_parameters() {
     myfile.close();
     LogDebug("HGCalDigisClient") << "Export CM parameters @ " << csv_file_name << std::endl;
 }
+
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void HGCalDigisClient::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

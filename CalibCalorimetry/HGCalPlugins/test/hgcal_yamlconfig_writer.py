@@ -86,6 +86,7 @@ def getmodule(filename,verb=0):
   #gSystem.Load(f"{os.environ['CMSSW_BASE']}/lib/{os.environ['SCRAM_ARCH']}/libGeometryHGCalMapping.so")
   gROOT.ProcessLine('#include "Geometry/HGCalMapping/interface/HGCalModuleLocator.h"')
   from ROOT import HGCalModuleLocator, HGCalElectronicsId
+  print(HGCalElectronicsId(0x04a4c3ff).rawId())
   locator = HGCalModuleLocator()
   locator.buildLocatorFrom(filename,True)
   econids = [ ]
@@ -143,5 +144,3 @@ if __name__=='__main__':
                                          help="set level of verbosity, default=%(default)s" )
   args = parser.parse_args()
   main(args)
-  
-

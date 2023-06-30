@@ -53,6 +53,12 @@ options.register('inputFiles',
                  'input TB file')
 options.register('GPU', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'run on GPU')
+options.register('runNumber', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'run number')
+options.register('maxEventsPerLS', 1000, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'max. events per lumi section')
+options.register('firstLS', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'first lumi section')
+
+
+
 options.maxEvents = 100  # number of events to emulate
 options.output = 'output.root'  # output EDM file
 options.secondaryOutput = 'output.raw'  # output streamer file
@@ -76,14 +82,11 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
     hgcalEmulatedSlinkRawData = cms.PSet(initialSeed = cms.untracked.uint32(42))
 )
 
-#process.source = cms.Source("EmptySource")
-process.source = cms.Source('EmptyIOVSource',
-    timetype = cms.string('runnumber'),
-    firstValue = cms.uint64(1),
-    lastValue = cms.uint64(1),
-    interval = cms.uint64(1)
-)
-
+process.source = cms.Source("EmptySource",
+                            numberEventsInRun = cms.untracked.uint32(options.maxEvents),
+                            firstRun = cms.untracked.uint32(options.runNumber),
+                            numberEventsInLuminosityBlock = cms.untracked.uint32(options.maxEventsPerLS),
+                            firstLuminosityBlock = cms.untracked.uint32(options.firstLS) )
 
 # steer the emulator part
 process.hgcalEmulatedSlinkRawData.emulatorType = options.mode
@@ -192,7 +195,7 @@ process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
 process.DQMStore = cms.Service("DQMStore")
 process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
-process.dqmSaver.runNumber = 123480
+process.dqmSaver.runNumber = options.runNumber
 
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis   #RAW->DIGI
                      * process.hgcalRecHit                                    #DIGI->RECO

@@ -47,7 +47,7 @@ void testSiPMCellLocator(int nentries, std::string path_channelmap, std::string 
           // Calibration and common mode channels
           if (seq == 8 || seq == 17 || seq == 18) continue;
 
-          HGCalElectronicsId eid(zside>0,fedid, captureblockidx, econdidx, econderx, halfrocch);                 
+          HGCalElectronicsId eid(zside>0,slink, captureblock, econdidx, econderx, halfrocch);                 
           
           HGCScintillatorDetId detid = celllocator.getDetId(eid, seq, z, plane, modiu, modiv);
           assert(detid.sipm());

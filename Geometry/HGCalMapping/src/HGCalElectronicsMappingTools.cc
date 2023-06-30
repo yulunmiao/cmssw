@@ -24,7 +24,7 @@ namespace hgcal {
 
         //build the electronics id
         auto econderx = hgcal::getEcondErxFor(c.chip,c.half);
-        uint32_t elecid = HGCalElectronicsId(m.zside,m.fedid,m.captureblock,m.econdidx,econderx,c.seq).raw(); 
+        uint32_t elecid = HGCalElectronicsId(m.zside,m.slink,m.captureblock,m.econdidx,econderx,c.seq).raw(); 
 
         //build the detector id
         DetId::Detector det = m.plane<=26 ? DetId::Detector::HGCalEE : DetId::Detector::HGCalHSi;
