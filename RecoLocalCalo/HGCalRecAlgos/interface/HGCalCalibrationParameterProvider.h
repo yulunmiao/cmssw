@@ -40,7 +40,8 @@ class HGCalCalibrationParameterProvider{
     const uint32_t denseMap(uint32_t ElectronicsID) const;
     
     public:
-    explicit HGCalCalibrationParameterProvider(HGCalCalibrationParameterProviderConfig config);
+    explicit HGCalCalibrationParameterProvider(){};
+    void initialize(HGCalCalibrationParameterProviderConfig config);
     CalibrationParameter& operator[](uint32_t ElectronicsID);
 };
 

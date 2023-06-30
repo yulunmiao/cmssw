@@ -1,11 +1,15 @@
 #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-HGCalCalibrationParameterProvider::HGCalCalibrationParameterProvider(HGCalCalibrationParameterProviderConfig config):
-        config_(config),
-        calibrationParameter_(config_.EventSLinkMax*config_.sLinkCaptureBlockMax*config_.captureBlockECONDMax*config_.econdERXMax*config_.erxChannelMax) {
-                  LogDebug("HGCalCalibrationParamter") << calibrationParameter_.size();
-        }
+void HGCalCalibrationParameterProvider::initialize(HGCalCalibrationParameterProviderConfig config){
+    config_=config;        
+    LogDebug("HGCalCalibrationParameterProvider")<<"initializing with EventSLinkMax="<<config_.EventSLinkMax
+                                                 <<",sLinkCaptureBlockMax="<<config_.sLinkCaptureBlockMax
+                                                 <<",captureBlockECONDMax="<<config_.captureBlockECONDMax
+                                                 <<",econdERXMax="<<config_.econdERXMax
+                                                 <<",erxChannelMax="<<config_.erxChannelMax;
+    calibrationParameter_=std::vector<CalibrationParameter>(config_.EventSLinkMax*config_.sLinkCaptureBlockMax*config_.captureBlockECONDMax*config_.econdERXMax*config_.erxChannelMax);
+}
 
 const uint32_t HGCalCalibrationParameterProvider::denseMap(uint32_t ElectronicsID) const{
     uint32_t sLink = ((ElectronicsID >> kFEDIDShift) & kFEDIDMask);

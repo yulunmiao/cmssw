@@ -26,6 +26,11 @@
 // include for save calibration parameter
 #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
 
+// includes for size parameters
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+
+// include for debug info
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 
@@ -55,9 +60,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   private:
     void produce(device::Event&, device::EventSetup const&) override;
-
+    void beginRun(edm::Run const&, edm::EventSetup const&) override;
     edm::ESWatcher<HGCalCondSerializablePedestalsRcd> cfgWatcher_;
     edm::ESGetToken<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd> tokenConds_;
+    edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
+
     const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
     const edm::EDPutTokenT<hgcalrechit::HGCalRecHitHostCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
@@ -68,20 +75,27 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
       : tokenConds_(esConsumes<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd>(
           edm::ESInputTag(iConfig.getParameter<std::string>("pedestal_label")))),
+        moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(
+          iConfig.getParameter<edm::ESInputTag>("ModuleInfo"))),
         digisToken_{consumes<hgcaldigi::HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
         recHitsToken_{produces()},
         calibrator_{HGCalRecHitCalibrationAlgorithms(
           iConfig.getParameter<int>("n_blocks"),
           iConfig.getParameter<int>("n_threads"))},
-        calibrationParameterProvider_(
-        HGCalCalibrationParameterProviderConfig{.EventSLinkMax=1,
-                                              .sLinkCaptureBlockMax=1,
-                                              .captureBlockECONDMax=2,
-                                              .econdERXMax=12,
-                                              .erxChannelMax=37+2,
-        }),
+        calibrationParameterProvider_(),
         n_hits_scale{iConfig.getParameter<int>("n_hits_scale")}
     {}
+    
+  void HGCalRecHitProducer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
+    auto moduleInfo = iSetup.getData(moduleInfoToken_);
+    std::tuple<uint16_t,uint8_t,uint8_t,uint8_t> denseIdxMax = moduleInfo.getMaxValuesForDenseIndex();    
+    calibrationParameterProvider_.initialize(HGCalCalibrationParameterProviderConfig{.EventSLinkMax=std::get<0>(denseIdxMax),
+                                      .sLinkCaptureBlockMax=std::get<1>(denseIdxMax),
+                                      .captureBlockECONDMax=std::get<2>(denseIdxMax),
+                                      .econdERXMax=std::get<3>(denseIdxMax),
+                                      .erxChannelMax = 37+2,//+2 for the two common modes
+    });
+  }
 
   void HGCalRecHitProducer::produce(device::Event& iEvent, device::EventSetup const& iSetup) {
     auto queue = iEvent.queue();
@@ -154,6 +168,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     desc.add<int>("n_threads", -1);
     desc.add<int>("n_hits_scale", -1);
     desc.add<std::string>("pedestal_label", "");
+    desc.add<edm::ESInputTag>("ModuleInfo",edm::ESInputTag(""));
     descriptions.addWithDefaultLabel(desc);
   }
 
