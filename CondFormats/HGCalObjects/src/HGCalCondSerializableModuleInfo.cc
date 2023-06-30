@@ -73,7 +73,7 @@ HGCalCondSerializableModuleInfo::ERxBitPatternMap HGCalCondSerializableModuleInf
   
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxbit;
   for(auto m : params_) {
-    uint32_t rtn = erxBitPatternMapDenseIndex(m.slink,m.captureblock,m.econdix,maxCB,maxEcon);
+    uint32_t rtn = erxBitPatternMapDenseIndex(m.slink,m.captureblock,m.econdidx,maxCB,maxEcon);
     uint8_t nerx=6*(1+m.isHD);
     erxbit[rtn]=(1<<nerx)-1;
   }

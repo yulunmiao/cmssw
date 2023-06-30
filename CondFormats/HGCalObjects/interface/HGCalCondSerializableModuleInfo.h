@@ -87,6 +87,7 @@ public:
   static uint32_t erxBitPatternMapDenseIndex(uint16_t slink, uint16_t captureblock, uint16_t econdidx, uint16_t maxCB,uint16_t maxEcon){
     uint32_t rtn=slink * maxCB + captureblock;
     rtn = rtn * maxEcon + econdidx;
+    return rtn;
   }
   
   //parameters to serialize
