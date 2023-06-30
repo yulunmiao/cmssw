@@ -30,6 +30,7 @@ public:
 
 private:
   void produce(edm::Event&, const edm::EventSetup&) override;
+  void beginRun(edm::Run const&, edm::EventSetup const&) override;
 
   const edm::EDGetTokenT<FEDRawDataCollection> fedRawToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecDigisToken_;
@@ -37,15 +38,17 @@ private:
   const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
   edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
   edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
-  edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> eleMapWatcher_;
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
+
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxEnableBits_;
   
   const std::vector<unsigned int> fedIds_;
   const unsigned int badECONDMax_;
   const unsigned int numERxsInECOND_;
-  const std::unique_ptr<HGCalUnpacker> unpacker_;
+  HGCalUnpackerConfig unpackerConfig_;
   HGCalModuleConfig moduleConfig_; // current module
+  std::unique_ptr<HGCalUnpacker> unpacker_; // remove the const here to initialize in begin run
+
 
 };
 
@@ -56,49 +59,36 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
       configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
                          iConfig.getParameter<edm::ESInputTag>("config_label"))),
-      moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd>(
+      moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(
                          iConfig.getParameter<edm::ESInputTag>("module_info_label"))),
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
-      unpacker_(new HGCalUnpacker(
-          HGCalUnpackerConfig{.sLinkBOE = iConfig.getParameter<unsigned int>("slinkBOE"),
+      unpackerConfig_(HGCalUnpackerConfig{.sLinkBOE = iConfig.getParameter<unsigned int>("slinkBOE"),
                               .captureBlockReserved = iConfig.getParameter<unsigned int>("captureBlockReserved"),
                               .econdHeaderMarker = iConfig.getParameter<unsigned int>("econdHeaderMarker"),
-                              .sLinkCaptureBlockMax = iConfig.getParameter<unsigned int>("maxCaptureBlock"),
-                              .captureBlockECONDMax = iConfig.getParameter<unsigned int>("captureBlockECONDMax"),
-                              .econdERXMax = iConfig.getParameter<unsigned int>("econdERXMax"),
-                              .erxChannelMax = iConfig.getParameter<unsigned int>("erxChannelMax"),
-                              .payloadLengthMax = iConfig.getParameter<unsigned int>("payloadLengthMax"),
-                              .channelMax = iConfig.getParameter<unsigned int>("channelMax"),
-                              .commonModeMax = iConfig.getParameter<unsigned int>("commonModeMax")})) {}
-
+                              .payloadLengthMax = iConfig.getParameter<unsigned int>("payloadLengthMax")}) {}
+                              
+void HGCalRawToDigi::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
+  auto moduleInfo = iSetup.getData(moduleInfoToken_);
+  std::tuple<uint16_t,uint8_t,uint8_t,uint8_t> denseIdxMax = moduleInfo.getMaxValuesForDenseIndex();  
+  unpackerConfig_.sLinkCaptureBlockMax=std::get<1>(denseIdxMax);
+  unpackerConfig_.captureBlockECONDMax=std::get<2>(denseIdxMax);
+  unpackerConfig_.econdERXMax=std::get<3>(denseIdxMax);
+  unpackerConfig_.erxChannelMax=37;
+  unpackerConfig_.channelMax=std::get<0>(denseIdxMax)*std::get<1>(denseIdxMax)*std::get<2>(denseIdxMax)*std::get<3>(denseIdxMax)*37;
+  unpackerConfig_.commonModeMax=std::get<0>(denseIdxMax)*std::get<1>(denseIdxMax)*std::get<2>(denseIdxMax)*std::get<3>(denseIdxMax)*2;
+  unpacker_=std::unique_ptr<HGCalUnpacker>(new HGCalUnpacker(unpackerConfig_));
+  erxEnableBits_=moduleInfo.getERxBitPattern();
+  LogDebug("HGCalRawToDigi::erxbits") << "eRx enabled bits" << std::endl;
+  for(auto it : erxEnableBits_)
+    LogDebug("HGCalRawToDigi::erxbits") << it.first << " = " << "0x" << std::hex << (uint32_t)(it.second) << std::dec << std::endl;
+}
 //
 void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   // retrieve the FED raw data
   const auto& raw_data = iEvent.get(fedRawToken_);
-
-  // retrieve module info
-  if(eleMapWatcher_.check(iSetup)){
-
-    auto moduleInfo = iSetup.getData(moduleInfoToken_);
-
-    //get max values in the current run
-    std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> maxForDenseIdx=moduleInfo.getMaxValuesForDenseIndex();
-    std::cout << "Max values for dense-indexing "
-              << "max slink=" << (uint32_t)std::get<0>(maxForDenseIdx) << " "
-              << "max capture block=" << (uint32_t)std::get<1>(maxForDenseIdx) << " "
-              << "max econ-D=" << (uint32_t)std::get<2>(maxForDenseIdx) << " "
-              << "max eRx index=" << (uint32_t)std::get<3>(maxForDenseIdx) << std::endl;
-
-    //get enable patterns
-    erxEnableBits_ = moduleInfo.getERxBitPattern();
-    std::cout << "eRx enabled bits" << std::endl;
-    for(auto it : erxEnableBits_)
-      std::cout << it.first << " = " << "0x" << std::hex << (uint32_t)(it.second) << std::dec << std::endl;
-  }
-  
   
   // retrieve configuration from YAML files
   if (configWatcher_.check(iSetup)) {
