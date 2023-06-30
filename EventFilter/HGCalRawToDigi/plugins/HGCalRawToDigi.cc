@@ -38,6 +38,7 @@ private:
   const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
   edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
   edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
+  edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> eleMapWatcher_;
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
 
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxEnableBits_;
@@ -130,7 +131,9 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
 
     unpacker_->parseSLink(
         data_32bit,
-        [this](uint16_t /*sLink*/, uint8_t /*captureBlock*/, uint8_t /*econd*/) { return (1 << numERxsInECOND_) - 1; });
+        [this](uint16_t sLink, uint8_t captureBlock, uint8_t econd) { 
+          return this->erxEnableBits_[HGCalCondSerializableModuleInfo::erxBitPatternMapDenseIndex(sLink,captureBlock,econd,0,0)]; 
+        });
 
     auto channeldata = unpacker_->channelData();
     auto commonModeSum=unpacker_->commonModeSum();
