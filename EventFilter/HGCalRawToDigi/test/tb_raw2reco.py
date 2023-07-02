@@ -188,19 +188,25 @@ else:
 #
 # DQM
 #
-process.tbdqmedanalyzer = cms.EDProducer('HGCalDigisClient',
-                                         Digis = cms.InputTag('hgcalDigis','DIGI'),
-                                         MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'), )
+process.hgCalDigisClient = cms.EDProducer('HGCalDigisClient',
+                                          Digis = cms.InputTag('hgcalDigis', ''),
+                                          MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'),
+                                          ModuleMapping = cms.ESInputTag(''), )
+process.hgCalDigisClientHarvester = cms.EDProducer('HGCalDigisClientHarvester',
+                                                   ModuleMapping = process.hgCalDigisClient.ModuleMapping,
+                                                   HexTemplateFile = cms.string('/afs/cern.ch/work/y/ykao/public/raw_data_handling/hexagons_20230626.root'),
+                                                   Level0CalibOut = cms.string('level0_calib_params.txt'),)
 
 process.DQMStore = cms.Service("DQMStore")
 process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
 process.dqmSaver.tag = 'HGCAL'
 process.dqmSaver.runNumber = options.runNumber
 
-process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis   #RAW->DIGI
-                     * process.hgcalRecHit                                    #DIGI->RECO
-                     * process.tbdqmedanalyzer * process.dqmSaver             #DQM
-                     * process.hgCalSoATester * process.hgCalSoARecHitTester  #TESTERS
+#path
+process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis                # RAW->DIGI
+                     * process.hgcalRecHit                                                 # DIGI->RECO
+                     * process.hgCalDigisClient * process.hgCalDigisClientHarvester * process.dqmSaver # DQM
+                     * process.hgCalSoATester * process.hgCalSoARecHitTester               # TESTERS
 )
 
 if options.dumpFRD:
