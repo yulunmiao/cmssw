@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 
+
 namespace hgcal {
 
   /// a reader of s-link data from binary files
@@ -18,13 +19,6 @@ namespace hgcal {
     /// \param[in] configuration parameters
     explicit SlinkFromRaw(const edm::ParameterSet &iConfig);
     
-    struct SlinkFromRawEvent {
-        unsigned int event, chip;
-        int half, bxcounter, eventcounter, orbitcounter;
-        std::vector<unsigned int>* daqdata{nullptr};
-    };
-
-
     FEDRawDataCollection next() override;
     
   private:
@@ -35,7 +29,7 @@ namespace hgcal {
     hgcal_slinkfromraw::RecordT<4095> *record_;
     uint32_t nEvents_;
   };
-  
+
 }  // namespace hgcal
 
 #endif

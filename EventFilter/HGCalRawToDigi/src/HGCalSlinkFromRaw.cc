@@ -1,6 +1,4 @@
 #include "EventFilter/HGCalRawToDigi/interface/HGCalSlinkFromRaw.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/Utilities/interface/Exception.h"
 
 // example reader by P.Dauncey, using https://gitlab.cern.ch/pdauncey/hgcal10glinkreceiver
 
@@ -28,6 +26,7 @@ FEDRawDataCollection SlinkFromRaw::next() {
   if( fileReader_.closed() ) {
     auto inputfile = inputfiles_[ifile_];
     fileReader_.open(inputfile);
+    
   }
 
   //no more records in the file
@@ -36,6 +35,7 @@ FEDRawDataCollection SlinkFromRaw::next() {
 
     if(ifile_>=inputfiles_.size())
       throw cms::Exception("SlinkFromRaw::next") << "No more files";
+   
     fileReader_.close();
     auto inputfile=inputfiles_[ifile_];
     fileReader_.open(inputfile);
@@ -45,16 +45,15 @@ FEDRawDataCollection SlinkFromRaw::next() {
   
   // Set up specific records to interpet the formats
   const hgcal_slinkfromraw::RecordStarting *rStart((hgcal_slinkfromraw::RecordStarting*)record_);
-  const hgcal_slinkfromraw::RecordStopping *rStop ((hgcal_slinkfromraw::RecordStopping*)record_);
+  const hgcal_slinkfromraw::RecordStopping *rStop((hgcal_slinkfromraw::RecordStopping*)record_);
   const hgcal_slinkfromraw::RecordRunning  *rEvent((hgcal_slinkfromraw::RecordRunning*)record_);
   if(record_->state()==hgcal_slinkfromraw::FsmState::Starting) {
     rStart->print();
     std::cout << std::endl;
-  } else if(record_->state()==hgcal_slinkfromraw::FsmState::Stopping) {
+  } else if(record_->state()==hgcal_slinkfromraw::FsmState::Stopping){
     rStop->print();
     std::cout << std::endl;
-  } else {
-                
+  } else {                
     // We have a new event
     nEvents_++;
     bool print(nEvents_<=1);
@@ -62,6 +61,8 @@ FEDRawDataCollection SlinkFromRaw::next() {
       rEvent->print();
       std::cout << std::endl;
     }
+
+
 
     // Check id is correct
     if(!rEvent->valid()) rEvent->print();
@@ -103,7 +104,28 @@ FEDRawDataCollection SlinkFromRaw::next() {
       //copy to the event      
       auto *payload=record_->getPayload();
       auto payloadLength=record_->payloadLength()-2;
-      std::cout << payload << " " << payloadLength/sizeof(uint32_t) << std::endl;
+      //uint64_t rpayload[payloadLength]; 
+
+      for (int i(0); i < payloadLength ; i++)
+	{
+	  //std::cout <<"p " << std::setw(16)<< std::setfill('0') <<
+	  //  std::hex<< payload[i] << std::dec<< std::endl;
+	  
+	  //swap 16 bits
+	  // rpayload[i] = 
+	    ((((payload[i]) & 0xff00000000000000) >> 56) |
+	     (((payload[i]) & 0x00ff000000000000) >> 40) |
+	     (((payload[i]) & 0x0000ff0000000000) >> 24) |
+	     (((payload[i]) & 0x000000ff00000000) >> 8 ) |
+	     (((payload[i]) & 0x00000000ff000000) << 8 ) |
+	     (((payload[i]) & 0x0000000000ff0000) << 24) |
+	     (((payload[i]) & 0x000000000000ff00) << 40) |
+	     (((payload[i]) & 0x00000000000000ff) << 56));
+
+	    //std::cout <<"r " << std::setw(16)<< std::setfill('0') <<
+	    //  std::hex<< rpayload[i] << std::dec<< std::endl;
+	}
+      
       size_t total_event_size = payloadLength/sizeof(char);
       std::cout << "\t -> " << total_event_size << std::endl;
       auto& fed_data = raw_data.FEDData(1);
@@ -115,3 +137,5 @@ FEDRawDataCollection SlinkFromRaw::next() {
 
   return raw_data;
 }
+  
+  

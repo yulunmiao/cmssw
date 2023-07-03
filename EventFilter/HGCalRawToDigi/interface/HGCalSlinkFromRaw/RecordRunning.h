@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cstdint>
+#include <algorithm>
 
 #include "BePacketHeader.h"
 #include "SlinkBoe.h"
@@ -45,10 +46,12 @@ namespace hgcal_slinkfromraw {
     const BePacketHeader* bePacketHeader() const {
       return (const BePacketHeader*)daqPayload();
     }
-    
+
     const uint32_t* econdPayload() const {
       return (payloadLength()==0?nullptr:(const uint32_t*)(_payload+3));
     }
+    
+    
     
     const SlinkEoe* slinkEoe() const {
       return (SlinkEoe*)(_payload+payloadLength()-2);
@@ -67,6 +70,7 @@ namespace hgcal_slinkfromraw {
     }
 
     uint32_t* getEcondPayload() {
+      
       return (payloadLength()==0?nullptr:(uint32_t*)(_payload+3));
     }
     
@@ -77,14 +81,14 @@ namespace hgcal_slinkfromraw {
     void print(std::ostream &o=std::cout, std::string s="") const {
       o << s << "RecordRunning::print()" << std::endl;
       RecordHeader::print(o,s+" ");
-      /*      
-      for(unsigned i(0);i<payloadLength();i++) {
-	o << s << "   Payload word " << std::setw(5) << " = 0x"
-	  << std::hex << std::setfill('0')
-	  << std::setw(16) << _payload[i]
-	  << std::dec << std::setfill(' ') << std::endl;
-      }
-      */
+           
+      //for(unsigned i(0);i<payloadLength();i++) {
+      //	o << s << "   Payload word " << std::setw(5) << " = 0x"
+      //	  << std::hex << std::setfill('0')
+      //	  << std::setw(16) << _payload[i]
+      //	  << std::dec << std::setfill(' ') << std::endl;
+      //}
+      
       slinkBoe()->print(o,s+" ");
       if(bePacketHeader()!=nullptr) bePacketHeader()->print(o,s+" ");
       slinkEoe()->print(o,s+" ");
@@ -92,6 +96,7 @@ namespace hgcal_slinkfromraw {
     
   private:
     uint64_t _payload[4];
+    
   };
 
 }

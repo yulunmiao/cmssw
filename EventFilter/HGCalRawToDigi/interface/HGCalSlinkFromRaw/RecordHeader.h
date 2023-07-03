@@ -5,11 +5,8 @@
 #include <iomanip>
 #include <cstdint>
 
-//#include <sys/types.h>
-//#include <unistd.h>
 
 #include "FsmState.h"
-//#include "RunControlFsmEnums.h"
 
 namespace hgcal_slinkfromraw {
 

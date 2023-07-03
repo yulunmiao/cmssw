@@ -20,7 +20,7 @@ namespace hgcal_slinkfromraw {
     uint64_t* getPayload() {
       return (uint64_t*)(this+1);
     }
-    
+
     void incrementPayloadLength(uint16_t l=1) {
       RecordHeader::setPayloadLength(payloadLength()+l);
     }
@@ -32,6 +32,7 @@ namespace hgcal_slinkfromraw {
     void deepCopy(const Record *r) {
       deepCopy(*r);
     }
+
   };
   
   template<unsigned NumberOfPayloadWords> class RecordT : public Record {
@@ -74,6 +75,8 @@ namespace hgcal_slinkfromraw {
 	  << std::dec << std::setfill(' ') << std::endl;
       }
     }
+    
+
   protected:
     uint64_t _payload[NumberOfPayloadWords];
   private:

@@ -34,7 +34,7 @@ options.register('randomActiveECOND', False, VarParsing.VarParsing.multiplicity.
                  'randomly activate ECOn-Ds on emulation')
 options.register('storeOutput', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the output into an EDM file')
-options.register('storeRAWOutput', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('storeRAWOutput', True, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the RAW output into a streamer file')
 options.register('storeEmulatorInfo', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the emulator metadata')
@@ -57,15 +57,18 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(options.maxEv
 process.source = cms.Source("EmptySource")
 process.hgcalEmulatedSlinkRawData.emulatorType = options.mode
 if process.hgcalEmulatedSlinkRawData.emulatorType == 'slinkfromraw':
-    process.hgcalEmulatedSlinkRawData.inputs = cms.untracked.vstring('/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/fakeRawData/Run1683391179_Link0_File0000000000.bin',
-                                                                     '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/fakeRawData/Run1683391179_Link0_File0000000001.bin')
+    process.hgcalEmulatedSlinkRawData.inputs = cms.untracked.vstring('/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/fakeRawData/Run1683391179_Link0_File0000000000.bin')
+                                                                     # just for file handling testing
+                                                                     #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/fakeRawData/Run1683391179_Link0_File0000000000.bin', 
+                                                                     #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/fakeRawData/Run1683391179_Link0_File0000000001.bin')
+
     process.hgcalEmulatedSlinkRawData.treeName = cms.untracked.string('')
 
 process.hgcalEmulatedSlinkRawData.storeEmulatorInfo = bool(options.storeEmulatorInfo)
 
 
 # steer the unpacker
-process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData')
+process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData')
 process.hgcalDigis.fedIds = cms.vuint32(options.fedId)
 
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis)
