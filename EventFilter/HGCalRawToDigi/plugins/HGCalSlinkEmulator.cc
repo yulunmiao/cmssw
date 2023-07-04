@@ -31,21 +31,17 @@
 class HGCalSlinkEmulator : public edm::stream::EDProducer<> {
 public:
   explicit HGCalSlinkEmulator(const edm::ParameterSet&);
-
   static void fillDescriptions(edm::ConfigurationDescriptions&);
-
 private:
   void produce(edm::Event&, const edm::EventSetup&) override;
-
+  FEDRawDataCollection produceWithoutSlink(edm::Event& iEvent, const edm::EventSetup& iSetup);
+  
   const unsigned int fed_id_;
-
   const bool store_emul_info_;
   const bool store_fed_header_trailer_;
   std::string emul_type_;
-  
   const edm::EDPutTokenT<FEDRawDataCollection> fedRawToken_;
   const edm::EDPutTokenT<HGCalTestSystemMetaData> metadataToken_;
-
   edm::Service<edm::RandomNumberGenerator> rng_;
   edm::EDPutTokenT<HGCalSlinkEmulatorInfo> fedEmulInfoToken_;
   hgcal::HGCalFrameGenerator frame_gen_;
@@ -83,18 +79,31 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
 
 //
 void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
-                                                                                     
-  //raw s-link can be put directly to the event
-  if(emul_type_=="slinkfromraw") {
-    FEDRawDataCollection raw_data = raw_reader_->next();
-    iEvent.emplace(fedRawToken_, std::move(raw_data));
-    return;
-  }
 
-  //add metadata
-  auto metadata = frame_gen_.produceMetaData();
-  iEvent.emplace(metadataToken_, std::move(metadata));
+  //produce raw / meta data
+  FEDRawDataCollection raw_data;
+  HGCalTestSystemMetaData meta_data;
+  if(emul_type_=="slinkfromraw") {
+    raw_data = raw_reader_->next();
+    meta_data = raw_reader_->nextMetaData();
+  } else {
+    raw_data = produceWithoutSlink(iEvent,iSetup);
+    meta_data = frame_gen_.produceMetaData();
+
+    // store the emulation information for events without real s-link, if requested
+    if (store_emul_info_)
+      iEvent.emplace(fedEmulInfoToken_, frame_gen_.lastSlinkEmulatedInfo());
+    
+  }
   
+  iEvent.emplace(fedRawToken_, std::move(raw_data));
+  iEvent.emplace(metadataToken_, std::move(meta_data));
+}
+
+
+//
+FEDRawDataCollection  HGCalSlinkEmulator::produceWithoutSlink(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+
   //otherwise generate a new frame
   frame_gen_.setRandomEngine(rng_->getEngine(iEvent.streamID()));
 
@@ -148,12 +157,9 @@ void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSet
     ptr += FEDTrailer::length;
   }
 
-  iEvent.emplace(fedRawToken_, std::move(raw_data));
-
-  // store the emulation information if requested
-  if (store_emul_info_)
-    iEvent.emplace(fedEmulInfoToken_, frame_gen_.lastSlinkEmulatedInfo());
+  return raw_data;
 }
+
 
 //
 void HGCalSlinkEmulator::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {

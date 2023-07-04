@@ -47,7 +47,6 @@ options.register('pedestalFile',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'pedestal txt file')
 options.register('inputFiles',
-                 #'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/160fC/160fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_141543/pedestal_run0.root',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'input TB file')
@@ -93,7 +92,11 @@ process.hgcalEmulatedSlinkRawData.emulatorType = options.mode
 if process.hgcalEmulatedSlinkRawData.emulatorType == 'hgcmodule':
     #process.hgcalEmulatedSlinkRawData.treeName = cms.untracked.string('unpacker_data/hgcroc')
     process.hgcalEmulatedSlinkRawData.inputs = cms.untracked.vstring(options.inputFiles)
-process.hgcalEmulatedSlinkRawData.storeEmulatorInfo = bool(options.storeEmulatorInfo)
+    process.hgcalEmulatedSlinkRawData.storeEmulatorInfo = bool(options.storeEmulatorInfo)
+elif process.hgcalEmulatedSlinkRawData.emulatorType == 'slinkfromraw':
+    process.hgcalEmulatedSlinkRawData.inputs = cms.untracked.vstring(options.inputFiles)
+
+    
 print(process.hgcalEmulatedSlinkRawData.emulatorType)
 
 # steer the number of capture blocks

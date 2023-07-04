@@ -21,12 +21,11 @@ SlinkFromRaw::SlinkFromRaw(const edm::ParameterSet &iConfig) : SlinkEmulatorBase
 FEDRawDataCollection SlinkFromRaw::next() {
 
   FEDRawDataCollection raw_data;
-  
+
   //open for the first time
   if( fileReader_.closed() ) {
     auto inputfile = inputfiles_[ifile_];
-    fileReader_.open(inputfile);
-    
+    fileReader_.open(inputfile);    
   }
 
   //no more records in the file
@@ -40,7 +39,6 @@ FEDRawDataCollection SlinkFromRaw::next() {
     auto inputfile=inputfiles_[ifile_];
     fileReader_.open(inputfile);
   }
-
   edm::LogInfo("SlinkFromRaw: Reading record from file #") << ifile_ << "nevents=" << nEvents_ << "\n";
   
   // Set up specific records to interpet the formats
@@ -49,11 +47,10 @@ FEDRawDataCollection SlinkFromRaw::next() {
   const hgcal_slinkfromraw::RecordRunning  *rEvent((hgcal_slinkfromraw::RecordRunning*)record_);
   if(record_->state()==hgcal_slinkfromraw::FsmState::Starting) {
     rStart->print();
-    std::cout << std::endl;
   } else if(record_->state()==hgcal_slinkfromraw::FsmState::Stopping){
     rStop->print();
-    std::cout << std::endl;
   } else {                
+
     // We have a new event
     nEvents_++;
     bool print(nEvents_<=1);
@@ -62,11 +59,14 @@ FEDRawDataCollection SlinkFromRaw::next() {
       std::cout << std::endl;
     }
 
-
-
     // Check id is correct
     if(!rEvent->valid()) rEvent->print();
-                
+
+    //FIXME: these have to be read from the TCDS block
+    metaData_.trigType_=0;
+    metaData_.trigTime_=0;
+    metaData_.trigWidth_=0;
+    
     // Access the Slink header ("begin-of-event")
     // This should always be present; check pattern is correct
     const hgcal_slinkfromraw::SlinkBoe *b(rEvent->slinkBoe());

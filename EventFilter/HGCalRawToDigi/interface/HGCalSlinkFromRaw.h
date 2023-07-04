@@ -20,9 +20,12 @@ namespace hgcal {
     explicit SlinkFromRaw(const edm::ParameterSet &iConfig);
     
     FEDRawDataCollection next() override;
+    HGCalTestSystemMetaData nextMetaData() override { return metaData_; }
     
   private:
 
+    HGCalTestSystemMetaData metaData_;
+    
     size_t ifile_;
     std::vector<std::string> inputfiles_;
     hgcal_slinkfromraw::FileReader fileReader_;
