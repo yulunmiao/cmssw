@@ -82,7 +82,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     calibParams = newCalibParams;
   }
 
-  std::unique_ptr<HGCalRecHitHostCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection const& host_digis) {
+  std::unique_ptr<HGCalRecHitDeviceCollection> HGCalRecHitCalibrationAlgorithms::calibrate(Queue& queue, HGCalDigiHostCollection const& host_digis) {
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- Start of calibrate\n\n" << std::endl;
 
     LogDebug("HGCalRecHitCalibrationAlgorithms")<<"N blocks: "<<n_blocks<<"\tN threads: "<<n_threads<<std::endl;
@@ -121,11 +121,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after calibration: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
-    LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- copying the rechits from device to the host\n\n" << std::endl;
-    auto host_recHits = std::make_unique<HGCalRecHitHostCollection>(device_recHits->view().metadata().size(), queue);
-    alpaka::memcpy(queue, host_recHits->buffer(), device_recHits->buffer());
-
-    return host_recHits;
+    return device_recHits;
   }
 
   void HGCalRecHitCalibrationAlgorithms::print(HGCalDigiHostCollection const& digis, int max) const {
