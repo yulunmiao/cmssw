@@ -147,7 +147,7 @@ process.hgcalDigis.module_info_label = cms.ESInputTag('') # for HGCalModuleInfoE
 #
 process.load('EventFilter.HGCalRawToDigi.hgCalSoATester_cfi')
 process.hgCalSoATester.Digis=cms.InputTag('hgcalDigis','DIGI')
-process.load('RecoLocalCalo.HGCalRecAlgos.hgCalSoARecHitTester_cfi')
+process.load('RecoLocalCalo.HGCalRecAlgos.hgCalRecHitsFromSoAproducer_cfi')
 
 #
 # CONDITIONS AND CONFIGURATIONS
@@ -206,7 +206,7 @@ process.dqmSaver.runNumber = options.runNumber
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis                # RAW->DIGI
                      * process.hgcalRecHit                                                 # DIGI->RECO
                      * process.hgCalDigisClient * process.hgCalDigisClientHarvester * process.dqmSaver # DQM
-                     * process.hgCalSoATester * process.hgCalSoARecHitTester               # TESTERS
+                     * process.hgCalSoATester * process.hgCalRecHitsFromSoAproducer        # TESTERS / Phase I TRANSLATORS
 )
 
 if options.dumpFRD:
@@ -227,6 +227,7 @@ if options.storeOutput:
             'keep *_hgcalEmulatedSlinkRawData_*_*',
             'keep *_hgcalDigis_*_*',
             'keep *_hgcalRecHit_*_*',
+            'keep *_hgCalRecHitsFromSoAproducer_*_*',
         )
     )
     process.outpath += process.output

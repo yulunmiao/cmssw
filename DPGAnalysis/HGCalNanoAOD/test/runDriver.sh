@@ -1,8 +1,8 @@
 cmsDriver.py NANO \
-    -s USER:DPGAnalysis/HGCalNanoAOD/hgcRecHits_cff.hgcRecHitsTask \
+    -s USER:DPGAnalysis/HGCalNanoAOD/hgcRecHits_cff.hgctbRecHitsTask \
     --datatier NANOAOD \
     --eventcontent NANOAOD \
-    --filein file:/eos/user/d/dalfonso/HGCALtbeam/singleMu_pt10/step3.root \
+    --filein file:/eos/cms/store/cmst3/group/hgcal/CMG_studies/psilva/TB2023/output_numEvent100.root \
     --fileout hgcalnano_testcmsdriver.root \
     -n -1 \
     --nThreads 4 \

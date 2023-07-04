@@ -37,4 +37,9 @@ hgcHEbackRecHitsTable = hgcEERecHitsTable.clone()
 hgcHEbackRecHitsTable.src = "HGCalRecHit:HGCHEBRecHits"
 hgcHEbackRecHitsTable.name = "RecHitHGCHEB"
 
+hgctbRecHitsTable =  hgcEERecHitsTable.clone()
+hgctbRecHitsTable.src = "hgCalRecHitsFromSoAproducer"
+hgctbRecHitsTable.name = "RecHitHGC"
+
 hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEfrontRecHitsTable,hgcHEbackRecHitsTable,hgcEERecHitsPositionTable,hgcHEfrontRecHitsPositionTable)
+hgctbRecHitsTask = cms.Task(hgctbRecHitsTable)
