@@ -13,4 +13,4 @@ cmsDriver.py NANO \
     --no_exec
 cmsRun testcmsdriver_cfg.py
 
-$CMSSW_BASE/src/PhysicsTools/NanoAOD/test/inspectNanoFile.py hgcalnano_testcmsdriver.root -j hgcalnano.json -s hgcalnano_report.html -d hgcalnano_doc.html
+$CMSSW_RELEASE_BASE/src/PhysicsTools/NanoAOD/test/inspectNanoFile.py hgcalnano_testcmsdriver.root -j hgcalnano.json -s hgcalnano_report.html -d hgcalnano_doc.html
