@@ -62,7 +62,9 @@ private:
   std::string templateROOT_;
 
   //monitoring elements
-  std::map<MonitorKey_t, MonitorElement*> hex_channelId, hex_occupancy, p_coeffs;
+  std::map<MonitorKey_t, MonitorElement*> hex_channelId, 
+    hex_pedestal,hex_noise, hex_cmrho, hex_bxm1rho,
+    p_coeffs;
 
   //module mapper stuff
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
@@ -109,7 +111,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
   //book histos only if module info changed (should happen end of first lumi section)
   if (!miWatcher_.check(iSetup)) return;
   
-  //read module mapper and build list of module tags to retrieve the monitoring elemnts for
+  //read module mapper and build list of module tags to retrieve the monitoring elements for
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
   module_keys_ = moduleInfo.getAsSimplifiedModuleLocatorMap(true);
   for(auto m : moduleInfo.params_) {
@@ -118,9 +120,12 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     MonitorKey_t k(m.zside,m.plane,m.u,m.v);
     int nch(39*6*(1+m.isHD));
 
-    ibooker.setCurrentFolder("HGCAL/Maps");    
+    ibooker.setCurrentFolder("HGCAL/Summary");    
     hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
-    hex_occupancy[k] = ibooker.book2DPoly("hex_occupancy" + tag, "; x[cm]; y[cm];Occupancy", -26 , 26 , -28 , 24);
+    hex_pedestal[k]  = ibooker.book2DPoly("hex_pedestal" + tag,  "; x[cm]; y[cm];Pedestal", -26 , 26 , -28 , 24);
+    hex_noise[k]     = ibooker.book2DPoly("hex_noise" + tag,     "; x[cm]; y[cm];Noise", -26 , 26 , -28 , 24);
+    hex_cmrho[k]     = ibooker.book2DPoly("hex_cmrho" + tag,     "; x[cm]; y[cm];#rho(CM)", -26 , 26 , -28 , 24);
+    hex_bxm1rho[k]   = ibooker.book2DPoly("hex_bxm1rho" + tag,   "; x[cm]; y[cm];#rho(ADC_{-1})", -26 , 26 , -28 , 24);
 
     p_coeffs[k] = ibooker.book2D("coeffs_"+tag, ";Channel;", nch,0,nch, 11,0,11);
     p_coeffs[k]->setBinLabel(1,"<ADC>",2);
@@ -150,8 +155,11 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     for(auto kit : hex_channelId) {
       MonitorKey_t k(kit.first);
       hex_channelId[k]->addBin(gr);
-      hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i); 
-      hex_occupancy[k]->addBin(gr);
+      hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);       
+      hex_pedestal[k]->addBin(gr);
+      hex_noise[k]->addBin(gr);
+      hex_cmrho[k]->addBin(gr);
+      hex_bxm1rho[k]->addBin(gr);
     }
   }
   fgeo->Close();
@@ -173,8 +181,6 @@ void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::
     std::string meName("HGCAL/Digis/sums_"+tag);
     const MonitorElement *me = igetter.get(meName);
     if (me == nullptr) continue;
-
-    std::cout << " retrieved sums for " << tag << std::endl;
     
     //convert the sums to coefficients
     for(int ibin=1; ibin< me->getNbinsX(); ibin++) {
@@ -197,6 +203,12 @@ void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::
         p_coeffs[k]->setBinContent(ibin,5+3*i,intercepts[i]);
       }
 
+      //fill hexplots
+      hex_pedestal[k]->setBinContent(ibin,obs.first);
+      hex_noise[k]->setBinContent(ibin,obs.second);
+      hex_cmrho[k]->setBinContent(ibin,Rs[0]);
+      hex_bxm1rho[k]->setBinContent(ibin,Rs[1]);
+      
       //add to summary stats
       bool zside = std::get<0>(k);
       uint16_t slink = std::get<1>(k);
@@ -233,7 +245,7 @@ void HGCalDigisClientHarvester::export_calibration_parameters(std::map<HGCalElec
     
     myfile << "0x" << std::hex << id.raw() << " " << std::dec
            << std::setprecision(3)
-           << obs.first << " " << obs.second
+           << obs.first << " " << obs.second << " "
            << slopes[0] << " " << intercepts[0] << " "
            << slopes[1] << " " << intercepts[1] << " "
            << std::endl;
