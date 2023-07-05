@@ -1,5 +1,7 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
+#include "DQM/HGCal/interface/RunningStatistics.h"
+
 #include <iostream>
 #include <iomanip>
 #include <stdio.h>
@@ -54,13 +56,13 @@ private:
   /**
      @short saves the level-0 calibration parameters from the pedestal profiles of different modules harvested
    */
-  void export_calibration_parameters(std::map<MonitorKey_t,const MonitorElement*> &pedestals);
+  void export_calibration_parameters(std::map<HGCalElectronicsId,hgcal::CellStatistics> &);
 
   //location of the hex map templates
   std::string templateROOT_;
 
   //monitoring elements
-  std::map<MonitorKey_t, MonitorElement*> hex_channelId, hex_occupancy;
+  std::map<MonitorKey_t, MonitorElement*> hex_channelId, hex_occupancy, p_coeffs;
 
   //module mapper stuff
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
@@ -83,7 +85,7 @@ HGCalDigisClientHarvester::HGCalDigisClientHarvester(const edm::ParameterSet& iC
 void HGCalDigisClientHarvester::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::ESInputTag>("ModuleMapping",edm::ESInputTag(""));
-  desc.add<std::string>("HexTemplateFile","/afs/cern.ch/work/y/ykao/public/raw_data_handling/hexagons_20230626.root");
+  desc.add<std::string>("HexTemplateFile","/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/hexagons_20230626.root");
   desc.add<std::string>("Level0CalibOut","level0_calibration_parameters.txt");
 }
 
@@ -110,14 +112,28 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
   //read module mapper and build list of module tags to retrieve the monitoring elemnts for
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
   module_keys_ = moduleInfo.getAsSimplifiedModuleLocatorMap(true);
-  for(auto it: module_keys_) {
+  for(auto m : moduleInfo.params_) {
 
-    MonitorKey_t k(it.second);
-    TString tag=Form("%d_%d_%d_%d",std::get<0>(k),std::get<1>(k),std::get<2>(k),std::get<3>(k));
+    TString tag=Form("%d_%d_%d_%d",m.zside,m.plane,m.u,m.v);
+    MonitorKey_t k(m.zside,m.plane,m.u,m.v);
+    int nch(39*6*(1+m.isHD));
 
     ibooker.setCurrentFolder("HGCAL/Maps");    
     hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
     hex_occupancy[k] = ibooker.book2DPoly("hex_occupancy" + tag, "; x[cm]; y[cm];Occupancy", -26 , 26 , -28 , 24);
+
+    p_coeffs[k] = ibooker.book2D("coeffs_"+tag, ";Channel;", nch,0,nch, 11,0,11);
+    p_coeffs[k]->setBinLabel(1,"<ADC>",2);
+    p_coeffs[k]->setBinLabel(2,"#sigma(ADC)",2);
+    p_coeffs[k]->setBinLabel(3,"#rho(ADC,CM)",2);
+    p_coeffs[k]->setBinLabel(4,"k(ADC,CM)",2);
+    p_coeffs[k]->setBinLabel(5,"o(ADC,CM)",2);
+    p_coeffs[k]->setBinLabel(6,"#rho(ADC,ADC_{-1})",2);
+    p_coeffs[k]->setBinLabel(7,"k(ADC,ADC_{-1})",2);
+    p_coeffs[k]->setBinLabel(8,"o(ADC,ADC_{-1})",2);
+    p_coeffs[k]->setBinLabel(9,"#rho(ADC,TDC)",2);
+    p_coeffs[k]->setBinLabel(10,"k(ADC,TDC)",2);
+    p_coeffs[k]->setBinLabel(11,"o(ADC,TDC)",2);   
   }
 
   //fill the 2DPoly from the hexmap external templates
@@ -148,54 +164,79 @@ void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::
 {
 
   //loop over modules to harvest
-  std::map<MonitorKey_t,const MonitorElement*> pedestals;
+  std::map<HGCalElectronicsId,hgcal::CellStatistics> summary_stats;
   for(auto it : module_keys_) {
     
     MonitorKey_t k(it.second);
     TString tag=Form("%d_%d_%d_%d",std::get<0>(k),std::get<1>(k),std::get<2>(k),std::get<3>(k));
 
-    std::string meName("HGCAL/Digis/p_adc_"+tag);
-    const MonitorElement* numerator = igetter.get(meName);
-    if (numerator == nullptr) continue;
+    std::string meName("HGCAL/Digis/sums_"+tag);
+    const MonitorElement *me = igetter.get(meName);
+    if (me == nullptr) continue;
 
-    pedestals[it.first]=numerator;
-    std::cout << " retrieved ADC profile for " << tag << std::endl;
+    std::cout << " retrieved sums for " << tag << std::endl;
+    
+    //convert the sums to coefficients
+    for(int ibin=1; ibin< me->getNbinsX(); ibin++) {
+      hgcal::CellStatistics stats;
+      stats.n      = me->getBinContent(ibin,1);
+      stats.sum_x  = me->getBinContent(ibin,2);
+      stats.sum_x  = me->getBinContent(ibin,3);
+      stats.sum_s  = {me->getBinContent(ibin,4),me->getBinContent(ibin,7),me->getBinContent(ibin,10)};
+      stats.sum_ss = {me->getBinContent(ibin,5),me->getBinContent(ibin,8),me->getBinContent(ibin,11)};
+      stats.sum_xs = {me->getBinContent(ibin,6),me->getBinContent(ibin,9),me->getBinContent(ibin,12)};
+      std::pair<double,double> obs = stats.getObservableStats();
+      std::vector<double> Rs = stats.getPearsonCorrelation();
+      std::vector<double> slopes = stats.getSlopes();
+      std::vector<double> intercepts = stats.getIntercepts();
+      p_coeffs[k]->setBinContent(ibin,1,obs.first);
+      p_coeffs[k]->setBinContent(ibin,2,obs.second);
+      for(size_t i=0; i<3; i++) {
+        p_coeffs[k]->setBinContent(ibin,3+3*i,Rs[i]);
+        p_coeffs[k]->setBinContent(ibin,4+3*i,slopes[i]);
+        p_coeffs[k]->setBinContent(ibin,5+3*i,intercepts[i]);
+      }
+
+      //add to summary stats
+      bool zside = std::get<0>(k);
+      uint16_t slink = std::get<1>(k);
+      uint16_t captureblock = std::get<2>(k);
+      uint16_t econd = std::get<3>(k);
+      uint16_t erx = (ibin-1)/39;
+      uint16_t seq = (ibin-1)%39;
+      HGCalElectronicsId eleid(zside,slink,captureblock,econd,erx,seq);      
+      summary_stats[eleid]=stats;     
+    }
+    
   }
 
   //save pedestals to file
-  export_calibration_parameters(pedestals);
+  export_calibration_parameters(summary_stats);
 }
 
 
 //
-void HGCalDigisClientHarvester::export_calibration_parameters(std::map<MonitorKey_t,const MonitorElement*> &pedestals) {
+void HGCalDigisClientHarvester::export_calibration_parameters(std::map<HGCalElectronicsId,hgcal::CellStatistics> &stats) {
 
   //open txt file
   std::ofstream myfile(level0CalibOut_);
 
-  myfile << "Channel Pedestal CM_slope CM_offset kappa_BXm1\n";
-  for(auto it : pedestals) {
+  myfile << "Channel Pedestal Noise CM_slope CM_offset BXm1_slope BXm1_offset\n";
+  for(std::map<HGCalElectronicsId,hgcal::CellStatistics>::iterator it=stats.begin();
+      it!=stats.end(); it++) {
 
-    MonitorKey_t k(it.first);
-    bool zside = std::get<0>(k);
-    uint16_t slink = std::get<1>(k);
-    uint16_t captureblock = std::get<2>(k);
-    uint16_t econd = std::get<3>(k);
-
-    const MonitorElement *me=it.second;
-    for(int ibin=0; ibin<me->getNbinsX(); ibin++) {
-      uint16_t erx = ibin/39;
-      uint16_t seq = ibin%39;
-      HGCalElectronicsId id(zside,slink,captureblock,econd,erx,seq);
-
-      myfile << "0x" << std::hex << id.raw() << " " << std::dec
-             << std::setprecision(3)
-             << me->getBinContent(ibin+1) << " " //<< me->getBinError(ibin+1) << " "
-             << 0.f << " "
-             << 0.f << " "
-             << 0.f << std::endl;
-    }
+    HGCalElectronicsId id=it->first;
+    hgcal::CellStatistics s=it->second;
+    std::pair<double,double> obs = s.getObservableStats();
+    std::vector<double> slopes = s.getSlopes();
+    std::vector<double> intercepts = s.getIntercepts();
     
+    myfile << "0x" << std::hex << id.raw() << " " << std::dec
+           << std::setprecision(3)
+           << obs.first << " " << obs.second
+           << slopes[0] << " " << intercepts[0] << " "
+           << slopes[1] << " " << intercepts[1] << " "
+           << std::endl;
   }
 
   myfile.close();

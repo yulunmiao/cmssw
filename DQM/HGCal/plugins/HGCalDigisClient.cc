@@ -55,8 +55,7 @@ private:
   const edm::EDGetTokenT<HGCalTestSystemMetaData> metadataToken_;
 
   std::map<MonitorKey_t, MonitorElement*> p_hitcount,p_maxadcvstrigtime,
-    p_adc, p_tot, p_adcm, p_toa, p_maxadc,
-    p_adcvsadc,p_adcvsadcm,p_adcmvsadcm;
+    p_adc, p_tot, p_adcm, p_toa, p_maxadc, p_sums;
      
   // ------------ member data ------------
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
@@ -85,13 +84,34 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   const auto& digis = iEvent.getHandle(digisToken_);
   auto const& digis_view = digis->const_view();
   int32_t ndigis=digis_view.metadata().size();
-  std::map<MonitorKey_t,uint16_t> maxADC;  
+  
+  //start by computing the #fired TDC per e-Rx, average CM per e-Rx
+  std::map<HGCalElectronicsId, float> nTDC,avgCM; 
+  for(int32_t i = 0; i < ndigis; ++i) {
+
+    auto digi = digis_view[i];
+    HGCalElectronicsId eleid=HGCalElectronicsId(digi.electronicsId());
+    HGCalElectronicsId erxid(eleid.zSide(),eleid.fedId(),eleid.captureBlock(),eleid.econdIdx(),eleid.econdeRx(),0);
+    if(nTDC.count(erxid)==0) {
+      nTDC[erxid]=0;
+      avgCM[erxid]=0;
+    }
+    if(eleid.isCM()) {
+      avgCM[erxid]+= 0.5*digi.adc();
+    } else if( digi.tctp()>0 || digi.toa()>0) {
+      nTDC[erxid] += 1;
+    }
+  }
+  
+  //fill the histograms / statistics
+  std::map<MonitorKey_t, uint16_t> maxADC;
   for(int32_t i = 0; i < ndigis; ++i) {
 
     auto digi = digis_view[i];
 
     //identify the module key from the electronics id
-    HGCalElectronicsId eleid=HGCalElectronicsId(digi.electronicsId());      
+    HGCalElectronicsId eleid=HGCalElectronicsId(digi.electronicsId());
+    HGCalElectronicsId erxid(eleid.zSide(),eleid.fedId(),eleid.captureBlock(),eleid.econdIdx(),eleid.econdeRx(),0);
     bool isCM=eleid.isCM();
     int ch=eleid.halfrocChannel();
     int globalChannelId = 39*eleid.econdeRx() + ch;
@@ -102,7 +122,8 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
                                  << "adcm1 = "           << digi.adcm1()                            << ", "
                                  << "tot = "             << digi.tot()                              << ", "
                                  << "halfrocChannel = "  << (uint32_t) eleid.halfrocChannel()   << ", "
-                                 << "channel = "         << globalChannelId                                          << ", CM=" << isCM;
+                                 << "channel = "         << globalChannelId
+                                 << ", CM=" << isCM;
 
     // fill monitoring elements for digis
     uint8_t tctp        = digi.tctp();
@@ -110,38 +131,35 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     uint16_t tot        = digi.tot();
     uint16_t toa        = digi.toa();
     uint16_t adcm       = digi.adcm1();
+
     if(adc>0 || tot>0) p_hitcount[geomKey]->Fill(globalChannelId);
-    if(tctp==3) p_tot[geomKey]->Fill(globalChannelId, tot);
+
+    p_adcm[geomKey]->Fill(globalChannelId, adcm);
+    p_toa[geomKey]->Fill(globalChannelId, toa);
+
+      
+    //TOT
+    if(tctp==3) {
+      p_tot[geomKey]->Fill(globalChannelId, tot);
+    }
+    
+    //ADC
     else {
       p_adc[geomKey]->Fill(globalChannelId, adc);
       if(maxADC.count(geomKey)==0) maxADC[geomKey]=0;
       maxADC[geomKey]=std::max(maxADC[geomKey],adc);
+      
+      //increment sums of this channel
+      float cm=avgCM[erxid];
+      float tdc=nTDC[erxid];
+      std::vector<double> tosum = {1,
+                                   (double)adc,pow(adc,2),
+                                   cm,pow(cm,2),adc*cm,
+                                   (double)adcm,pow(adcm,2),(double)adc*adcm,
+                                   tdc,pow(tdc,2),adc*tdc};
+      for(size_t k=1; k<=tosum.size(); k++) 
+        p_sums[geomKey]->getBinContent(globalChannelId+k,k,p_sums[geomKey]->getBinContent(globalChannelId+k,k)+tosum[k-1]);
     }
-    p_adcm[geomKey]->Fill(globalChannelId, adcm);
-    p_toa[geomKey]->Fill(globalChannelId, toa);
-
-    //fill also 2D correlations for channels in the same module
-    if(tctp!=0) continue;
-    for(int32_t j = i; j < ndigis; ++j) { //this could be more intelligent as digis come sequentially
-      auto j_digi = digis_view[j];
-      HGCalElectronicsId j_eleid=HGCalElectronicsId(j_digi.electronicsId());      
-      if(eleid.zSide()!=j_eleid.zSide()) continue;
-      if(eleid.fedId()!=j_eleid.fedId()) continue;
-      if(eleid.captureBlock()!=j_eleid.captureBlock()) continue;
-      if(eleid.econdIdx()!=j_eleid.econdIdx()) continue;
-
-      uint8_t tctp = j_digi.tctp();
-      if(tctp!=0) continue;
-
-      uint16_t j_adc = j_digi.adc();
-      uint16_t j_adcm = j_digi.adcm1();
-      int j_ch=j_eleid.halfrocChannel();
-      int j_globalChannelId = 39*j_eleid.econdeRx() + j_ch;
-      p_adcvsadc[geomKey]->Fill(globalChannelId,j_globalChannelId,adc*j_adc);
-      p_adcvsadcm[geomKey]->Fill(globalChannelId,j_globalChannelId,adc*j_adcm);
-      p_adcmvsadcm[geomKey]->Fill(globalChannelId,j_globalChannelId,adcm*j_adcm);
-    }
-    
   }
 
   //read trigtime and fill monitoring elements for the leading hit
@@ -169,16 +187,26 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     MonitorKey_t k(m.zside,m.plane,m.u,m.v);
     int nch(39*6*(1+m.isHD));
     p_hitcount[k] = ibook.book1D("hitcount_"+tag,           ";Channel; #hits",   nch, 0, nch);
-    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, ";max ADC; Counts",  100, 0, 100, 100, -0.5, 99.5);
-    p_adcvsadc[k]      = ibook.book2D("adcvsadc_"+tag, ";Channel; Channel", nch,0,nch, nch,0,nch);
-    p_adcvsadcm[k]     = ibook.book2D("adcvsadcm_"+tag, ";Channel; Channel", nch,0,nch, nch,0,nch);
-    p_adcmvsadcm[k]    = ibook.book2D("adcmvsadcm_"+tag, ";Channel; Channel", nch,0,nch, nch,0,nch);
-    p_maxadc[k]        = ibook.book1D("maxadc_"+tag,             ";max ADC; Counts",  100, -0.5, 99.5); 
-    p_adc[k]           = ibook.bookProfile("p_adc_" + tag,       ";Channel; ADC",     nch, 0, nch, 150, 0, 150);
+    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, ";max ADC; Counts",  100, 0, 100, 100, -0.5, 99.5);   
+    p_sums[k]             = ibook.book2D("sums_"+tag, ";Channel;", nch,0,nch, 12,0,12);
+    p_sums[k]->setBinLabel(1,"N",2);
+    p_sums[k]->setBinLabel(2,"#sum ADC",2);
+    p_sums[k]->setBinLabel(3,"#sum ADC^{2}",2);
+    p_sums[k]->setBinLabel(4,"#sum CM",2);
+    p_sums[k]->setBinLabel(5,"#sum CM^{2}",2);
+    p_sums[k]->setBinLabel(6,"#sum ADC*CM",2);
+    p_sums[k]->setBinLabel(7,"#sum ADC_{-1}",2);
+    p_sums[k]->setBinLabel(8,"#sum ADC_{-1}^{2}",2);
+    p_sums[k]->setBinLabel(9,"#sum ADC*ADC_{-1}",2);
+    p_sums[k]->setBinLabel(10,"#sum TDC",2);
+    p_sums[k]->setBinLabel(11,"#sum TDC^{2}",2);
+    p_sums[k]->setBinLabel(12,"#sum ADC*TDC",2);
+    p_maxadc[k]           = ibook.book1D("maxadc_"+tag,             ";max ADC; Counts",  100, -0.5, 99.5); 
+    p_adc[k]              = ibook.bookProfile("p_adc_" + tag,       ";Channel; ADC",     nch, 0, nch, 150, 0, 150);
     p_adc[k]->setOption("s"); //save standard deviation instead of error mean for noise estimate
-    p_tot[k]           = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 150, 0, 150);
-    p_adcm[k]          = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 150, 0, 150);
-    p_toa[k]           = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 150, 0, 150);
+    p_tot[k]              = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 150, 0, 150);
+    p_adcm[k]             = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 150, 0, 150);
+    p_toa[k]              = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 150, 0, 150);
   }
 }
 
