@@ -151,16 +151,18 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     TObject *obj = key->ReadObj();
     if(!obj->InheritsFrom("TGraph")) continue;
     gr = (TGraph*) obj;
-    i++;    
+
     for(auto kit : hex_channelId) {
       MonitorKey_t k(kit.first);
       hex_channelId[k]->addBin(gr);
-      hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);       
+      hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);
       hex_pedestal[k]->addBin(gr);
       hex_noise[k]->addBin(gr);
       hex_cmrho[k]->addBin(gr);
       hex_bxm1rho[k]->addBin(gr);
     }
+
+    i++;    
   }
   fgeo->Close();
 
