@@ -3,7 +3,7 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 
 process = cms.Process("TESTDQM")
 
-options = VarParsing.VarParsing()
+options = VarParsing.VarParsing('analysis')
 options.parseArguments()
 
 
@@ -14,13 +14,18 @@ process.source = cms.Source("PoolSource",
 
 process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEvents))
 
+# Logical mapping
+process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
+process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
+process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
+process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
+
 process.hgCalDigisClient = cms.EDProducer(
     'HGCalDigisClient',
     Digis=cms.InputTag('hgcalDigis', ''),
     MetaData=cms.InputTag('hgcalEmulatedSlinkRawData', 'hgcalMetaData'),
     ModuleMapping=cms.ESInputTag(''),
 )
-
 process.hgCalDigisClientHarvester = cms.EDProducer(
     'HGCalDigisClientHarvester',
     ModuleMapping=process.hgCalDigisClient.ModuleMapping,
