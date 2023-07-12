@@ -46,7 +46,7 @@ options.register('configFile',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'config yaml file')
 options.register('pedestalFile',
-                 '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt',
+                 '/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/calibration_parameters.txt',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'pedestal txt file')
 options.register('inputFiles',
@@ -196,28 +196,11 @@ else:
         n_threads = cms.int32(4096),
     )
 
-#
-# DQM
-#
-process.hgCalDigisClient = cms.EDProducer('HGCalDigisClient',
-                                          Digis = cms.InputTag('hgcalDigis', ''),
-                                          MetaData = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalMetaData'),
-                                          ModuleMapping = cms.ESInputTag(''), )
-process.hgCalDigisClientHarvester = cms.EDProducer('HGCalDigisClientHarvester',
-                                                   ModuleMapping = process.hgCalDigisClient.ModuleMapping,
-                                                   HexTemplateFile = cms.string('/afs/cern.ch/work/y/ykao/public/raw_data_handling/hexagons_20230626.root'),
-                                                   Level0CalibOut = cms.string('level0_calib_params.txt'),)
-
-process.DQMStore = cms.Service("DQMStore")
-process.load("DQMServices.FileIO.DQMFileSaverOnline_cfi")
-process.dqmSaver.tag = 'HGCAL'
-process.dqmSaver.runNumber = options.runNumber
 
 #path
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis                # RAW->DIGI
                      * process.hgcalRecHit                                                 # DIGI->RECO
-                     #* process.hgCalDigisClient * process.hgCalDigisClientHarvester * process.dqmSaver # DQM
-                     #* process.hgCalSoATester * process.hgCalRecHitsFromSoAproducer        # TESTERS / Phase I TRANSLATORS
+                     * process.hgCalSoATester * process.hgCalRecHitsFromSoAproducer        # TESTERS / Phase I TRANSLATORS
 )
 
 if options.dumpFRD:
