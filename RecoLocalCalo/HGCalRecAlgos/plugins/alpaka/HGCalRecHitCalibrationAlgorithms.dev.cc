@@ -70,10 +70,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     template <typename TAcc>
     ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalRecHitDeviceCollection::ConstView view, int size) const {
       for (int i = 0; i < size; ++i) {
+#ifdef EDM_ML_DEBUG
         auto const& rechit = view[i];
         printf("%d\t%d\t%f\t%f\t%d\n", i, rechit.detid(), rechit.energy(), rechit.time(), rechit.flags());
+#endif
       }
-      printf("\n");
     }
   };
 
