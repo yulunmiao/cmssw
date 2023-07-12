@@ -99,8 +99,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   void HGCalRecHitProducer::produce(device::Event& iEvent, device::EventSetup const& iSetup) {
     auto queue = iEvent.queue();
-
-    std::cout << "\n\nINFO -- Start of produce\n\n" << std::endl;
     
     // Read digis
     auto const& hostDigisIn = iEvent.get(digisToken_);
@@ -146,18 +144,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       hostDigis.view()[i].flags() = hostDigisIn.view()[i%oldSize].flags();
     }
 
-    std::cout << "Loaded host digis: " << hostDigis.view().metadata().size() << std::endl;
+    LogDebug("HGCalRecHitProducer") << "Loaded host digis: " << hostDigis.view().metadata().size() << std::endl;
 
-    std::cout << "\n\nINFO -- calling calibrate method" << std::endl;
+    LogDebug("HGCalRecHitProducer") << "\n\nINFO -- calling calibrate method" << std::endl;
 
     auto start = now();
     auto recHits = calibrator_.calibrate(queue, hostDigis);
     alpaka::wait(queue);
     auto stop = now();
 
-    std::cout<<"Time: "<< duration(start, stop) <<std::endl;
+    LogDebug("HGCalRecHitProducer") << "Time: " << duration(start, stop) << std::endl;
 
-    std::cout << "\n\nINFO -- storing rec hits in the event" << std::endl;
+    LogDebug("HGCalRecHitProducer") << "\n\nINFO -- storing rec hits in the event" << std::endl;
     iEvent.emplace(recHitsToken_, std::move(*recHits));
   }
 

@@ -20,6 +20,7 @@
 #include <memory>
 
 // user include files
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 
@@ -117,13 +118,12 @@ void HGCalRecHitsFromSoAproducer::produce(edm::Event& iEvent, const edm::EventSe
   }
   
   //report
-  std::cout << "[HGCalRecHitsFromSoAproducer]" << std::endl
-            << "ndigis=" << ndigis << " nhits=" << nhits << std::endl
-            << "can assign " << ndetidFound << " detIds to DIGIS from mapping" << std::endl;
+  LogDebug("HGCalRecHitsFromSoAproducer")
+      << "ndigis=" << ndigis << " nhits=" << nhits << std::endl
+      << "can assign " << ndetidFound << " detIds to DIGIS from mapping" << std::endl;
 
   //put to the event
   hgcRecHits->sort();
-  std::cout << hgcRecHits->size() << std::endl;
   iEvent.put(std::move(hgcRecHits));
 }
 
