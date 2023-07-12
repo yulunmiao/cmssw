@@ -94,8 +94,9 @@ ECONDInput HGCalModuleTreeReader::next() {
   if (it_data_ == data_.end())
     throw cms::Exception("HGCalModuleTreeReader") << "Insufficient number of events were retrieved from input tree to proceed with the generation of emulated events.";
 
+  ECONDInput data{it_data_->first, it_data_->second};
   ++it_data_;
-  return ECONDInput{it_data_->first, it_data_->second};
+  return data;
 }
 
 //
