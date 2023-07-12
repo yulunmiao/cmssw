@@ -4,6 +4,8 @@
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiCellChannelInfo.h"
 #include "DataFormats/ForwardDetId/interface/HGCSiliconDetId.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiPMTileInfo.h"
+#include "DataFormats/ForwardDetId/interface/HGCScintillatorDetId.h"
 
 namespace hgcal {
 
@@ -11,6 +13,11 @@ namespace hgcal {
      @short method returns a DetId to ElectronicsId map or vice-versa based on the info available for Si cells
    */
   std::map<uint32_t,uint32_t> mapSiGeoToElectronics(const HGCalCondSerializableModuleInfo &, const HGCalCondSerializableSiCellChannelInfo &,bool geo2ele);
+
+  /**
+     @short method returns a DetId to ElectronicsId map or vice-versa based on the info available for SiPM tiles
+   */
+  std::map<uint32_t,uint32_t> mapSiPMGeoToElectronics(const HGCalCondSerializableModuleInfo &, const HGCalCondSerializableSiPMTileInfo &,bool geo2ele);
 
   /**
      @short formula to get ECOND e-Rx for a given ROC chip/half

@@ -42,7 +42,12 @@ public:
   /**
      @short retrieve module info from electronics id information (ECON-D idx, Capture Block idx, FED ID)
   */
-  HGCalModuleInfo getModule(int ,int ,int ,bool) const;
+  HGCalModuleInfo getModule(int ,int ,int) const;
+
+  /**
+     @short retrieve module info from electronics id
+  */
+  HGCalModuleInfo getModule(HGCalElectronicsId& ) const;
 
   /**
      @short retrieve module info from geometry
@@ -52,7 +57,7 @@ public:
   /**
      @short Module location from electronics id information (plane,u,v,isSiPM)
   */
-  std::tuple<int,int,int,bool> getModuleLocation(int ,int ,int ,bool) const;
+  std::tuple<int,int,int,bool> getModuleLocation(int ,int ,int ) const;
   
   /**
      @short Module location from ElectronicsId (plane,u,v,isSiPM)
@@ -63,6 +68,11 @@ public:
     @short module electronics identifier (ECON-D idx, Capture Block idx, FED ID)
   */
   std::tuple<int,int,int> getModuleElectronicsIdentifiers(int ,int ,int ,bool , bool ) const;
+
+   /*
+    @short retireve HGCalElectronicsId from geometry and channel ROC fields
+  */
+  HGCalElectronicsId getModuleElectronicsId(int ,int ,int ,bool , bool ,uint8_t ,uint8_t ) const;
 
   /**
      @short retrieves a map elecId <-> geomId

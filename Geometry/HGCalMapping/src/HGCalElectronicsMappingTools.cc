@@ -40,4 +40,39 @@ namespace hgcal {
     return idmap;
   }
 
+  std::map<uint32_t,uint32_t> mapSiPMGeoToElectronics(const HGCalCondSerializableModuleInfo &moduleInfo,
+                                                    const HGCalCondSerializableSiPMTileInfo &sipmCellInfo,
+                                                    bool geo2ele)
+  {
+    //loop over SiPM tileboards
+    std::map<uint32_t,uint32_t> idmap;
+    for(auto m : moduleInfo.params_){
+      
+      if(!m.isSiPM) continue;
+
+      //loop over tiles in this tileboard
+      auto cells = sipmCellInfo.getAllCellsInModule(m.plane, m.u);
+      for(auto c: cells){
+        
+        if(c.t!=1) continue;
+
+        uint16_t econderx = c.sipmcell/36;
+        uint16_t halfrocch = c.sipmcell - 36*econderx;
+        uint32_t elecid = HGCalElectronicsId(m.zside,m.fedid,m.captureblock,m.econdidx,econderx,halfrocch).raw();
+
+        int layer = m.plane - 25;
+        int type = ((layer <= 8) ? 0 : ((layer <= 17) ? 1 : 2));
+        int ring = (m.zside ? c.iring : (-1)*c.iring);
+        int iphi = m.v*8 + c.iphi + 1;
+
+        uint32_t geoid = HGCScintillatorDetId(type, layer, ring, iphi, false, true).rawId();
+
+        //map
+        idmap[geo2ele ? geoid : elecid] = geo2ele ? elecid : geoid;
+      }
+    }
+
+    return idmap;
+  }
+
 }

@@ -9,8 +9,10 @@
 
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableSiCellChannelInfoRcd.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableSiPMTileInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiCellChannelInfo.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiPMTileInfo.h"
 #include "Geometry/HGCalMapping/interface/HGCalElectronicsMappingTools.h"
 
 #include <iostream>
@@ -27,7 +29,8 @@ public:
    */
   explicit HGCalElectronicsMapESSourceTester(const edm::ParameterSet& iConfig)
     :  moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("ModuleInfo"))),
-       siModuleInfoToken_(esConsumes<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("SiModuleInfo")))
+       siModuleInfoToken_(esConsumes<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("SiModuleInfo"))),
+       sipmModuleInfoToken_(esConsumes<HGCalCondSerializableSiPMTileInfo,HGCalCondSerializableSiPMTileInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("SiPMModuleInfo")))
   {}
 
   /**
@@ -37,6 +40,7 @@ public:
     edm::ParameterSetDescription desc;
     desc.add<edm::ESInputTag>("ModuleInfo",edm::ESInputTag(""));
     desc.add<edm::ESInputTag>("SiModuleInfo",edm::ESInputTag(""));
+    desc.add<edm::ESInputTag>("SiPMModuleInfo",edm::ESInputTag(""));
     descriptions.addWithDefaultLabel(desc);
   }
   
@@ -65,6 +69,7 @@ private:
   //tokens and record watches
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
   edm::ESGetToken<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd> siModuleInfoToken_;
+  edm::ESGetToken<HGCalCondSerializableSiPMTileInfo,HGCalCondSerializableSiPMTileInfoRcd> sipmModuleInfoToken_;
 };
 
 //
@@ -78,6 +83,10 @@ void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm
   std::map<uint32_t,uint32_t> ele2geo=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,false);
   std::map<uint32_t,uint32_t> geo2ele=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,true);
 
+  auto sipmCellInfo = iSetup.getData(sipmModuleInfoToken_);
+  std::map<uint32_t,uint32_t> sipmEle2geo=hgcal::mapSiPMGeoToElectronics(moduleInfo,sipmCellInfo,false);
+  std::map<uint32_t,uint32_t> sipmGeo2ele=hgcal::mapSiPMGeoToElectronics(moduleInfo,sipmCellInfo,true);
+
   std::cout << "Read module info with " << moduleInfo.params_.size() << " entries" << std::endl
             << "Max values for dense indexing are" << std::endl
             << "\tmax fed=" << (uint32_t)(std::get<0>(denseIdxMax)) << std::endl
@@ -85,12 +94,15 @@ void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm
             << "\tmax econd=" << (uint32_t)(std::get<2>(denseIdxMax)) << std::endl
             << "\tmax eRx=" << (uint32_t)(std::get<3>(denseIdxMax)) << std::endl
             << "Read si cell info with " << siCellInfo.params_.size() << " entries" << std::endl
-            << "ID maps #ele2geo=" << ele2geo.size() << " #geo2ele=" << geo2ele.size() << std::endl;
+            << "si ID maps #ele2geo=" << ele2geo.size() << " #geo2ele=" << geo2ele.size() << std::endl
+            << "Read SiPM cell info with " << sipmCellInfo.params_.size() << " entries" << std::endl
+            << "SiPM ID maps #ele2geo=" << sipmEle2geo.size() << " #geo2ele=" << sipmGeo2ele.size() << std::endl;
   std::cout << "e-Rx enable bit patterns" << std::endl;
   for(auto it : erxbitmap){
     std::cout << "\t" << it.first << " : " << it.second << std::endl;
   }
   
+  // si cell test
   assert(ele2geo.size()==geo2ele.size());
 
   for(auto it : ele2geo) {
@@ -103,8 +115,22 @@ void HGCalElectronicsMapESSourceTester::beginRun(edm::Run const& iRun, const edm
     assert(ele2geo[it.second]==it.first);
   }
 
-  std::cout << "1:1 correspondences found for physical cells" << std::endl;
+  std::cout << "1:1 correspondences found for physical si cells" << std::endl;
 
+  // sipm cell test
+  assert(sipmEle2geo.size()==sipmGeo2ele.size());
+
+  for(auto it : sipmEle2geo) {
+    assert(sipmGeo2ele.count(it.second)==1);
+    assert(sipmGeo2ele[it.second]==it.first);
+  }
+  
+  for(auto it : sipmGeo2ele) {
+    assert(sipmEle2geo.count(it.second)==1);
+    assert(sipmEle2geo[it.second]==it.first);
+  }
+
+  std::cout << "1:1 correspondences found for physical SiPM cells" << std::endl;
 }
 
 

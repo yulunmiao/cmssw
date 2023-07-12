@@ -19,10 +19,11 @@ void HGCalModuleLocator::buildModuleLocatorFrom(std::string path,bool usefip)
     if(iline==1) continue;
     std::istringstream stream(line);
     int zside;
+    std::string itype;
     HGCalModuleInfo m;
-    stream >> m.plane >> m.u >> m.v >> m.isSiPM >> m.isHD >> m.wafType >> m.econdidx >> m.captureblock >> m.slink >> m.captureblockidx >> m.fedid >> zside;
+    stream >> m.plane >> m.u >> m.v >> m.isSiPM >> m.isHD >> itype >> m.econdidx >> m.captureblock >> m.slink >> m.captureblockidx >> m.fedid >> zside;
     m.zside = (zside>0);
+    m.wafType = (m.isSiPM ? 0 : std::stoi(itype));
     getInfo().addParameter(m);
   }
 }
-

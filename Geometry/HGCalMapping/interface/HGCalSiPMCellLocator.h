@@ -12,42 +12,25 @@
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
 #include "DataFormats/ForwardDetId/interface/HGCScintillatorDetId.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiPMTileInfo.h"
+#include "Geometry/HGCalMapping/interface/HGCalEntityLocatorBase.h"
 
-
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <map>
-#include <tuple>
-#include <iterator>
-#include <algorithm>
-
-class HGCalSiPMCellLocator {
+class HGCalSiPMCellLocator : public HGCalEntityLocatorBase<HGCalCondSerializableSiPMTileInfo> 
+{
 
     public:
 
         HGCalSiPMCellLocator(){};
 
-        void buildLocatorFrom(std::string channelpath);
+        void buildLocatorFrom(std::string path,bool usefip=false) override {
+            buildLocatorFrom(path,false,usefip);
+        }
 
-        // // Cell location from ROC fields and Module location
-        std::tuple<int,int,int> getCellLocation(int seq, int econderx, int halfrocch, int layer, int modiring, int modiphi) const;
+        void buildLocatorFrom(std::string path,bool append,bool usefip);
 
-        // // Cell location (ring,iphi) from HGCalElectronicsId and Module location
-        std::tuple<int,int> getCellLocation(HGCalElectronicsId& id, int seq, int layer, int modiring, int modiphi) const;
-
-        // // DetId from ElectronicsId and Module location, including z-side
-        DetId getDetId(HGCalElectronicsId& id, int seq, int z, int layer, int modiring, int modiphi) const;
-
-        // // Module location (layer, ring, iphi) from DetId
-        std::tuple<int,int,int> getModuleLocation(DetId& id) const;
+        ~HGCalSiPMCellLocator(){};
 
     private:
-        HGCalCondSerializableSiPMTileInfo cellColl_;
 
-        int getSiPMchannel(int seq, uint8_t econderx, uint8_t halfrocch) const;
 };
 
 #endif

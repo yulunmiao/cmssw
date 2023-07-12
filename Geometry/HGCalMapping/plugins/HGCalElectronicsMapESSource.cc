@@ -17,6 +17,7 @@
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiPMTileInfo.h"
 #include "Geometry/HGCalMapping/interface/HGCalModuleLocator.h"
 #include "Geometry/HGCalMapping/interface/HGCalSiCellLocator.h"
+#include "Geometry/HGCalMapping/interface/HGCalSiPMCellLocator.h"
 
 /**
    @short 
@@ -70,6 +71,8 @@ private:
 //specify the different ES sources
 typedef HGCalElectronicsMapESSourceBase<HGCalCondSerializableModuleInfoRcd,HGCalCondSerializableModuleInfo,HGCalModuleLocator> HGCalModuleInfoESSource;
 typedef HGCalElectronicsMapESSourceBase<HGCalCondSerializableSiCellChannelInfoRcd,HGCalCondSerializableSiCellChannelInfo,HGCalSiCellLocator> HGCalSiModuleInfoESSource;
+typedef HGCalElectronicsMapESSourceBase<HGCalCondSerializableSiPMTileInfoRcd,HGCalCondSerializableSiPMTileInfo,HGCalSiPMCellLocator> HGCalSiPMModuleInfoESSource;
 
 DEFINE_FWK_EVENTSETUP_SOURCE(HGCalModuleInfoESSource);
 DEFINE_FWK_EVENTSETUP_SOURCE(HGCalSiModuleInfoESSource);
+DEFINE_FWK_EVENTSETUP_SOURCE(HGCalSiPMModuleInfoESSource);
