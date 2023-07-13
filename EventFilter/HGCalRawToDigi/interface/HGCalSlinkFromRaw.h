@@ -24,6 +24,13 @@ namespace hgcal {
     
   private:
 
+    bool nextRecord(){
+      bool status( fileReader_.read(record_) );
+
+      return status;
+    }
+      
+    
     HGCalTestSystemMetaData metaData_;
     
     size_t ifile_;

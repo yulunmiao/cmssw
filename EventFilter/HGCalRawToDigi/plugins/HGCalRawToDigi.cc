@@ -66,7 +66,7 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
       unpackerConfig_(HGCalUnpackerConfig{.sLinkBOE = iConfig.getParameter<unsigned int>("slinkBOE"),
-                              .captureBlockReserved = iConfig.getParameter<unsigned int>("captureBlockReserved"),
+                              .cbHeaderMarker = iConfig.getParameter<unsigned int>("cbHeaderMarker"),
                               .econdHeaderMarker = iConfig.getParameter<unsigned int>("econdHeaderMarker"),
                               .payloadLengthMax = iConfig.getParameter<unsigned int>("payloadLengthMax")}) {}
                               
@@ -119,16 +119,31 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     const auto& fed_data = raw_data.FEDData(fed_id);
     if (fed_data.size() == 0)
       continue;
-
-    std::vector<uint32_t> data_32bit;
+    
     auto* ptr = fed_data.data();
     size_t fed_size = fed_data.size();
+    std::vector<uint32_t> data_32bit;
     for (size_t i = 0; i < fed_size; i += 4){
-      data_32bit.emplace_back(((*(ptr + i) & 0xff) << 0) + (((i + 1) < fed_size) ? ((*(ptr + i + 1) & 0xff) << 8) : 0) +
-                              (((i + 2) < fed_size) ? ((*(ptr + i + 2) & 0xff) << 16) : 0) +
-                              (((i + 3) < fed_size) ? ((*(ptr + i + 3) & 0xff) << 24) : 0));
+      data_32bit.emplace_back( (((*(ptr + i) & 0xff) << 0) +
+                                (((i + 1) < fed_size) ? ((*(ptr + i + 1) & 0xff) << 8) : 0) +
+                                (((i + 2) < fed_size) ? ((*(ptr + i + 2) & 0xff) << 16) : 0) +
+                                (((i + 3) < fed_size) ? ((*(ptr + i + 3) & 0xff) << 24) : 0))
+                               );
     }
-
+    
+    //preserve pseudo-endianness
+    //data_32bit.emplace_back(
+    //                        ((*(ptr + i) & 0xff) << 24) +
+    //                        (((i + 1) < fed_size) ? ((*(ptr + i + 1) & 0xff) << 16) : 0) +
+    //                        (((i + 2) < fed_size) ? ((*(ptr + i + 2) & 0xff) << 8) : 0) +
+    //                        (((i + 3) < fed_size) ? ((*(ptr + i + 3) & 0xff) << 0) : 0) );
+    
+    std::cout << "[HGCalRawToDigi:produce]"
+              << std::dec << "FED ID=" << fed_id
+              << std::hex << " First words: 0x" << data_32bit[0] << " 0x" << data_32bit[1]  
+              << std::dec << " Data size=" << fed_size << std::endl;
+    
+    
     unpacker_->parseSLink(
         data_32bit,
         [this](uint16_t sLink, uint8_t captureBlock, uint8_t econd) { 
@@ -201,9 +216,9 @@ void HGCalRawToDigi::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("src", edm::InputTag("rawDataCollector"));
   desc.add<unsigned int>("maxCaptureBlock", 1)->setComment("maximum number of capture blocks in one S-Link");
-  desc.add<unsigned int>("captureBlockReserved", 0)->setComment("capture block reserved pattern");
+  desc.add<unsigned int>("cbHeaderMarker", 0x5f)->setComment("capture block reserved pattern");
   desc.add<unsigned int>("econdHeaderMarker", 0x154)->setComment("ECON-D header Marker pattern");
-  desc.add<unsigned int>("slinkBOE", 0x2a)->setComment("SLink BOE pattern");
+  desc.add<unsigned int>("slinkBOE", 0x55)->setComment("SLink BOE pattern");
   desc.add<unsigned int>("captureBlockECONDMax", 12)->setComment("maximum number of ECON-D's in one capture block");
   desc.add<unsigned int>("econdERXMax", 12)->setComment("maximum number of eRx's in one ECON-D");
   desc.add<unsigned int>("erxChannelMax", 37)->setComment("maximum number of channels in one eRx");

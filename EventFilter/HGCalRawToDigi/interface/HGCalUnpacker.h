@@ -19,9 +19,9 @@
 #include <vector>
 
 struct HGCalUnpackerConfig {
-  uint32_t sLinkBOE{0x0};               ///< S-Link BOE pattern
-  uint32_t captureBlockReserved{0x3f};  ///< Capture block reserved pattern
-  uint32_t econdHeaderMarker{0x154};    ///< ECON-D header Marker pattern
+  uint32_t sLinkBOE{0x2a};              ///< S-Link BOE pattern
+  uint32_t cbHeaderMarker{0x5f};        ///< Capture block reserved pattern for a new event
+  uint32_t econdHeaderMarker{0x154};    ///< ECON-D header Marker pattern for a new event
   uint32_t sLinkCaptureBlockMax{10};    ///< maximum number of capture blocks in one S-Link
   uint32_t captureBlockECONDMax{12};    ///< maximum number of ECON-Ds in one capture block
   uint32_t econdERXMax{12};             ///< maximum number of eRxs in one ECON-D
@@ -43,10 +43,10 @@ public:
     kSLinkFEDIdMask = 0b1111111111,
   };
   enum CaptureBlockHeaderShift {
-    kCaptureBlockReservedShift = 26,
+    kCaptureBlockReservedShift = 25,
   };
   enum CaptureBlockMask {
-    kCaptureBlockReservedMask = 0b111111,
+    kCaptureBlockReservedMask = 0b1111111,
     kCaptureBlockECONDStatusMask = 0b111,
   };
   enum ECONDHeaderShift {

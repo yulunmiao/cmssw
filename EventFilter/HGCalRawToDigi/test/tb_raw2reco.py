@@ -38,6 +38,9 @@ options.register('storeRAWOutput', False, VarParsing.VarParsing.multiplicity.sin
                  'also store the RAW output into a streamer file')
 options.register('storeEmulatorInfo', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'also store the emulator metadata')
+options.register('slinkBOE', 0x2a, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for S-link')
+options.register('cbHeaderMarker', 0x5f, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for BE/capture block')
+options.register('econdHeaderMarker', 0x154, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for ECON-D')
 options.register('configFile',
                  '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
@@ -142,9 +145,14 @@ process.hgcalDigis.numERxsInECOND = options.numERxsPerECOND
 process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventional, high number of ECON-Ds per capture block
     process.hgcalDigis.captureBlockECONDMax,
     len([ec for ec in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs if ec.active]))
+
 process.hgcalDigis.config_label = cms.ESInputTag('') # for HGCalConfigESSourceFromYAML
 process.hgcalDigis.module_info_label = cms.ESInputTag('') # for HGCalModuleInfoESSource
+process.hgcalDigis.slinkBOE=cms.uint32(options.slinkBOE)
+process.hgcalDigis.cbHeaderMarker=cms.uint32(options.cbHeaderMarker)
+process.hgcalDigis.econdHeaderMarker=cms.uint32(options.econdHeaderMarker)
 
+    
 #
 # TESTERS
 #
@@ -208,8 +216,8 @@ process.dqmSaver.runNumber = options.runNumber
 #path
 process.p = cms.Path(process.hgcalEmulatedSlinkRawData * process.hgcalDigis                # RAW->DIGI
                      * process.hgcalRecHit                                                 # DIGI->RECO
-                     * process.hgCalDigisClient * process.hgCalDigisClientHarvester * process.dqmSaver # DQM
-                     * process.hgCalSoATester * process.hgCalRecHitsFromSoAproducer        # TESTERS / Phase I TRANSLATORS
+                     #* process.hgCalDigisClient * process.hgCalDigisClientHarvester * process.dqmSaver # DQM
+                     #* process.hgCalSoATester * process.hgCalRecHitsFromSoAproducer        # TESTERS / Phase I TRANSLATORS
 )
 
 if options.dumpFRD:
@@ -237,9 +245,14 @@ if options.storeOutput:
 
 if options.storeRAWOutput:
     process.outputRAW = cms.OutputModule("FRDOutputModule",
-        source = cms.InputTag('hgcalEmulatedSlinkRawData'),
+        source = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData'),
         frdVersion = cms.untracked.uint32(6),
         frdFileVersion = cms.untracked.uint32(1),
         fileName = cms.untracked.string(options.secondaryOutput)
     )
     process.outpath += process.outputRAW
+
+#add timing
+process.Timing = cms.Service("Timing",
+                             summaryOnly = cms.untracked.bool(True),
+                             useJobReport = cms.untracked.bool(True))

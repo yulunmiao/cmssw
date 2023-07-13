@@ -28,112 +28,91 @@ FEDRawDataCollection SlinkFromRaw::next() {
     fileReader_.open(inputfile);    
   }
 
-  //no more records in the file
-  if(!fileReader_.read(record_)) {
+  //no more records in the file, move to next
+  if(!nextRecord()) {
     ifile_++;
-
+  
     if(ifile_>=inputfiles_.size())
-      throw cms::Exception("SlinkFromRaw::next") << "No more files";
+      throw cms::Exception("[HGCalSlinkFromRaw::next]") << "no more files";
    
     fileReader_.close();
     auto inputfile=inputfiles_[ifile_];
     fileReader_.open(inputfile);
+
+    return next();      
   }
-  edm::LogInfo("SlinkFromRaw: Reading record from file #") << ifile_ << "nevents=" << nEvents_ << "\n";
   
-  // Set up specific records to interpet the formats
-  const hgcal_slinkfromraw::RecordStarting *rStart((hgcal_slinkfromraw::RecordStarting*)record_);
-  const hgcal_slinkfromraw::RecordStopping *rStop((hgcal_slinkfromraw::RecordStopping*)record_);
-  const hgcal_slinkfromraw::RecordRunning  *rEvent((hgcal_slinkfromraw::RecordRunning*)record_);
-  if(record_->state()==hgcal_slinkfromraw::FsmState::Starting) {
-    rStart->print();
-  } else if(record_->state()==hgcal_slinkfromraw::FsmState::Stopping){
+  //if record is stop or starting read again
+  if(record_->state()==hgcal_slinkfromraw::FsmState::Stopping){
+    edm::LogInfo("SlinkFromRaw") << "RecordStopping will search for next";
+    const hgcal_slinkfromraw::RecordStopping *rStop((hgcal_slinkfromraw::RecordStopping*)record_);
     rStop->print();
-  } else {                
-
-    // We have a new event
-    nEvents_++;
-    bool print(nEvents_<=1);
-    if(print) {
-      rEvent->print();
-      std::cout << std::endl;
-    }
-
-    // Check id is correct
-    if(!rEvent->valid()) rEvent->print();
-
-    //FIXME: these have to be read from the TCDS block
-    metaData_.trigType_=0;
-    metaData_.trigTime_=0;
-    metaData_.trigWidth_=0;
-    
-    // Access the Slink header ("begin-of-event")
-    // This should always be present; check pattern is correct
-    const hgcal_slinkfromraw::SlinkBoe *b(rEvent->slinkBoe());
-    assert(b!=nullptr);
-    if(!b->validPattern()) b->print();
-    
-    // Access the Slink trailer ("end-of-event")
-    // This should always be present; check pattern is correct
-    const hgcal_slinkfromraw::SlinkEoe *e(rEvent->slinkEoe());
-    assert(e!=nullptr);
-    if(!e->validPattern()) e->print();
-                
-    // Access the BE packet header
-    const hgcal_slinkfromraw::BePacketHeader *bph(rEvent->bePacketHeader());
-    if(bph!=nullptr && print) bph->print();
-    
-    // Access ECON-D packet as an array of 32-bit words
-    const uint32_t *pEcond(rEvent->econdPayload());
-    
-    // Check this is not an empty event
-    if(pEcond!=nullptr) {
-                    
-      if(print) {
-        std::cout << "First 10 words of ECON-D packet" << std::endl;
-        std::cout << std::hex << std::setfill('0');
-        for(unsigned i(0);i<10;i++) {
-          std::cout << "0x" << std::setw(8) << pEcond[i] << std::endl;
-        }
-        std::cout << std::dec << std::setfill(' ');
-        std::cout << std::endl;
-      }
-
-      //record_->print();
-      
-      //copy to the event      
-      auto *payload=record_->getPayload();
-      auto payloadLength=record_->payloadLength()-2;
-      //uint64_t rpayload[payloadLength]; 
-
-      for (int i(0); i < payloadLength ; i++)
-	{
-	  //std::cout <<"p " << std::setw(16)<< std::setfill('0') <<
-	  //  std::hex<< payload[i] << std::dec<< std::endl;
-	  
-	  //swap 16 bits
-	  // rpayload[i] = 
-	    ((((payload[i]) & 0xff00000000000000) >> 56) |
-	     (((payload[i]) & 0x00ff000000000000) >> 40) |
-	     (((payload[i]) & 0x0000ff0000000000) >> 24) |
-	     (((payload[i]) & 0x000000ff00000000) >> 8 ) |
-	     (((payload[i]) & 0x00000000ff000000) << 8 ) |
-	     (((payload[i]) & 0x0000000000ff0000) << 24) |
-	     (((payload[i]) & 0x000000000000ff00) << 40) |
-	     (((payload[i]) & 0x00000000000000ff) << 56));
-
-	    //std::cout <<"r " << std::setw(16)<< std::setfill('0') <<
-	    //  std::hex<< rpayload[i] << std::dec<< std::endl;
-	}
-      
-      size_t total_event_size = payloadLength/sizeof(char);
-      std::cout << "\t -> " << total_event_size << std::endl;
-      auto& fed_data = raw_data.FEDData(1);
-      fed_data.resize(total_event_size);
-      auto* ptr = fed_data.data();
-      memcpy(ptr, (char*)payload, total_event_size);
-    }
+    return next();
   }
+  if(record_->state()==hgcal_slinkfromraw::FsmState::Starting) {
+    edm::LogInfo("SlinkFromRaw") << "RecordStarting will search for next";
+    const hgcal_slinkfromraw::RecordStarting *rStart((hgcal_slinkfromraw::RecordStarting*)record_);
+    rStart->print();
+    return next();
+  }
+
+  //analyze event
+  edm::LogInfo("SlinkFromRaw: Reading record from file #") << ifile_ << "nevents=" << nEvents_ << "\n";
+  const hgcal_slinkfromraw::RecordRunning  *rEvent((hgcal_slinkfromraw::RecordRunning*)record_);
+  if(!rEvent->valid())
+    throw cms::Exception("[HGCalSlinkFromRaw::next]") << "record running is invalid";
+  nEvents_++;
+  bool print(nEvents_<=1);
+  if(print) {     
+    rEvent->print();
+  }
+
+  //FIXME: these have to be read from the TCDS block
+  metaData_.trigType_=0;
+  metaData_.trigTime_=0;
+  metaData_.trigWidth_=0;
+    
+  // Access the Slink header ("begin-of-event")
+  const hgcal_slinkfromraw::SlinkBoe *b(rEvent->slinkBoe());
+  assert(b!=nullptr);
+  if(!b->validPattern())
+    throw cms::Exception("[HGCalSlinkFromRaw::next]") << "SlinkBoe has invalid pattern";
+  uint32_t sourceId=b->sourceId();
+  
+  // Access the Slink trailer ("end-of-event")
+  const hgcal_slinkfromraw::SlinkEoe *e(rEvent->slinkEoe());
+  assert(e!=nullptr);
+  if(!e->validPattern())
+    throw cms::Exception("[HGCalSlinkFromRaw::next]") << "SlinkEoe has invalid pattern";
+  
+  // Access the BE packet header
+  const hgcal_slinkfromraw::BePacketHeader *bph(rEvent->bePacketHeader());
+  if(bph==nullptr)
+    throw cms::Exception("[HGCalSlinkFromRaw::next]") << "Null pointer to BE packet header";
+  
+  // Access ECON-D packet as an array of 32-bit words
+  const uint32_t *pEcond(rEvent->econdPayload());
+  if(pEcond==nullptr)
+    throw cms::Exception("[HGCalSlinkFromRaw::next]") << "Null pointer to ECON-D payload";
+          
+  //copy to the event      
+  auto *payload=record_->getPayload();
+  auto payloadLength=record_->payloadLength()-2;
+
+  //this is a hack to store 32b as [MSB 32b | LSB 32b]
+  //unclear how the final system will be
+  for(auto i=0; i<payloadLength; i++) {
+    std::cout << "0x" << std::hex << (payload[i]>>32) << "\t" << (payload[i] & 0xffffffff) << std::endl;
+    //    if(i!=3)
+    payload[i]=((payload[i]&0xffffffff)<<32) | payload[i]>>32;
+  }
+  size_t total_event_size = payloadLength/sizeof(char);
+  std::cout << "Total event size in bytes is:" << total_event_size << " sourceId=" << sourceId << std::endl;
+  auto& fed_data = raw_data.FEDData(1); //data for one FED
+  fed_data.resize(total_event_size);
+  auto* ptr = fed_data.data();
+  memcpy(ptr, (char*)payload, total_event_size);
+  
 
   return raw_data;
 }

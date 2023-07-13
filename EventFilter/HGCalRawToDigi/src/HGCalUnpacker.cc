@@ -45,30 +45,35 @@ void HGCalUnpacker::parseSLink(
          captureBlock++) {  // loop through all capture blocks
       //----- parse the capture block header
       if (((inputArray[iword] >> kCaptureBlockReservedShift) & kCaptureBlockReservedMask) !=
-          config_.captureBlockReserved)  // sanity check
+          config_.cbHeaderMarker)  // sanity check
         throw cms::Exception("CorruptData")
             << "Expected a capture block header at word " << std::dec << iword << "/0x" << std::hex << iword
-            << " (reserved word: 0x" << config_.captureBlockReserved << "), got 0x" << inputArray[iword] << ".";
+            << " (reserved word: 0x" << config_.cbHeaderMarker << "), got 0x"
+            << ((inputArray[iword] >> kCaptureBlockReservedShift) & kCaptureBlockReservedMask)
+            << " from 0x" << inputArray[iword]  << ".";
 
       const uint64_t captureBlockHeader = ((uint64_t)inputArray[iword] << 32) | ((uint64_t)inputArray[iword + 1]);
       iword += 2;  // length of capture block header (64 bits)
 
-      LogDebug("HGCalUnpack") << "Capture block=" << (int)captureBlock << ", capture block header=0x" << std::hex
-                              << captureBlockHeader;
+      //LogDebug("HGCalUnpack")
+      std::cout << "Capture block=" << (int)captureBlock << ", capture block header=0x" << std::hex
+                << captureBlockHeader << std::endl;
 
       //----- parse the capture block body
       for (uint8_t econd = 0; econd < config_.captureBlockECONDMax; econd++) {  // loop through all ECON-Ds
         if (((captureBlockHeader >> (3 * econd)) & kCaptureBlockECONDStatusMask) >= 0b100)
           continue;  // only pick active ECON-Ds
+        std::cout << (uint32_t)(econd )<< " is active" << std::endl;
 
         //----- parse the ECON-D header
         // (the second word of ECON-D header contains no information for unpacking, use only the first one)
-        if (((inputArray[iword] >> kHeaderShift) & kHeaderMask) != config_.econdHeaderMarker)  // sanity check
+        //FIXME PEDRO YOU ADDED +1
+        if (((inputArray[iword+1] >> kHeaderShift) & kHeaderMask) != config_.econdHeaderMarker)  // sanity check
           throw cms::Exception("CorruptData")
               << "Expected a ECON-D header at word " << std::dec << iword << "/0x" << std::hex << iword
               << " (marker: 0x" << config_.econdHeaderMarker << "), got 0x" << inputArray[iword] << ".";
 
-        const auto& econdHeader = inputArray[iword];
+        const auto& econdHeader = inputArray[iword+1];
         iword += 2;  // length of ECON-D header (2 * 32 bits)
 
         LogDebug("HGCalUnpack") << "ECON-D #" << (int)econd << ", first word of ECON-D header=0x" << std::hex
@@ -76,6 +81,8 @@ void HGCalUnpacker::parseSLink(
 
         //----- extract the payload length
         const uint32_t payloadLength = (econdHeader >> kPayloadLengthShift) & kPayloadLengthMask;
+        std::cout << "ECOND- header= 0x" << std::hex << econdHeader << " and payload length is =" << std::dec << payloadLength << std::endl;
+        std::cout << "Passthrough=" << ((econdHeader >> kPassThroughShift) & kPassThroughMask) << std::endl;
         if (payloadLength > config_.payloadLengthMax)  // if payload length too big
           throw cms::Exception("CorruptData") << "Unpacked payload length=" << payloadLength
                                               << " exceeds the maximal length=" << config_.payloadLengthMax;
@@ -84,12 +91,13 @@ void HGCalUnpacker::parseSLink(
         //Quality check
         if ((((captureBlockHeader >> (3 * econd)) & kCaptureBlockECONDStatusMask) != 0b000) ||
             (((econdHeader >> kHTShift) & kHTMask) >= 0b10) || (((econdHeader >> kEBOShift) & kEBOMask) >= 0b10) ||
-            (((econdHeader >> kMatchShift) & kMatchMask) == 0) ||
+            (((econdHeader >> kMatchShift) & kMatchMask) == 1) || //PEDRO: LOGIC IS REVERSED
             (((econdHeader >> kTruncatedShift) & kTruncatedMask) == 1)) {  // bad ECOND
-          LogDebug("HGCalUnpack") << "ECON-D failed quality check, HT=" << (econdHeader >> kHTShift & kHTMask)
+          //LogDebug("HGCalUnpack")
+            std::cout << "ECON-D failed quality check, HT=" << (econdHeader >> kHTShift & kHTMask)
                                   << ", EBO=" << (econdHeader >> kEBOShift & kEBOMask)
                                   << ", M=" << (econdHeader >> kMatchShift & kMatchMask)
-                                  << ", T=" << (econdHeader >> kTruncatedShift & kTruncatedMask);
+                      << ", T=" << (econdHeader >> kTruncatedShift & kTruncatedMask) << std::endl;
           badECOND_.emplace_back(iword - 2);
           iword += payloadLength;  // skip the current ECON-D (using the payload length parsed above)
 
@@ -106,11 +114,14 @@ void HGCalUnpacker::parseSLink(
           LogDebug("HGCalUnpack") << "Standard ECON-D";
           const auto enabledERX = enabledERXMapping(sLink, captureBlock, econd);
           for (uint8_t erx = 0; erx < config_.econdERXMax; erx++) {
+
             //loop through eRx
             //pick active eRx
             if ((enabledERX >> erx & 1) == 0)
               continue;
 
+            std::cout << uint32_t(erx) << " is enabled" << std::endl;
+            
             //----- parse the eRX subpacket header
             //common mode
             const HGCalElectronicsId cm0id(zside, sLink, captureBlock, econd, erx, 37);
@@ -135,7 +146,8 @@ void HGCalUnpacker::parseSLink(
             commonModeDataSize_ += 2;
             // empty check
             if (((inputArray[iword] >> kFormatShift) & kFormatMask) == 1) {  // empty
-              LogDebug("HGCalUnpack") << "eRx empty";
+              //  LogDebug("HGCalUnpack")
+              std::cout << "eRx empty" << std::endl;
               iword += 1;  // length of an empty eRx header (32 bits)
               continue;    // go to the next eRx
             }
@@ -153,18 +165,19 @@ void HGCalUnpacker::parseSLink(
               const uint32_t tempIndex = bitCounter / 32 + iword;
               const uint8_t tempBit = bitCounter % 32;
               const uint32_t temp =
-                  (tempBit == 0) ? inputArray[tempIndex]
-                                 : (inputArray[tempIndex] << tempBit) | (inputArray[tempIndex + 1] >> (32 - tempBit));
+                (tempBit == 0) ? inputArray[tempIndex]
+                : (inputArray[tempIndex] << tempBit) | (inputArray[tempIndex + 1] >> (32 - tempBit));
               const uint8_t code = temp >> 28;
               // use if and else here
               channelData_[channelDataSize_] = HGCROCChannelDataFrame<HGCalElectronicsId>(
-                  id,
-                  ((temp << erxBodyLeftShift_[code]) >> erxBodyRightShift_[code]) & erxBodyMask_[code]);
+                                                                                          id,
+                                                                                          ((temp << erxBodyLeftShift_[code]) >> erxBodyRightShift_[code]) & erxBodyMask_[code]);
               bitCounter += erxBodyBits_[code];
               if (code == 0b0010)
                 channelData_[channelDataSize_].fillFlag1(1);
               commonModeSum_[channelDataSize_]=cmSum;
-              LogDebug("HGCalUnpack") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
+              //LogDebug("HGCalUnpack")
+              std::cout << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
                                       << (int)erx << ":" << (int)channel << "\n"
                                       << "  full word readout=0x" << std::hex << temp << std::dec << ", code=0x"
                                       << std::hex << (int)code << std::dec << "\n"
@@ -172,12 +185,15 @@ void HGCalUnpacker::parseSLink(
                                       << channelData_[channelDataSize_].raw();
               channelDataSize_++;
             }
+
             // pad to the whole word
             iword += bitCounter / 32;
             if (bitCounter % 32 != 0)
               iword += 1;
-            // eRx subpacket has no trailer
+
           }
+          std::cout << std::dec << iword << std::endl;
+
         } else {
           // passthrough ECON-D
           LogDebug("HGCalUnpack") << "Passthrough ECON-D";
@@ -185,7 +201,7 @@ void HGCalUnpacker::parseSLink(
           for (uint8_t erx = 0; erx < config_.econdERXMax; erx++) {  // loop through all eRxs
             if ((enabledERX >> erx & 1) == 0)
               continue;  // only pick active eRxs
-
+            
             //----- parse the eRX subpacket header
             //common mode
             const HGCalElectronicsId cm0id(zside, sLink, captureBlock, econd, erx, 37);
@@ -229,7 +245,7 @@ void HGCalUnpacker::parseSLink(
         //----- parse the ECON-D trailer
         // (no information needed from ECON-D trailer in unpacker, skip it)
         iword += 1;  // length of the ECON-D trailer (32 bits CRC)
-
+        
         if (iword - econdBodyStart != payloadLength)
           throw cms::Exception("CorruptData")
               << "Mismatch between unpacked and expected ECON-D #" << (int)econd << " payload length\n"
@@ -273,10 +289,10 @@ void HGCalUnpacker::parseCaptureBlock(
   for (uint32_t iword = 0; iword < inputArray.size();) {  // loop through all capture blocks
 
     //----- parse the capture block header
-    if (((inputArray[iword] >> kCaptureBlockReservedShift) & kCaptureBlockReservedMask) != config_.captureBlockReserved)
+    if (((inputArray[iword] >> kCaptureBlockReservedShift) & kCaptureBlockReservedMask) != config_.cbHeaderMarker)
       throw cms::Exception("CorruptData")
           << "Expected a capture block header at word " << std::dec << iword << "/0x" << std::hex << iword
-          << " (reserved word: 0x" << config_.captureBlockReserved << "), got 0x" << inputArray[iword] << ".";
+          << " (reserved word: 0x" << config_.cbHeaderMarker << "), got 0x" << inputArray[iword] << ".";
 
     const uint64_t captureBlockHeader = ((uint64_t)inputArray[iword] << 32) | ((uint64_t)inputArray[iword + 1]);
     LogDebug("HGCalUnpack") << "Capture block=" << (int)captureBlock << ", capture block header=0x" << std::hex
@@ -285,6 +301,7 @@ void HGCalUnpacker::parseCaptureBlock(
 
     //----- parse the capture block body
     for (uint8_t econd = 0; econd < config_.captureBlockECONDMax; econd++) {  // loop through all ECON-Ds
+
       if ((captureBlockHeader >> (3 * econd) & kCaptureBlockECONDStatusMask) >= 0b100)
         continue;  // only pick the active ECON-Ds
 
@@ -302,7 +319,7 @@ void HGCalUnpacker::parseCaptureBlock(
                               << econdHeader;
 
       //----- extract the payload length
-      const uint32_t payloadLength = ((econdHeader >> kPayloadLengthShift)) & kPayloadLengthMask;
+      const uint32_t payloadLength = ((econdHeader >> kPayloadLengthShift)) & kPayloadLengthMask;     
       if (payloadLength > config_.payloadLengthMax)  // payload length is too large
         throw cms::Exception("CorruptData") << "Unpacked payload length=" << payloadLength
                                             << " exceeds the maximal length=" << config_.payloadLengthMax;
@@ -504,16 +521,17 @@ void HGCalUnpacker::parseECOND(
     const uint32_t payloadLength = (econdHeader >> kPayloadLengthShift) & kPayloadLengthMask;
     if (payloadLength > config_.payloadLengthMax)  // payload length too big
       throw cms::Exception("CorruptData")
-          << "Unpacked payload length=" << payloadLength << " exceeds the maximal length=" << config_.payloadLengthMax;
+        << "Unpacked payload length=" << payloadLength << " exceeds the maximal length=" << config_.payloadLengthMax;
 
-    LogDebug("HGCalUnpack") << "ECON-D #" << (int)econd << ", payload length = " << payloadLength;
+    LogDebug("HGCalUnpack")  << "ECON-D #" << (int)econd << ", payload length = " << payloadLength;
+    
     //Quality check
     if (((econdHeader >> kHTShift & kHTMask) >= 0b10) || ((econdHeader >> kEBOShift & kEBOMask) >= 0b10) ||
         ((econdHeader >> kMatchShift & kMatchMask) == 0) ||
         ((econdHeader >> kTruncatedShift & kTruncatedMask) == 1)) {  // bad ECOND
       LogDebug("HGCalUnpack") << "ECON-D failed quality check, HT=" << (econdHeader >> kHTShift & kHTMask)
-                              << ", EBO=" << (econdHeader >> kEBOShift & kEBOMask)
-                              << ", M=" << (econdHeader >> kMatchShift & kMatchMask)
+                << ", EBO=" << (econdHeader >> kEBOShift & kEBOMask)
+                << ", M=" << (econdHeader >> kMatchShift & kMatchMask)
                               << ", T=" << (econdHeader >> kTruncatedShift & kTruncatedMask);
       badECOND_.emplace_back(iword - 2);
       iword += payloadLength;  // skip the current ECON-D (using the payload length parsed above)
