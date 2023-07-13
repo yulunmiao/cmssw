@@ -9,6 +9,7 @@ namespace hgcal {
 
     //loop over Si modules
     std::map<uint32_t,uint32_t> idmap;
+
     for(auto m : moduleInfo.params_){
       
       if(m.isSiPM) continue;

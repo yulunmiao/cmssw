@@ -56,14 +56,9 @@ options.register('inputFiles',
 options.register('GPU', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
                  'run on GPU')
 options.register('runNumber', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'run number')
-options.register('maxEventsPerLS', 1000, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'max. events per lumi section')
+options.register('maxEventsPerLS', 100000, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'max. events per lumi section')
 options.register('firstLS', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'first lumi section')
 
-
-
-options.maxEvents = 100  # number of events to emulate
-options.output = 'output.root'  # output EDM file
-options.secondaryOutput = 'output.raw'  # output streamer file
 options.parseArguments()
 
 process.load('EventFilter.HGCalRawToDigi.hgcalEmulatedSlinkRawData_cfi')
@@ -79,7 +74,6 @@ if options.debug:
     )
 
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(options.maxEvents))
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
     hgcalEmulatedSlinkRawData = cms.PSet(initialSeed = cms.untracked.uint32(42))
 )
@@ -215,24 +209,24 @@ process.outpath = cms.EndPath()
 
 if options.storeOutput:
     process.output = cms.OutputModule("PoolOutputModule",
-        fileName = cms.untracked.string(options.output),
-        outputCommands = cms.untracked.vstring(
-            'drop *',
-            'keep *_hgcalEmulatedSlinkRawData_*_*',
-            'keep *_hgcalDigis_*_*',
-            'keep *_hgcalRecHit_*_*',
-            'keep *_hgCalRecHitsFromSoAproducer_*_*',
-        )
-    )
+                                      fileName = cms.untracked.string(options.output),
+                                      outputCommands = cms.untracked.vstring(
+                                          'drop *',
+                                          'keep *_hgcalEmulatedSlinkRawData_*_*',
+                                          'keep *_hgcalDigis_*_*',
+                                          'keep *_hgcalRecHit_*_*',
+                                          'keep *_hgCalRecHitsFromSoAproducer_*_*',
+                                      )
+                                  )
     process.outpath += process.output
 
 if options.storeRAWOutput:
     process.outputRAW = cms.OutputModule("FRDOutputModule",
-        source = cms.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData'),
-        frdVersion = cms.untracked.uint32(6),
-        frdFileVersion = cms.untracked.uint32(1),
-        fileName = cms.untracked.string(options.secondaryOutput)
-    )
+                                         source = cms.InputTag('hgcalEmulatedSlinkRawData'),
+                                         frdVersion = cms.untracked.uint32(6),
+                                         frdFileVersion = cms.untracked.uint32(1),
+                                         fileName = cms.untracked.string(options.output.replace('.root','.raw')),
+                                     )
     process.outpath += process.outputRAW
 
 #add timing

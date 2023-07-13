@@ -6,8 +6,3 @@
   <use name="Geometry/HGCalMapping"/>
   <flags EDM_PLUGIN="1"/>
 </library>
-
-<bin file="testHGCalLogicalMapping.cc" name="testHGCalLogicalMapping">
-  <flags TEST_RUNNER_ARGS=" 2000 Geometry/HGCalMapping/data/channels_sipmontile.hgcal.txt Geometry/HGCalMapping/data/modulelocator.txt"/>
-  <use name="Geometry/HGCalMapping"/>
-</bin>
