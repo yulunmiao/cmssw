@@ -19,7 +19,7 @@ process.source = cms.Source('EmptyIOVSource',
 )
 
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
-process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
+process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_test.txt'
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
 process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
 process.load('Geometry.HGCalMapping.hgCalSiPMModuleInfoESSource_cfi')
