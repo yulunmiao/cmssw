@@ -83,18 +83,23 @@ void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSet
   //produce raw / meta data
   FEDRawDataCollection raw_data;
   HGCalTestSystemMetaData meta_data;
+
+  // try{
   if(emul_type_=="slinkfromraw") {
     raw_data = raw_reader_->next();
     meta_data = raw_reader_->nextMetaData();
   } else {
     raw_data = produceWithoutSlink(iEvent,iSetup);
     meta_data = frame_gen_.produceMetaData();
-
+    
     // store the emulation information for events without real s-link, if requested
     if (store_emul_info_)
       iEvent.emplace(fedEmulInfoToken_, frame_gen_.lastSlinkEmulatedInfo());
     
   }
+  // } catch(cms::Exception &e){
+  //  LogDebug("HGCalSlinkEmulator::produce") << e.what();
+  // }
   
   iEvent.emplace(fedRawToken_, std::move(raw_data));
   iEvent.emplace(metadataToken_, std::move(meta_data));
@@ -102,7 +107,7 @@ void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSet
 
 
 //
-FEDRawDataCollection  HGCalSlinkEmulator::produceWithoutSlink(edm::Event& iEvent, const edm::EventSetup& iSetup) {
+FEDRawDataCollection HGCalSlinkEmulator::produceWithoutSlink(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   //otherwise generate a new frame
   frame_gen_.setRandomEngine(rng_->getEngine(iEvent.streamID()));

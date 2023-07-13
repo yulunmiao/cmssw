@@ -5,6 +5,13 @@
   <flags EDM_PLUGIN="1"/>
 </library>
 
+<library file="HGCalEmptyEventFilter.cc" name="HGCalEmptyEventFilter">
+  <use name="EventFilter/HGCalRawToDigi"/>
+  <use name="DataFormats/HGCalDigi"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
+
+
 <bin file="HGCalUnpackerTest.cc" name="HGCalUnpacker">
   <use name="DataFormats/HGCalDigi"/>
   <use name="FWCore/MessageLogger"/>
