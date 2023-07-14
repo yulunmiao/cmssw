@@ -95,7 +95,7 @@ private:
       if (const auto config = yaml_file["metaData"]; config.IsDefined()) {
         int charMode = yaml_file["metaData"]["characMode"].as<int>();
         assert(charMode==0 or charMode==1);
-        cond->moduleConfigs[0].charMode = 0; //(bool) charMode;
+        cond->moduleConfigs[0].charMode = (bool) charMode;
         //for (const auto& params : config)
         //  parseNode(params.first.as<std::string>(), params.second, cond);
       } else {

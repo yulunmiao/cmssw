@@ -95,11 +95,10 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   if (configWatcher_.check(iSetup)) {
     auto conds = iSetup.getData(configToken_);
     size_t nmods = conds.moduleConfigs.size();
-    edm::LogInfo("HGCalRawToDigi") << "Conditions retrieved for " << nmods << " modules:\n" << conds;
+    edm::LogInfo("HGCalRawToDigi") << "Conditions retrieved for " << nmods << " modules:\n" << conds << std::endl;
     for (auto it : conds.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
       HGCalModuleConfig moduleConfig(it.second);
-      edm::LogInfo("HGCalRawToDigi")
-        << "  Module " << it.first << ": charMode=" << moduleConfig.charMode;
+      edm::LogInfo("HGCalRawToDigi") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
     }
     moduleConfig_ = conds.moduleConfigs[0]; // for now use module with electronicsId = 0 as placeholder
   } // else: use previously loaded module configuration
