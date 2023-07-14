@@ -237,7 +237,10 @@ if options.storeRAWOutput:
                                      )
     process.outpath += process.outputRAW
 
-#add timing
+#add timing and mem (too slow) for FWK jobs report
 process.Timing = cms.Service("Timing",
                              summaryOnly = cms.untracked.bool(True),
                              useJobReport = cms.untracked.bool(True))
+#process.SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
+#                                        ignoreTotal = cms.untracked.int32(1),
+#                                        jobReportOutputOnly = cms.untracked.bool(True) )
