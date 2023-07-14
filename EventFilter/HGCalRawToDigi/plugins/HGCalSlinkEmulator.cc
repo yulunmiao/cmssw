@@ -23,16 +23,20 @@
 #include "DataFormats/FEDRawData/interface/FEDRawDataCollection.h"
 #include "DataFormats/FEDRawData/interface/FEDHeader.h"
 #include "DataFormats/FEDRawData/interface/FEDTrailer.h"
-
 #include "DataFormats/HGCalDigi/interface/HGCalRawDataEmulatorInfo.h"
 #include "EventFilter/HGCalRawToDigi/interface/HGCalFrameGenerator.h"
 #include "EventFilter/HGCalRawToDigi/interface/HGCalSlinkFromRaw.h"
+
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
+
 
 class HGCalSlinkEmulator : public edm::stream::EDProducer<> {
 public:
   explicit HGCalSlinkEmulator(const edm::ParameterSet&);
   static void fillDescriptions(edm::ConfigurationDescriptions&);
 private:
+  void beginRun(edm::Run const&, edm::EventSetup const&) override;
   void produce(edm::Event&, const edm::EventSetup&) override;
   FEDRawDataCollection produceWithoutSlink(edm::Event& iEvent, const edm::EventSetup& iSetup);
   
@@ -46,6 +50,8 @@ private:
   edm::EDPutTokenT<HGCalSlinkEmulatorInfo> fedEmulInfoToken_;
   hgcal::HGCalFrameGenerator frame_gen_;
   std::unique_ptr<hgcal::SlinkFromRaw> raw_reader_;
+  edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
+  HGCalModuleConfig moduleConfig_;
 };
 
 //
@@ -56,7 +62,10 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
       emul_type_(iConfig.getParameter<std::string>("emulatorType")),
       fedRawToken_(produces<FEDRawDataCollection>("hgcalFEDRawData")),
       metadataToken_(produces<HGCalTestSystemMetaData>("hgcalMetaData")),
-      frame_gen_(iConfig) {
+      frame_gen_(iConfig),
+      configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd,edm::Transition::BeginRun>(
+                     iConfig.getParameter<edm::ESInputTag>("ModuleConfig")))
+{
   
   if (emul_type_=="slinkfromraw") {
     raw_reader_ = std::make_unique<hgcal::SlinkFromRaw>(iConfig);
@@ -76,6 +85,13 @@ HGCalSlinkEmulator::HGCalSlinkEmulator(const edm::ParameterSet& iConfig)
   }
 
 }
+
+//
+void HGCalSlinkEmulator::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
+  auto conds = iSetup.getData(configToken_);
+  moduleConfig_ = conds.moduleConfigs[0];
+}
+
 
 //
 void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -100,6 +116,9 @@ void HGCalSlinkEmulator::produce(edm::Event& iEvent, const edm::EventSetup& iSet
   // } catch(cms::Exception &e){
   //  LogDebug("HGCalSlinkEmulator::produce") << e.what();
   // }
+
+  meta_data.injgain_ = moduleConfig_.injgain;
+  meta_data.injcalib_ = moduleConfig_.injcalib;
   
   iEvent.emplace(fedRawToken_, std::move(raw_data));
   iEvent.emplace(metadataToken_, std::move(meta_data));
@@ -183,6 +202,7 @@ void HGCalSlinkEmulator::fillDescriptions(edm::ConfigurationDescriptions& descri
   desc.add<bool>("fedHeaderTrailer", false)->setComment("also add FED header/trailer info");
   desc.add<bool>("storeEmulatorInfo", false)
       ->setComment("also append a 'truth' auxiliary info to the output event content");
+  desc.add<edm::ESInputTag>("ModuleConfig", edm::ESInputTag(""))->setComment("label for HGCalConfigESSourceFromYAML reader");
   descriptions.add("hgcalEmulatedSlinkRawData", desc);
 }
 

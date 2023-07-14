@@ -21,7 +21,8 @@
 ////typedef std::map<HGCalElectronicsId,bool> HGCALROCConfig; // ID -> readout mode
 struct HGCalModuleConfig {
   bool charMode; // characterization/readout mode
-  char gain;     // gain settings
+  char gain,injgain;     // gain settings
+  uint32_t injcalib;    //injected charge
   //HGCALROCConfig ROC; // map between ROC ID -> parameters
   COND_SERIALIZABLE;
 };

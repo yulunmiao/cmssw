@@ -96,6 +96,14 @@ private:
         int charMode = yaml_file["metaData"]["characMode"].as<int>();
         assert(charMode==0 or charMode==1);
         cond->moduleConfigs[0].charMode = (bool) charMode;
+
+        cond->moduleConfigs[0].injcalib = 0;
+        if(yaml_file["metaData"]["chip_params"]["Calib"])
+          cond->moduleConfigs[0].injcalib = yaml_file["metaData"]["chip_params"]["Calib"].as<int>();
+        cond->moduleConfigs[0].injgain = 0;
+        if(yaml_file["metaData"]["chip_params"]["Inj_gain"])
+          cond->moduleConfigs[0].injgain = yaml_file["metaData"]["chip_params"]["Inj_gain"].as<int>();
+        
         //for (const auto& params : config)
         //  parseNode(params.first.as<std::string>(), params.second, cond);
       } else {
