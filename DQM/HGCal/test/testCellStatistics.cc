@@ -1,4 +1,4 @@
-#include "DQM/HGCal/interface/RunningStatistics.h"
+#include "DQM/HGCal/interface/CellStatistics.h"
 #include <iostream>
 #include <cassert>
 

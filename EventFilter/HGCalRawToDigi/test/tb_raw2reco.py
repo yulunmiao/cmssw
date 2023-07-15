@@ -45,10 +45,10 @@ options.register('configFile',
                  '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
                  'config yaml file')
-options.register('pedestalFile',
-                 '/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/calibration_parameters.txt',
+options.register('conditions',
+                 'default',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
-                 'pedestal txt file')
+                 'conditions tag')
 options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
@@ -160,15 +160,14 @@ process.load('RecoLocalCalo.HGCalRecAlgos.hgCalRecHitsFromSoAproducer_cfi')
 process.load('CalibCalorimetry.HGCalPlugins.hgCalConfigESSourceFromYAML_cfi') # read yaml config file(s)
 process.hgCalConfigESSourceFromYAML.filename = options.configFile
 
+# CONDITIONS
 # RecHit producer: pedestal txt file for DIGI -> RECO calibration
-process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # read txt pedestal file for calibration
-process.hgCalPedestalsESSource.filename = options.pedestalFile
-
 # Logical mapping
+process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') 
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
-process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
-process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
+from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions
+configTBConditions(process,options.conditions)
 
 if options.GPU:
     process.hgcalRecHit = cms.EDProducer(

@@ -104,7 +104,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   }
   
   //fill the histograms / statistics
-  std::map<MonitorKey_t, uint16_t> maxADC;
+  std::map<MonitorKey_t, double> maxADC;
   for(int32_t i = 0; i < ndigis; ++i) {
 
     auto digi = digis_view[i];
@@ -146,19 +146,27 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     //ADC
     else {
       p_adc[geomKey]->Fill(globalChannelId, adc);
-      if(maxADC.count(geomKey)==0) maxADC[geomKey]=0;
-      maxADC[geomKey]=std::max(maxADC[geomKey],adc);
-      
+      if(maxADC.count(geomKey)==0) maxADC[geomKey]=0.f;
+      maxADC[geomKey]=std::max(maxADC[geomKey],(double)adc);
+
       //increment sums of this channel
       float cm=avgCM[erxid];
       float tdc=nTDC[erxid];
       std::vector<double> tosum = {1,
-                                   (double)adc,pow(adc,2),
-                                   cm,pow(cm,2),adc*cm,
-                                   (double)adcm,pow(adcm,2),(double)adc*adcm,
-                                   tdc,pow(tdc,2),adc*tdc};
-      for(size_t k=1; k<=tosum.size(); k++) 
-        p_sums[geomKey]->getBinContent(globalChannelId+k,k,p_sums[geomKey]->getBinContent(globalChannelId+k,k)+tosum[k-1]);
+                                   (double)adc,
+                                   pow((double)adc,2),
+                                   (double)cm,
+                                   pow((double)cm,2),
+                                   double(adc*cm),
+                                   (double)adcm,
+                                   pow((double)adcm,2),
+                                   double(adc*adcm),
+                                   (double)tdc,
+                                   pow((double)tdc,2),
+                                   double(adc*tdc)};
+      for(size_t k=1; k<=tosum.size(); k++)
+        p_sums[geomKey]->setBinContent(globalChannelId,k,
+                                       p_sums[geomKey]->getBinContent(globalChannelId+k,k)+tosum[k-1]);
     }
   }
 
@@ -187,7 +195,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     MonitorKey_t k(m.zside,m.plane,m.u,m.v);
     int nch(39*6*(1+m.isHD));
     p_hitcount[k] = ibook.book1D("hitcount_"+tag,           ";Channel; #hits",   nch, 0, nch);
-    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, ";max ADC; Counts",  100, 0, 100, 100, -0.5, 99.5);   
+    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, ";max ADC; Counts",  100, 0, 100, 100,0,1024);   
     p_sums[k]             = ibook.book2D("sums_"+tag, ";Channel;", nch,0,nch, 12,0,12);
     p_sums[k]->setBinLabel(1,"N",2);
     p_sums[k]->setBinLabel(2,"#sum ADC",2);
@@ -201,12 +209,12 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     p_sums[k]->setBinLabel(10,"#sum TDC",2);
     p_sums[k]->setBinLabel(11,"#sum TDC^{2}",2);
     p_sums[k]->setBinLabel(12,"#sum ADC*TDC",2);
-    p_maxadc[k]           = ibook.book1D("maxadc_"+tag,             ";max ADC; Counts",  100, -0.5, 99.5); 
-    p_adc[k]              = ibook.bookProfile("p_adc_" + tag,       ";Channel; ADC",     nch, 0, nch, 150, 0, 150);
+    p_maxadc[k] = ibook.book1D("maxadc_"+tag,             ";max ADC; Counts",  100,0,1024); 
+    p_adc[k]    = ibook.bookProfile("p_adc_" + tag,       ";Channel; ADC",     nch, 0, nch, 150, 0, 150);
     p_adc[k]->setOption("s"); //save standard deviation instead of error mean for noise estimate
-    p_tot[k]              = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 150, 0, 150);
-    p_adcm[k]             = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 150, 0, 150);
-    p_toa[k]              = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 150, 0, 150);
+    p_tot[k]    = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 150, 0, 150);
+    p_adcm[k]   = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 150, 0, 150);
+    p_toa[k]    = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 150, 0, 150);
   }
 }
 

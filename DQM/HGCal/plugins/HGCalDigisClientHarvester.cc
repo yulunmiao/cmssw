@@ -1,6 +1,6 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
-#include "DQM/HGCal/interface/RunningStatistics.h"
+#include "DQM/HGCal/interface/CellStatistics.h"
 
 #include <iostream>
 #include <iomanip>
@@ -62,7 +62,7 @@ private:
   std::string templateROOT_;
 
   //monitoring elements
-  std::map<MonitorKey_t, MonitorElement*> hex_channelId, 
+  std::map<MonitorKey_t, MonitorElement*> //hex_channelId, 
     hex_pedestal,hex_noise, hex_cmrho, hex_bxm1rho,
     p_coeffs;
 
@@ -121,7 +121,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     int nch(39*6*(1+m.isHD));
 
     ibooker.setCurrentFolder("HGCAL/Summary");    
-    hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
+    //hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
     hex_pedestal[k]  = ibooker.book2DPoly("hex_pedestal" + tag,  "; x[cm]; y[cm];Pedestal", -26 , 26 , -28 , 24);
     hex_noise[k]     = ibooker.book2DPoly("hex_noise" + tag,     "; x[cm]; y[cm];Noise", -26 , 26 , -28 , 24);
     hex_cmrho[k]     = ibooker.book2DPoly("hex_cmrho" + tag,     "; x[cm]; y[cm];#rho(CM)", -26 , 26 , -28 , 24);
@@ -152,10 +152,10 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     if(!obj->InheritsFrom("TGraph")) continue;
     gr = (TGraph*) obj;
 
-    for(auto kit : hex_channelId) {
+    for(auto kit : hex_pedestal) { 
       MonitorKey_t k(kit.first);
-      hex_channelId[k]->addBin(gr);
-      hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);
+      //hex_channelId[k]->addBin(gr);
+      //hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);
       hex_pedestal[k]->addBin(gr);
       hex_noise[k]->addBin(gr);
       hex_cmrho[k]->addBin(gr);
@@ -167,11 +167,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
   fgeo->Close();
 
   edm::LogInfo("HGCalDigisClientHarvester") << "Retrieved : " << module_keys_.size() << " module tags to harvest and defined hexmaps";
-}
 
-//
-void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::IGetter& igetter)
-{
 
   //loop over modules to harvest
   std::map<HGCalElectronicsId,hgcal::CellStatistics> summary_stats;
@@ -183,16 +179,18 @@ void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::
     std::string meName("HGCAL/Digis/sums_"+tag);
     const MonitorElement *me = igetter.get(meName);
     if (me == nullptr) continue;
-    
+    std::cout << meName << " " << me->getEntries() << std::endl;
     //convert the sums to coefficients
     for(int ibin=1; ibin< me->getNbinsX(); ibin++) {
       hgcal::CellStatistics stats;
       stats.n      = me->getBinContent(ibin,1);
       stats.sum_x  = me->getBinContent(ibin,2);
-      stats.sum_x  = me->getBinContent(ibin,3);
+      stats.sum_xx  = me->getBinContent(ibin,3);
       stats.sum_s  = {me->getBinContent(ibin,4),me->getBinContent(ibin,7),me->getBinContent(ibin,10)};
       stats.sum_ss = {me->getBinContent(ibin,5),me->getBinContent(ibin,8),me->getBinContent(ibin,11)};
       stats.sum_xs = {me->getBinContent(ibin,6),me->getBinContent(ibin,9),me->getBinContent(ibin,12)};
+      //std::cout << stats.n << " " << stats.sum_x << " " << stats.sum_xx << std::endl;
+      
       std::pair<double,double> obs = stats.getObservableStats();
       std::vector<double> Rs = stats.getPearsonCorrelation();
       std::vector<double> slopes = stats.getSlopes();
@@ -228,7 +226,6 @@ void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::
   export_calibration_parameters(summary_stats);
 }
 
-
 //
 void HGCalDigisClientHarvester::export_calibration_parameters(std::map<HGCalElectronicsId,hgcal::CellStatistics> &stats) {
 
@@ -258,6 +255,11 @@ void HGCalDigisClientHarvester::export_calibration_parameters(std::map<HGCalElec
   edm::LogInfo("HGCalDigisClient") << "Export CM parameters @ " << level0CalibOut_ << std::endl;
 }
 
+//
+void HGCalDigisClientHarvester::dqmEndJob(DQMStore::IBooker& ibooker, DQMStore::IGetter& igetter)
+{
+
+}
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(HGCalDigisClientHarvester);

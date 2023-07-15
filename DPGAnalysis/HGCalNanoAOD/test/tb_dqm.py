@@ -16,9 +16,9 @@ process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEven
 
 # Logical mapping
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
-process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
-process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
+from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions
+configTBConditions(process)
 
 process.hgCalDigisClient = cms.EDProducer(
     'HGCalDigisClient',

@@ -1,2 +1,2 @@
-<bin file="testRunningStats.cc" name="testRunningStats">
+<bin file="testCellStatistics.cc" name="testCellStats">
 </bin>

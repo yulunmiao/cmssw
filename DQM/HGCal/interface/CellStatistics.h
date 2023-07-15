@@ -79,8 +79,9 @@ namespace hgcal {
           var = (ncts/(ncts-1))*(xx/ncts-avg*avg);
         }
       }
-    
-      return std::pair<double,double>(avg,var);
+
+      double sigma = (var<0 ? -1 : 1)*sqrt(fabs(var));
+      return std::pair<double,double>(avg,sigma);
     }
 
     /**
