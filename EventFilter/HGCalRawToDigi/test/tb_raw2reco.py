@@ -80,7 +80,7 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
 process.source = cms.Source("EmptySource",
                             numberEventsInRun = cms.untracked.uint32(options.maxEvents),
                             firstRun = cms.untracked.uint32(options.runNumber),
-                            numberEventsInLuminosityBlock = cms.untracked.uint32(options.maxEventsPerLS),
+                            numberEventsInLuminosityBlock = cms.untracked.uint32(options.maxEvents), #could use maxEventsPerLS),
                             firstLuminosityBlock = cms.untracked.uint32(options.firstLS) )
 
 #RAW 2 DIGI and UNPACKER

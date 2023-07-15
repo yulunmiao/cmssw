@@ -62,7 +62,7 @@ private:
   std::string templateROOT_;
 
   //monitoring elements
-  std::map<MonitorKey_t, MonitorElement*> //hex_channelId, 
+  std::map<MonitorKey_t, MonitorElement*> hex_channelId, 
     hex_pedestal,hex_noise, hex_cmrho, hex_bxm1rho,
     p_coeffs;
 
@@ -121,7 +121,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     int nch(39*6*(1+m.isHD));
 
     ibooker.setCurrentFolder("HGCAL/Summary");    
-    //hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
+    hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
     hex_pedestal[k]  = ibooker.book2DPoly("hex_pedestal" + tag,  "; x[cm]; y[cm];Pedestal", -26 , 26 , -28 , 24);
     hex_noise[k]     = ibooker.book2DPoly("hex_noise" + tag,     "; x[cm]; y[cm];Noise", -26 , 26 , -28 , 24);
     hex_cmrho[k]     = ibooker.book2DPoly("hex_cmrho" + tag,     "; x[cm]; y[cm];#rho(CM)", -26 , 26 , -28 , 24);
@@ -154,8 +154,8 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
 
     for(auto kit : hex_pedestal) { 
       MonitorKey_t k(kit.first);
-      //hex_channelId[k]->addBin(gr);
-      //hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);
+      hex_channelId[k]->addBin(gr);
+      hex_channelId[k]->setBinContent(i+1, i==0 ? 1e-6 : i);
       hex_pedestal[k]->addBin(gr);
       hex_noise[k]->addBin(gr);
       hex_cmrho[k]->addBin(gr);
