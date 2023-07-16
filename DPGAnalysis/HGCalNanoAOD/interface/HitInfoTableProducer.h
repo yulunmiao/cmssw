@@ -82,15 +82,15 @@ class HitInfoTableProducer : public edm::stream::EDProducer<> {
     }
 
     auto tab = std::make_unique<nanoaod::FlatTable>(layervals.size(), name_, false, true);
-    tab->addColumn<int>("u_wafer", uvals, "u wafer coordinate");
-    tab->addColumn<int>("v_wafer", vvals, "v wafer coordinate");
-    tab->addColumn<int>("u_cell", uvals, "u cell coordinate");
-    tab->addColumn<int>("v_cell", vvals, "v cell coordinate");
-    tab->addColumn<unsigned int>("layer", layervals, "layer coordinate");
-    tab->addColumn<float>("eta", etavals, "eta coordinate");
-    tab->addColumn<float>("phi", phivals, "phi coordinate");
-    tab->addColumn<int>("zside", zsidevals, "z side coordinate");
-    tab->addColumn<int>("siThickIndex", sithickvals, "SiThickIndex");
+    tab->addColumn<int>("u_wafer", uvals, "rechit u wafer coordinate");
+    tab->addColumn<int>("v_wafer", vvals, "rechit v wafer coordinate");
+    tab->addColumn<int>("u_cell", uvals, "rechit u cell coordinate");
+    tab->addColumn<int>("v_cell", vvals, "rechit v cell coordinate");
+    tab->addColumn<unsigned int>("layer", layervals, "rechit layer coordinate");
+    tab->addColumn<float>("eta", etavals, "rechit eta coordinate");
+    tab->addColumn<float>("phi", phivals, "rechit phi coordinate");
+    tab->addColumn<int>("zside", zsidevals, "rechit z side coordinate");
+    tab->addColumn<int>("siThickIndex", sithickvals, "rechit SiThickIndex");
 
     iEvent.put(std::move(tab));
 

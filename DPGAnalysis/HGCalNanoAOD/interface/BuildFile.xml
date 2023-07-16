@@ -8,13 +8,13 @@
 <use name="DPGAnalysis/HGCalNanoAOD"/>
 <use name="DataFormats/CaloRecHit"/>
 <use name="Geometry/CaloGeometry"/>
-<use name="DataFormats/HGCalDigi"/>
 <use name="DataFormats/HGCRecHit"/>
+<use name="DataFormats/HGCalDigi"/>
 <use name="Geometry/HGCalGeometry"/>
-<use name="Geometry/HGCalMapping"/>
 <use name="Geometry/Records"/>
 <use name="CondFormats/DataRecord"/>
-<use name="CondFormats/HGCalObjects"/>  
+<use name="CondFormats/HGCalObjects"/>
+<use name="Geometry/HGCalMapping"/>
 <library file="*.cc" name="DPGAnalysisHGCalNanoAOD_plugins">
    <flags EDM_PLUGIN="1"/>
 </library>

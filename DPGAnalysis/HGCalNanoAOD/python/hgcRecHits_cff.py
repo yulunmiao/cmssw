@@ -9,9 +9,9 @@ hgcEERecHitsTable = cms.EDProducer("SimpleCaloRecHitFlatTableProducer",
     singleton = cms.bool(False), # the number of entries is variable
     extension = cms.bool(False), # this is the main table for the muons
     variables = cms.PSet(
-        detId = Var('detid().rawId()', 'int', precision=-1, doc='detId'),
-        energy = Var('energy', 'float', precision=14, doc='energy'),
-        time = Var('time', 'float', precision=14, doc='hit time'),
+        detId = Var('detid().rawId()', 'int', precision=-1, doc='rechit detId'),
+        energy = Var('energy', 'float', precision=14, doc='rechit energy'),
+        time = Var('time', 'float', precision=14, doc='rechit time'),
     )
 )
 
@@ -39,7 +39,27 @@ hgcHEbackRecHitsTable.name = "RecHitHGCHEB"
 
 hgctbRecHitsTable =  hgcEERecHitsTable.clone()
 hgctbRecHitsTable.src = "hgCalRecHitsFromSoAproducer"
-hgctbRecHitsTable.name = "RecHitHGC"
+hgctbRecHitsTable.name = "HGC"
+
+hgctbRecHitsPositionTable = hgcEERecHitsPositionTable.clone()
+hgctbRecHitsPositionTable.src = hgctbRecHitsTable.src
+hgctbRecHitsPositionTable.name = hgctbRecHitsTable.name
+
+from Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi import hgCalModuleInfoESSource as hgCalModuleInfoESSource_
+from Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi import hgCalSiModuleInfoESSource as hgCalSiModuleInfoESSource_
+
+hgCalModuleInfoESSource_.filename = 'Geometry/HGCalMapping/data/modulelocator_test.txt'
+hgCalSiModuleInfoESSource_.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
+
+hgcDigiTable = cms.EDProducer("HGCRecHitDigiTableProducer",
+    srcHits = hgctbRecHitsTable.src,
+    srcDigis = cms.InputTag("hgcalDigis:DIGI"),
+    cut = cms.string(""),
+    name = hgctbRecHitsTable.name, # want to have the same name of the rechits
+    doc  = cms.string("Digi in HGCAL Electromagnetic endcap"),
+    singleton = cms.bool(False), # the number of entries is variable
+    extension = cms.bool(False), # this is the main table for the muons
+)
 
 hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEfrontRecHitsTable,hgcHEbackRecHitsTable,hgcEERecHitsPositionTable,hgcHEfrontRecHitsPositionTable)
-hgctbRecHitsTask = cms.Task(hgctbRecHitsTable)
+hgctbRecHitsTask = cms.Task(hgctbRecHitsTable,hgctbRecHitsPositionTable,hgcDigiTable)
