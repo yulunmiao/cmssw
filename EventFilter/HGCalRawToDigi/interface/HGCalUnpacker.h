@@ -29,6 +29,7 @@ struct HGCalUnpackerConfig {
   uint32_t payloadLengthMax{469};       ///< maximum length of payload length
   uint32_t channelMax{7000000};         ///< maximum number of channels unpacked
   uint32_t commonModeMax{4000000};      ///< maximum number of common modes unpacked
+  bool applyFWworkaround{false};        ///this flag is used to deal with some firmware features 
 };
 
 /// This class is designed to unpack raw data from HGCal, formatted as S-Links, capture blocks, and ECON-Ds, to HGCROC channel data.
@@ -83,8 +84,10 @@ public:
   /// parse input in S-Link format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from S-Link indices to enabled eRx in this ECON-D
+  /// \param[in] fed2slink mapping of fed ids to S-link indices
   void parseSLink(const std::vector<uint32_t>& inputArray,
-                  const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping);
+                  const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
+                  const std::function<uint16_t(uint16_t fedid)>& fed2slink);
   /// parse input in capture block format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from capture block indices to enabled eRx in this ECON-D

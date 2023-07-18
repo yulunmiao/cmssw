@@ -41,6 +41,7 @@ options.register('storeEmulatorInfo', False, VarParsing.VarParsing.multiplicity.
 options.register('slinkBOE', 0x2a, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for S-link')
 options.register('cbHeaderMarker', 0x5f, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for BE/capture block')
 options.register('econdHeaderMarker', 0x154, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for ECON-D')
+options.register('applyFWworkaround', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.bool,'Patch unpacker behavior to deal with firmware known features')
 options.register('configFile',
                  '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
                  VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
@@ -146,7 +147,7 @@ process.hgcalDigis.module_info_label = cms.ESInputTag('') # for HGCalModuleInfoE
 process.hgcalDigis.slinkBOE=cms.uint32(options.slinkBOE)
 process.hgcalDigis.cbHeaderMarker=cms.uint32(options.cbHeaderMarker)
 process.hgcalDigis.econdHeaderMarker=cms.uint32(options.econdHeaderMarker)
-
+process.hgcalDigis.applyFWworkaround=options.applyFWworkaround
     
 #
 # TRANSLATOR TO PHASE I COLLECTION
@@ -205,7 +206,7 @@ if options.dumpFRD:
     process.dump = cms.EDAnalyzer("DumpFEDRawDataProduct",
         label = cms.untracked.InputTag('hgcalEmulatedSlinkRawData','hgcalFEDRawData'),
         feds = cms.untracked.vint32(options.fedId),
-        dumpPaylo2ad = cms.untracked.bool(True)
+        dumpPayload = cms.untracked.bool(True)
     )
     process.p *= process.dump
 

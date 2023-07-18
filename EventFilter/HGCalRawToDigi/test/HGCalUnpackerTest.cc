@@ -12,6 +12,11 @@ uint16_t enabledERXMapping(uint16_t sLink, uint8_t captureBlock, uint8_t econd) 
   return 0b11;
 }
 
+uint16_t fed2slink(uint16_t fedid) {
+  return 0;
+}
+
+
 int main(int argc, char* argv[]) {
   std::vector<uint32_t> testInput;
   if (argc > 1) {
@@ -39,7 +44,7 @@ int main(int argc, char* argv[]) {
   HGCalUnpackerConfig config;
   config.sLinkCaptureBlockMax = 2;
   HGCalUnpacker unpacker(config);
-  unpacker.parseSLink(testInput, enabledERXMapping);
+  unpacker.parseSLink(testInput, enabledERXMapping,fed2slink);
 
   auto channeldata = unpacker.channelData();
   for (unsigned int i = 0; i < channeldata.size(); i++) {

@@ -97,17 +97,23 @@ FEDRawDataCollection SlinkFromRaw::next() {
           
   //copy to the event      
   auto *payload=record_->getPayload();
-  auto payloadLength=record_->payloadLength()-2;
+  auto payloadLength=record_->payloadLength();
 
-  //this is a hack to store 32b as [MSB 32b | LSB 32b]
+  //  for(auto i=0; i<=payloadLength; i++)
+  //    std::cout <<std::dec << i << "  " << std::hex << payload[i] << std::endl;
+  
+  //NOTE these were hacks for Paul's file which reverts the 
+  //ECOND pseudo-endianness wrt to capture block and s-link
+  //so we invert the first 3 64b word (s-link + capture block)
   //unclear how the final system will be
+  //payloadLength-=2;
   for(auto i=0; i<payloadLength; i++) {
-    std::cout << "0x" << std::hex << (payload[i]>>32) << "\t" << (payload[i] & 0xffffffff) << std::endl;
-    //    if(i!=3)
     payload[i]=((payload[i]&0xffffffff)<<32) | payload[i]>>32;
   }
-  size_t total_event_size = payloadLength/sizeof(char);
-  std::cout << "Total event size in bytes is:" << total_event_size << " sourceId=" << sourceId << std::endl;
+
+  //put in the event (last word is a 0xdeadbeefdeadbeef which can be disregarded)
+  size_t total_event_size = (payloadLength-1)*sizeof(uint64_t)/sizeof(char);
+
   auto& fed_data = raw_data.FEDData(1); //data for one FED
   fed_data.resize(total_event_size);
   auto* ptr = fed_data.data();

@@ -87,10 +87,19 @@ public:
   std::tuple<uint16_t,uint16_t,uint16_t,uint16_t> getMaxValuesForDenseIndex() const;
 
   /**
+     @short returns s-link index for a fedid
+   */
+  std::map<uint16_t,uint16_t> getFedToSlinkMap() {
+    std::map<uint16_t,uint16_t> fed2slink;
+    for(auto m : params_) fed2slink[m.fedid]=m.slink;
+    return fed2slink;
+  }
+  
+  /**
      @short returns eRxBitPattern
    */
   ERxBitPatternMap getERxBitPattern() const;
-
+  
   /**
      @short computes the dense index for the erx bit pattern
    */

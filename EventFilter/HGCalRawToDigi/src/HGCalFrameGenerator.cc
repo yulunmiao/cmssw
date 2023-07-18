@@ -308,7 +308,7 @@ namespace hgcal {
       const auto& eid = last_emul_event_.first;
       const uint64_t event_id = std::get<0>(eid), bx_id = std::get<1>(eid), orbit_id = std::get<2>(eid);
       const auto slink_header = to128bit(to64bit(backend::buildSlinkHeader(
-          slink_params_.boe_marker, slink_params_.format_version, event_id, content_id, fed_id)));
+           slink_params_.boe_marker, slink_params_.format_version, event_id, content_id, fed_id)));
       slink_event.insert(slink_event.begin(), slink_header.begin(), slink_header.end());  // prepend S-link header
 
       // build the S-link trailer words

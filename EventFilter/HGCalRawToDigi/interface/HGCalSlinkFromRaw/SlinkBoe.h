@@ -27,12 +27,12 @@ class SlinkBoe {
   }
 
   void reset() {
-    _word[0]=uint64_t(16*BoePattern+3)<<52;
-    _word[1]=0;
+    _word[1]=uint64_t(16*BoePattern+3)<<52;
+    _word[0]=0;
   }
   
   uint8_t  boeHeader() const {
-    return _word[0]>>56;
+    return _word[1]>>56;
   }
 
   bool validPattern() const {
@@ -40,44 +40,44 @@ class SlinkBoe {
   }
   
   uint8_t  version() const {
-    return (_word[0]>>52)&0x0f;
+    return (_word[1]>>52)&0x0f;
   }
   
   uint64_t eventId() const {
-    return _word[0]&0xfffffffffff;
+    return _word[1]&0xfffffffffff;
   }
   
   uint8_t  l1aSubType() const{
-    return (_word[1]>>48)&0xff;
+    return (_word[0]>>48)&0xff;
   }
 
   uint16_t l1aType() const{
-    return (_word[1]>>32)&0xffff;
+    return (_word[0]>>32)&0xffff;
   }
   
   uint32_t sourceId() const{
-    return _word[1]&0xffffffff;
+    return _word[0]&0xffffffff;
   }
 
   void setEventId(uint64_t e) {
     assert(e<(1UL<<44));
-    _word[0]&=0xfffff00000000000;
-    _word[0]|=e;
+    _word[1]&=0xfffff00000000000;
+    _word[1]|=e;
   }
   
   void setL1aSubType(uint8_t st) {
-    _word[1]&=0x00ff000000000000;
-    _word[1]|=uint64_t(st)<<48;
+    _word[0]&=0x00ff000000000000;
+    _word[0]|=uint64_t(st)<<48;
   }
   
   void setL1aType(uint16_t t) {
-    _word[1]&=0x0000ffff00000000;
-    _word[1]|=uint64_t(t)<<32;
+    _word[0]&=0x0000ffff00000000;
+    _word[0]|=uint64_t(t)<<32;
   }
   
   void setSourceId(uint32_t s) {
-    _word[1]&=0x00000000ffffffff;
-    _word[1]|=s;
+    _word[0]&=0x00000000ffffffff;
+    _word[0]|=s;
   }
 
   bool valid() const {
@@ -87,8 +87,8 @@ class SlinkBoe {
   void print(std::ostream &o=std::cout, const std::string &s="") const {
     o << s << "SlinkBoe::print()  words = 0x"
       << std::hex << std::setfill('0')
-      << std::setw(16) << _word[0] << ", 0x"
-      << std::setw(16) << _word[1]
+      << std::setw(16) << _word[1] << ", 0x"
+      << std::setw(16) << _word[0]
       << std::dec << std::setfill(' ')
       << std::endl;
     o << s << " BOE header = 0x"

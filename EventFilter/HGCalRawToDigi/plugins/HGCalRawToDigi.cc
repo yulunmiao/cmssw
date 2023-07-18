@@ -42,6 +42,7 @@ private:
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
 
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxEnableBits_;
+  std::map<uint16_t,uint16_t> fed2slink_;
   
   const std::vector<unsigned int> fedIds_;
   const unsigned int badECONDMax_;
@@ -49,8 +50,6 @@ private:
   HGCalUnpackerConfig unpackerConfig_;
   HGCalModuleConfig moduleConfig_; // current module
   std::unique_ptr<HGCalUnpacker> unpacker_; // remove the const here to initialize in begin run
-
-
 };
 
 HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
@@ -66,9 +65,10 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
       unpackerConfig_(HGCalUnpackerConfig{.sLinkBOE = iConfig.getParameter<unsigned int>("slinkBOE"),
-                              .cbHeaderMarker = iConfig.getParameter<unsigned int>("cbHeaderMarker"),
-                              .econdHeaderMarker = iConfig.getParameter<unsigned int>("econdHeaderMarker"),
-                              .payloadLengthMax = iConfig.getParameter<unsigned int>("payloadLengthMax")}) {}
+                                          .cbHeaderMarker = iConfig.getParameter<unsigned int>("cbHeaderMarker"),
+                                          .econdHeaderMarker = iConfig.getParameter<unsigned int>("econdHeaderMarker"),
+                                          .payloadLengthMax = iConfig.getParameter<unsigned int>("payloadLengthMax"),
+                                          .applyFWworkaround = iConfig.getParameter<bool>("applyFWworkaround")}) {}
                               
 void HGCalRawToDigi::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
@@ -81,6 +81,7 @@ void HGCalRawToDigi::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetu
   unpackerConfig_.commonModeMax=std::get<0>(denseIdxMax)*std::get<1>(denseIdxMax)*std::get<2>(denseIdxMax)*std::get<3>(denseIdxMax)*2;
   unpacker_=std::unique_ptr<HGCalUnpacker>(new HGCalUnpacker(unpackerConfig_));
   erxEnableBits_=moduleInfo.getERxBitPattern();
+  fed2slink_=moduleInfo.getFedToSlinkMap();
   LogDebug("HGCalRawToDigi::erxbits") << "eRx enabled bits" << std::endl;
   for(auto it : erxEnableBits_)
     LogDebug("HGCalRawToDigi::erxbits") << it.first << " = " << "0x" << std::hex << (uint32_t)(it.second) << std::dec << std::endl;
@@ -147,8 +148,11 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
         data_32bit,
         [this](uint16_t sLink, uint8_t captureBlock, uint8_t econd) { 
           return this->erxEnableBits_[HGCalCondSerializableModuleInfo::erxBitPatternMapDenseIndex(sLink,captureBlock,econd,0,0)]; 
+        },
+        [this](uint16_t fedid) { 
+          return this->fed2slink_[fedid]; 
         });
-
+         
     auto channeldata = unpacker_->channelData();
     auto commonModeSum=unpacker_->commonModeSum();
     for (unsigned int i = 0; i < channeldata.size(); i++) {
@@ -218,8 +222,9 @@ void HGCalRawToDigi::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<unsigned int>("cbHeaderMarker", 0x5f)->setComment("capture block reserved pattern");
   desc.add<unsigned int>("econdHeaderMarker", 0x154)->setComment("ECON-D header Marker pattern");
   desc.add<unsigned int>("slinkBOE", 0x55)->setComment("SLink BOE pattern");
-  desc.add<unsigned int>("captureBlockECONDMax", 12)->setComment("maximum number of ECON-D's in one capture block");
-  desc.add<unsigned int>("econdERXMax", 12)->setComment("maximum number of eRx's in one ECON-D");
+  desc.add<unsigned int>("captureBlockECONDMax", 12)->setComment("maximum number of ECON-Ds in one capture block");
+  desc.add<bool>("applyFWworkaround",false)->setComment("use to enable dealing with firmware features (e.g. repeated words)");
+  desc.add<unsigned int>("econdERXMax", 12)->setComment("maximum number of eRxs in one ECON-D");
   desc.add<unsigned int>("erxChannelMax", 37)->setComment("maximum number of channels in one eRx");
   desc.add<unsigned int>("payloadLengthMax", 469)->setComment("maximum length of payload length");
   desc.add<unsigned int>("channelMax", 7000000)->setComment("maximum number of channels unpacked");
