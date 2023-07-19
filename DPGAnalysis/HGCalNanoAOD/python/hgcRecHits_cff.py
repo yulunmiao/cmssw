@@ -1,5 +1,5 @@
 import FWCore.ParameterSet.Config as cms
-from PhysicsTools.NanoAOD.common_cff import Var,P3Vars
+from PhysicsTools.NanoAOD.common_cff import Var
 
 hgcEERecHitsTable = cms.EDProducer("SimpleCaloRecHitFlatTableProducer",
     src = cms.InputTag("HGCalRecHit:HGCEERecHits"),
@@ -7,7 +7,7 @@ hgcEERecHitsTable = cms.EDProducer("SimpleCaloRecHitFlatTableProducer",
     name = cms.string("RecHitHGCEE"),
     doc  = cms.string("RecHits in HGCAL Electromagnetic endcap"),
     singleton = cms.bool(False), # the number of entries is variable
-    extension = cms.bool(False), # this is the main table for the muons
+    extension = cms.bool(False),
     variables = cms.PSet(
         detId = Var('detid().rawId()', 'int', precision=-1, doc='rechit detId'),
         energy = Var('energy', 'float', precision=14, doc='rechit energy'),
@@ -61,5 +61,7 @@ hgcDigiTable = cms.EDProducer("HGCRecHitDigiTableProducer",
     extension = cms.bool(False), # this is the main table for the muons
 )
 
+tbMetaDataTable = cms.EDProducer("HGCalMetaDataTableProducer")
+
 hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEfrontRecHitsTable,hgcHEbackRecHitsTable,hgcEERecHitsPositionTable,hgcHEfrontRecHitsPositionTable)
-hgctbRecHitsTask = cms.Task(hgctbRecHitsTable,hgctbRecHitsPositionTable,hgcDigiTable)
+hgctbTask = cms.Task(hgctbRecHitsTable,hgctbRecHitsPositionTable,hgcDigiTable,tbMetaDataTable)

@@ -1,11 +1,11 @@
 filein=$1
-[[ -z ${filein} ]] && filein="file:/eos/cms/store/cmst3/group/hgcal/CMG_studies/psilva/TB2023/output_numEvent100.root"
+[[ -z ${filein} ]] && filein="file:/afs/cern.ch/user/p/psilva/public/forMariarosaria/output_numEvent100_injscan_withcalibparams.root"
 
 fileout=$2
 [[ -z ${fileout} ]] && fileout="hgcalnano_testcmsdriver.root"
 
 cmsDriver.py NANO \
-    -s USER:DPGAnalysis/HGCalNanoAOD/hgcRecHits_cff.hgctbRecHitsTask \
+    -s USER:DPGAnalysis/HGCalNanoAOD/hgcRecHits_cff.hgctbTask \
     --datatier NANOAOD \
     --eventcontent NANOAOD \
     --filein ${filein} \
