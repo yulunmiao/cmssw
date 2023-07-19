@@ -30,6 +30,25 @@ class HGCalDigiFromDetIDTableProducer : public DigiInfoTableProducer< edm::View<
     return foundMatch;
   }
 
+  uint32_t getEconDIdx(const HGCROCChannelDataFrameElecSpec& digi) {
+    return digi.id().econdIdx();
+  }
+
+  uint32_t getEconDeRx(const HGCROCChannelDataFrameElecSpec& digi) {
+    return digi.id().econdeRx();
+  }
+
+  uint32_t getHalfRocChannel(const HGCROCChannelDataFrameElecSpec& digi) {
+    return digi.id().halfrocChannel();
+  }
+
+  uint32_t getElecIDisCM(const HGCROCChannelDataFrameElecSpec& digi) {
+    return digi.id().isCM();
+  }
+
+  uint32_t getElecID(const HGCROCChannelDataFrameElecSpec& digi) {
+    return digi.id().raw();
+  }
 
   float getTOA(const HGCROCChannelDataFrameElecSpec& digi) {
     return digi.toa();

@@ -42,6 +42,26 @@ template <typename T1, typename T2>
     throw cms::Exception("DigiInfoTableProducer:findMacth") << "Virtual function findMatch is not implemented!";
   }
 
+  uint32_t virtual getElecID(const typename T2::value_type& digi) {
+    throw cms::Exception("DigiInfoTableProducer:ElecID") << "Virtual function getElecID is not implemented!";
+  }
+
+  uint32_t virtual getEconDIdx(const typename T2::value_type& digi) {
+    throw cms::Exception("DigiInfoTableProducer:EconDIdx") << "Virtual function getEcondIdx is not implemented!";
+  }
+
+  uint32_t virtual getEconDeRx(const typename T2::value_type& digi) {
+    throw cms::Exception("DigiInfoTableProducer:EconDeRx") << "Virtual function getEcondeRx is not implemented!";
+  }
+
+  uint32_t virtual getHalfRocChannel(const typename T2::value_type& digi) {
+    throw cms::Exception("DigiInfoTableProducer:HalfRocChannel") << "Virtual function HalfRocChannel is not implemented!";
+  }
+
+  uint32_t virtual getElecIDisCM(const typename T2::value_type& digi) {
+    throw cms::Exception("DigiInfoTableProducer:ElecIDisCM") << "Virtual function ElecIDisCM is not implemented!";
+  }
+
   float virtual getTOA(const typename T2::value_type& digi) {
     throw cms::Exception("DigiInfoTableProducer:toa") << "Virtual function getTOA is not implemented!";
   }
@@ -55,7 +75,7 @@ template <typename T1, typename T2>
   }
 
   float virtual getADCm1(const typename T2::value_type& digi) {
-    throw cms::Exception("DigiInfoTableProducer:adc") << "Virtual function getADCm1 is not implemented!";
+    throw cms::Exception("DigiInfoTableProducer:adcm1") << "Virtual function getADCm1 is not implemented!";
   }
 
   void beginRun(edm::Run const& iRun, const edm::EventSetup& iSetup) override {
@@ -79,6 +99,11 @@ template <typename T1, typename T2>
     std::vector<float> totvals;
     std::vector<float> adcvals;
     std::vector<float> adcm1vals;
+    std::vector<uint32_t> eleIDvals;
+    std::vector<uint32_t> econDIdxvals;
+    std::vector<uint32_t> econDeRxvals;
+    std::vector<uint32_t> halfrocChannelvals;
+    std::vector<uint32_t> elecIDisCMvals;
 
     for (const auto& obj : *objs) {
       if (cut_(obj)) {
@@ -88,7 +113,12 @@ template <typename T1, typename T2>
 	    totvals.emplace_back(getTOT(objdigi));
 	    adcvals.emplace_back(getADC(objdigi));
 	    adcm1vals.emplace_back(getADCm1(objdigi));
-	    }
+	    eleIDvals.emplace_back(getElecID(objdigi));
+	    econDIdxvals.emplace_back(getEconDIdx(objdigi));
+	    econDeRxvals.emplace_back(getEconDeRx(objdigi));
+	    halfrocChannelvals.emplace_back(getHalfRocChannel(objdigi));
+	    elecIDisCMvals.emplace_back(getElecIDisCM(objdigi));
+	  }
 	}
       }
     }
@@ -98,6 +128,11 @@ template <typename T1, typename T2>
     tab->addColumn<float>("tot", totvals, "digi time of threshould");
     tab->addColumn<float>("adc", adcvals, "digi adc");
     tab->addColumn<float>("adcm1", adcm1vals, "digi adc-1");
+    tab->addColumn<uint32_t>("id_eleID", eleIDvals, "electronicID");
+    tab->addColumn<uint32_t>("id_EconDIdx", econDIdxvals, "econDIdxvals");
+    tab->addColumn<uint32_t>("id_EconDeRx", econDeRxvals, "econDeRxvals");
+    tab->addColumn<uint32_t>("id_halfrocChannel", halfrocChannelvals, "halfrocChannelvals");
+    tab->addColumn<uint32_t>("id_elecIDisCMvals", elecIDisCMvals, "elecIDisCMvals");
 
     iEvent.put(std::move(tab));
 
