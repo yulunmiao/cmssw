@@ -4,6 +4,10 @@ filein=$1
 fileout=$2
 [[ -z ${fileout} ]] && fileout="hgcalnano_testcmsdriver.root"
 
+jobtag=$3
+[[ -z ${jobtag} ]] && jobtag=""
+
+
 cmsDriver.py NANO \
     -s USER:DPGAnalysis/HGCalNanoAOD/hgcRecHits_cff.hgctbTask \
     --datatier NANOAOD \
@@ -18,4 +22,4 @@ cmsDriver.py NANO \
     --python_filename testcmsdriver_cfg.py \
     --no_exec
 
-cmsRun -j FrameworkJobReport_NANO.xml testcmsdriver_cfg.py
+cmsRun -j FrameworkJobReport_${jobtag}_NANO.xml testcmsdriver_cfg.py
