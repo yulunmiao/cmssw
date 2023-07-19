@@ -242,11 +242,11 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     p_sums[k]->setBinLabel(11,"#sum TDC^{2}",2);
     p_sums[k]->setBinLabel(12,"#sum ADC*TDC",2);
     p_maxadc[k] = ibook.book1D("maxadc_"+tag,             ";max ADC; Counts",  100,0,1024); 
-    p_adc[k]    = ibook.bookProfile("p_adc_" + tag,       ";Channel; ADC",     nch, 0, nch, 150, 0, 150);
+    p_adc[k]    = ibook.bookProfile("p_adc_" + tag,       ";Channel; ADC",     nch, 0, nch, 100, 0, 1024);
     p_adc[k]->setOption("s"); //save standard deviation instead of error mean for noise estimate
-    p_tot[k]    = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 150, 0, 150);
-    p_adcm[k]   = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 150, 0, 150);
-    p_toa[k]    = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 150, 0, 150);
+    p_tot[k]    = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 100, 0, 1024);
+    p_adcm[k]   = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 100, 0, 1024);
+    p_toa[k]    = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 100, 0, 1024);
   }
 }
 
