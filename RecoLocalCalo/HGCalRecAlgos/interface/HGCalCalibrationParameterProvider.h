@@ -5,7 +5,7 @@
 #include <vector>
 
 struct HGCalCalibrationParameterProviderConfig {
-    uint32_t EventSLinkMax{1000};              ///< maximum number of S-Links in one Event
+    uint32_t EventSLinkMax{1000};         ///< maximum number of S-Links in one Event
     uint32_t sLinkCaptureBlockMax{10};    ///< maximum number of capture blocks in one S-Link
     uint32_t captureBlockECONDMax{12};    ///< maximum number of ECON-Ds in one capture block
     uint32_t econdERXMax{12};             ///< maximum number of eRxs in one ECON-D
@@ -13,12 +13,12 @@ struct HGCalCalibrationParameterProviderConfig {
 };
 
 struct CalibrationParameter{
-    float pedestal, cm_slope, cm_offset, kappa_bxm1;
+    float gain, pedestal, cm_slope, cm_offset, kappa_bxm1;
 }; 
 
 class HGCalCalibrationParameterProvider{
 
-    private:
+  private:
     enum HGCalElectronicsIdMask {
         kZsideMask = 0x1,
         kFEDIDMask = 0x3ff,
@@ -39,10 +39,11 @@ class HGCalCalibrationParameterProvider{
     std::vector<CalibrationParameter> calibrationParameter_;
     const uint32_t denseMap(uint32_t ElectronicsID) const;
     
-    public:
+  public:
     explicit HGCalCalibrationParameterProvider(){};
     void initialize(HGCalCalibrationParameterProviderConfig config);
     CalibrationParameter& operator[](uint32_t ElectronicsID);
+    
 };
 
 #endif

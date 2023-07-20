@@ -18,10 +18,10 @@
 #include <iomanip> // for std::setw
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/ESWatcher.h"
-#include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
 
 // include for save calibration parameter
 #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
@@ -61,7 +61,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     void produce(device::Event&, device::EventSetup const&) override;
     void beginRun(edm::Run const&, edm::EventSetup const&) override;
-    edm::ESWatcher<HGCalCondSerializablePedestalsRcd> cfgWatcher_;
+    edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
+    edm::ESWatcher<HGCalCondSerializablePedestalsRcd> condWatcher_;
+    edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
     edm::ESGetToken<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd> tokenConds_;
     edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
 
@@ -73,8 +75,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   };
 
   HGCalRecHitProducer::HGCalRecHitProducer(const edm::ParameterSet& iConfig)
-      : tokenConds_(esConsumes<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd>(
-          edm::ESInputTag(iConfig.getParameter<std::string>("pedestal_label")))),
+      : configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
+          iConfig.getParameter<edm::ESInputTag>("config_label"))),
+        tokenConds_(esConsumes<HGCalCondSerializablePedestals, HGCalCondSerializablePedestalsRcd>(
+          iConfig.getParameter<edm::ESInputTag>("pedestal_label"))),
         moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(
           iConfig.getParameter<edm::ESInputTag>("ModuleInfo"))),
         digisToken_{consumes<hgcaldigi::HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("digis"))},
@@ -99,23 +103,37 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   void HGCalRecHitProducer::produce(device::Event& iEvent, device::EventSetup const& iSetup) {
     auto queue = iEvent.queue();
-    
+
     // Read digis
     auto const& hostDigisIn = iEvent.get(digisToken_);
     int oldSize = hostDigisIn.view().metadata().size();
     int newSize = oldSize * n_hits_scale;
     auto hostDigis = HGCalDigiHostCollection(newSize, queue);
 
-    // Check if there are new conditions and read them
-    if (cfgWatcher_.check(iSetup)){
+    // Check if there are new conditions and retrieve configuration from YAML files
+    if (configWatcher_.check(iSetup)) {
+      auto conds = iSetup.getData(configToken_);
+      size_t nmods = conds.moduleConfigs.size();
+      edm::LogInfo("HGCalRecHitProducer") << "Conditions retrieved for " << nmods << " modules:\n" << conds << std::endl;
+      for (auto it : conds.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
+        HGCalModuleConfig moduleConfig(it.second);
+        edm::LogInfo("HGCalRecHitProducer") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
+        for(auto it : moduleConfig.gains) {
+          HGCalElectronicsId id(it.first);
+          calibrationParameterProvider_[id.raw()].gain = it.second;
+          edm::LogInfo("HGCalRecHitProducer") << std::setw(5) << std::dec << (uint32_t)id.raw() << " "
+            << std::setw(6) << calibrationParameterProvider_[id.raw()].gain;
+        }
+      }
+    } // else: use previously loaded module configuration
 
+    // Check if there are new conditions and read them from pedestal txt files
+    if (condWatcher_.check(iSetup)){
       auto conds = iSetup.getData(tokenConds_);
       size_t nconds = conds.params_.size();
-      LogDebug("HGCalCalibrationParamter") << "Conditions retrieved:\n" << nconds;
-
-      // Print out all conditions readout
+      LogDebug("HGCalRecHitProducer") << "Conditions retrieved:\n" << nconds;
       HGCalRecHitCalibrationAlgorithms::CalibParams calibParams;
-      LogDebug("HGCalCalibrationParamter") << "   ID  eRx  Channel  isCM?  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
+      LogDebug("HGCalRecHitProducer") << "   ID  eRx  Channel  isCM?  Gain  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
       for(auto it : conds.params_) {
         HGCalElectronicsId id(it.first);
         HGCalFloatPedestals table = conds.getFloatPedestals(it.second);
@@ -123,15 +141,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         calibrationParameterProvider_[id.raw()].cm_slope = table.cm_slope;
         calibrationParameterProvider_[id.raw()].cm_offset = table.cm_offset;
         calibrationParameterProvider_[id.raw()].kappa_bxm1 = table.kappa_bxm1;
-
-        LogDebug("HGCalCalibrationParamter") << std::setw(5) << std::dec << (uint32_t)id.raw() << " " << std::setw(4) << std::dec << (uint32_t)id.econdeRx() << " "
-                  << std::setw(8) << (uint32_t)id.halfrocChannel() << " " << std::setw(6) << (uint32_t)id.isCM() << " "
+        LogDebug("HGCalRecHitProducer") << std::setw(5) << std::dec << (uint32_t)id.raw() << " " << std::setw(4) << std::dec << (uint32_t)id.econdeRx() << " "
+                  << std::setw(8) << (uint32_t)id.halfrocChannel() << " " << std::setw(6) << (uint32_t)id.isCM() << " " << std::setw(5) << calibrationParameterProvider_[id.raw()].gain
                   << std::setw(9) << std::setprecision(3) << calibrationParameterProvider_[id.raw()].pedestal << " " << std::setw(9) << calibrationParameterProvider_[id.raw()].cm_slope << " "
                   << std::setw(10) << calibrationParameterProvider_[id.raw()].cm_offset << " " << std::setw(12) << calibrationParameterProvider_[id.raw()].kappa_bxm1;
-      }
-
-      
-      }
+      }  
+    } // else: use previously loaded module configuration
 
     for(int i=0; i<newSize;i++){
       hostDigis.view()[i].electronicsId() = hostDigisIn.view()[i%oldSize].electronicsId();

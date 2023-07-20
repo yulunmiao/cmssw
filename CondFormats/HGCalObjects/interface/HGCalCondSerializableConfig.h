@@ -14,16 +14,17 @@
 #include <vector>
 
 #include "CondFormats/Serialization/interface/Serializable.h"
+//#include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
 
 ///**
 //   @short global Module settings read from YAML, same for all ROCs
 //*/
-////typedef std::map<HGCalElectronicsId,bool> HGCALROCConfig; // ID -> readout mode
+typedef std::map<uint32_t,uint32_t> HGCALROCConfig; // ID -> gain
 struct HGCalModuleConfig {
-  bool charMode; // characterization/readout mode
-  char gain,injgain;     // gain settings
-  uint32_t injcalib;    //injected charge
-  //HGCALROCConfig ROC; // map between ROC ID -> parameters
+  bool charMode;            // characterization/readout mode
+  char gain, injgain;       // gain settings
+  uint32_t injcalib;        //injected charge
+  HGCALROCConfig gains; // map between ROC ID -> parameters
   COND_SERIALIZABLE;
 };
 

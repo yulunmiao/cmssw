@@ -5,13 +5,13 @@ process = cms.Process("Calib")
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('python')
 options.register('verb',1,mytype=VarParsing.varType.int,
-                 "Verbosity level, 0=normal, 1=debug (default)")
+                 info="Verbosity level, 0=normal, 1=debug (default)")
 options.register('inputFile',None,mytype=VarParsing.varType.string,
                  info="Path to input file. Absolute, or relative to CMSSW src directory,"
                       " e.g. CalibCalorimetry/HGCalPlugins/test/pedestals_test.txt")
 options.parseArguments()
 #infname = '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt'
-infname = options.infname
+infname = options.inputFile
 verb    = options.verb
 print(f">>> inputFile={infname}")
 

@@ -11,29 +11,47 @@
 import os, yaml
 #import ROOT; ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+
+# To write hexadecimal string to YAML as hexadecimal without quotes.
+class YHex(str):
+  pass
+def hex_presenter(dumper, data):
+  return dumper.represent_int(b2h(data))
+yaml.add_representer(YHex,hex_presenter)
+
+
 def b2h(x):
-  """
-  Convert binary to hex.
-  E.g b2h(4) -> '0x4', b2h('100') -> '0x4'
-  """
-  return hex(x if isinstance(x,int) else int(x,2)) 
+  """Convert binary to hex."""
+  if isinstance(x,int):
+    return hex(x) # e.g. b2h(4) -> '0x4'
+  elif isinstance(x,str) and x[:2]=='0x':
+    return hex(int(x,16)) # e.g. b2h('0x4') -> '0x4'
+  else:
+    return hex(int(x,2)) # e.g. b2h('100') -> '0x4'
   
 
-def getmapper(econids,dname='',run=0,verb=0):
+def getmapper(econids,rocs,dname='',run=0,verb=0):
   """Create mapper to YAML config files."""
   if verb>=1:
-    print(f">>> getmapper({econids!r})")
+    print(f">>> getmapper({econids!r},{rocs!r})")
   mapper = {
     'run': 0,
     'ECONs': [
-      { 'id': econ,
+      { 'id': YHex(econid),
         'configs': {
-          'ECON': os.path.join(dname,f"Run_{run}.yaml"),
-          'ROCs': os.path.join(dname,"initial_full_config.yaml"),
+          'ECOND': os.path.join(dname,f"Run_{run}.yaml"),
+          'ECONT': os.path.join(dname,f"Run_{run}.yaml"),
+          'ROCs': [
+            os.path.join(dname,"initial_full_config.yaml")
+            for roc in rocs
+          ]
         }
-      } for econ in econids
+      } for econid in econids
     ]
   }
+  if verb>=2:
+    import pprint
+    pprint.pprint(mapper,sort_dicts=False)
   return mapper
   
 
@@ -86,7 +104,7 @@ def getmodule(filename,verb=0):
   #gSystem.Load(f"{os.environ['CMSSW_BASE']}/lib/{os.environ['SCRAM_ARCH']}/libGeometryHGCalMapping.so")
   gROOT.ProcessLine('#include "Geometry/HGCalMapping/interface/HGCalModuleLocator.h"')
   from ROOT import HGCalModuleLocator, HGCalElectronicsId
-  print(HGCalElectronicsId(0x04a4c3ff).rawId())
+  #print(HGCalElectronicsId(0x04a4c3ff).rawId())
   locator = HGCalModuleLocator()
   locator.buildLocatorFrom(filename,True)
   econids = [ ]
@@ -94,9 +112,10 @@ def getmodule(filename,verb=0):
     print(f">>>   Looping over modules...")
   modinfo = locator.getInfo()
   for module in modinfo.params_:
-    elecid = HGCalElectronicsId(module.zside,module.fedid,module.captureblock,module.econdidx,0,0).raw()
+    #elecid = HGCalElectronicsId(module.zside,module.fedid,module.captureblock,module.econdidx,0,0).raw()
+    elecid = HGCalElectronicsId(module.zside,module.slink,module.captureblock,module.econdidx,0,0).raw()
     if verb>=1:
-      print(f">>>   elecid={elecid} -> {hex(elecid)!r}")
+      print(f">>>   elecid={elecid:-4} -> {hex(elecid):5} = {bin(elecid)}")
     econids.append(hex(elecid))
   return econids
   
@@ -112,12 +131,15 @@ def main(args):
     econids = getmodule(modulemap,verb=verbosity)
   else:
     econids = [ # ECON IDs for mapper
-      '0x000',
-      '0x400',
+      '0x000', # bit 10 (2^10) = 0
+      '0x400', # bit 10 (2^10) = 1
     ]
+    if verbosity>=1:
+      for econid in econids:
+        print(f">>>   econid={int(econid,16)} -> econid={econid:5} = {bin(int(econid,16))}")
   
   rocs = [
-    0, 1, 2,
+    0, 1, 2, #3, 4, 5
   ]
   
   # CONFIGs
@@ -128,7 +150,7 @@ def main(args):
     yaml.dump(config,outfile,sort_keys=False)
   
   # MAPPER
-  mapper = getmapper(econids,verb=verbosity)
+  mapper = getmapper(econids,rocs,verb=verbosity)
   outfname = "test_hgcal_yamlmapper.yaml"
   print(f">>> Writing mapper {outfname} for {len(econids)} ECON modules...")
   with open(outfname,'w') as outfile:
