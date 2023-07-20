@@ -45,11 +45,11 @@ hgctbRecHitsPositionTable = hgcEERecHitsPositionTable.clone()
 hgctbRecHitsPositionTable.src = hgctbRecHitsTable.src
 hgctbRecHitsPositionTable.name = hgctbRecHitsTable.name
 
-from Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi import hgCalModuleInfoESSource as hgCalModuleInfoESSource_
-from Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi import hgCalSiModuleInfoESSource as hgCalSiModuleInfoESSource_
+from Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi import hgCalModuleInfoESSource # as hgCalModuleInfoESSource_
+from Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi import hgCalSiModuleInfoESSource #as hgCalSiModuleInfoESSource_
 
-hgCalModuleInfoESSource_.filename = 'Geometry/HGCalMapping/data/modulelocator_test.txt'
-hgCalSiModuleInfoESSource_.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
+hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_test.txt'
+hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
 
 hgcDigiTable = cms.EDProducer("HGCRecHitDigiTableProducer",
     srcHits = hgctbRecHitsTable.src,

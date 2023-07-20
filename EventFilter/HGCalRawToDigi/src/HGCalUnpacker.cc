@@ -71,7 +71,6 @@ void HGCalUnpacker::parseSLink(
       const uint64_t captureBlockHeader = ((uint64_t)cb_msb << 32) | ((uint64_t)cb_lsb);
       iword += 2;  // length of capture block header (64 bits)
       LogDebug("[HGCalUnpacker::parseSLink]") << "Capture block=" << (int)captureBlock << ", capture block header=0x" << std::hex << captureBlockHeader;
-      
       //----- parse the capture block body
       for (uint8_t econd = 0; econd < config_.captureBlockECONDMax; econd++) {  // loop through all ECON-Ds
 
@@ -80,7 +79,6 @@ void HGCalUnpacker::parseSLink(
 
         HGCalElectronicsId eleid(zside, sLink, captureBlock, econd, 0, 0);
         LogDebug("[HGCalUnpacker::parseSLink]") << std::dec << (uint32_t)zside << " " << (uint32_t)sLink << " " << (uint32_t)captureBlock << " " << (uint32_t)econd << std::endl;
-        
         //due to a bug in the firmware there is one extra 64b word after the CB which is to be ignored
         //this will skip it but should be removed once the bug is fixed in the firmware
         if(config_.applyFWworkaround) {
@@ -99,14 +97,14 @@ void HGCalUnpacker::parseSLink(
             << "Expected a ECON-D header at word " << std::dec << iword << "/0x" << std::hex << iword
             << " (marker: 0x" << config_.econdHeaderMarker << "), got 0x" << inputArray[iword] << ".";
         }
-        
+	
         const auto& econdHeader = inputArray[iword];
         iword += 2;  // length of ECON-D header (2 * 32 bits)
+
         //----- extract the payload length
         const uint32_t payloadLength = (econdHeader >> kPayloadLengthShift) & kPayloadLengthMask;
         LogDebug("[HGCalUnpacker::parseSLink]") << "ECON-D #" << (int)econd << ", first word of ECON-D header=0x" << std::hex << econdHeader
                                                 << "\t ECON-D payload=" << std::dec << payloadLength;
-        
         // if payload length too big
         if (payloadLength > config_.payloadLengthMax) {
           flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword,HGCalFlaggedECONDInfo::PAYLOADOVERFLOWS,eleid.raw()));
@@ -118,13 +116,13 @@ void HGCalUnpacker::parseSLink(
         //
         // Quality check for the ECON-D
         //
+	bool isTruncated(((econdHeader >> kTruncatedShift) & kTruncatedMask) == 1);
         uint32_t econdQuality(
                               (((captureBlockHeader >> (3 * econd)) & kCaptureBlockECONDStatusMask) != 0b000)*HGCalFlaggedECONDInfo::CBSTATUS + 
                               (((econdHeader >> kHTShift) & kHTMask) >= 0b10)*HGCalFlaggedECONDInfo::HTBITS +
                               (((econdHeader >> kEBOShift) & kEBOMask) >= 0b10)*HGCalFlaggedECONDInfo::EBOBITS +
                               (((econdHeader >> kMatchShift) & kMatchMask) == 0)*HGCalFlaggedECONDInfo::MATCHBIT +
-                              (((econdHeader >> kTruncatedShift) & kTruncatedMask) == 1)*HGCalFlaggedECONDInfo::TRUNCATED);
-        
+                              (isTruncated*HGCalFlaggedECONDInfo::TRUNCATED) );
         if(econdQuality>0) {
           flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword - 2,econdQuality,eleid.raw()));          
           LogDebug("[HGCalUnpacker::parseSLink]") << "ECON-D failed quality check, HT=" << (econdHeader >> kHTShift & kHTMask)
@@ -134,7 +132,7 @@ void HGCalUnpacker::parseSLink(
         }
         
         //if the ECON-D is truncated skip directly to the next
-        if(econdQuality>16) {
+        if(isTruncated) {
           iword += payloadLength;  // skip the current ECON-D (using the payload length parsed above)
           if (iword % 2 != 0) {  //TODO: check this
             LogDebug("[HGCalUnpacker::parseSLink]") << "Padding ECON-D payload to 2 32-bit words (remainder: " << (iword % 2) << ").";

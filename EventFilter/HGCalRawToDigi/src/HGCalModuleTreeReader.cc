@@ -36,11 +36,13 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
   chain.SetBranchAddress("trigtime", &event.trigtime);
   chain.SetBranchAddress("trigwidth", &event.trigwidth);
 
+  std::set<EventId> ambiguousKeys;
   for (long long i = 0; i < chain.GetEntries(); ++i) {
     chain.GetEntry(i);
 
     // check if event already exists
     EventId key{(uint32_t)event.eventcounter, (uint32_t)event.bxcounter, (uint32_t)event.orbitcounter};
+
     if (data_.count(key) == 0)
       data_[key] = ERxInput{};
 
@@ -51,6 +53,9 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
       //add metadata
       HGCalTestSystemMetaData md(0,event.trigtime,event.trigwidth);
       metadata_[key]=md;
+    }else {
+      ambiguousKeys.insert(key);
+      continue;
     }
     
     // daqdata: header, CM, 37 ch, CRC32, idle
@@ -84,7 +89,20 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
     // copy CRC32
     data_[key][erxKey].crc32 = event.daqdata->at(39);
   }
+
+  //
+  for(auto it: data_) 
+    if(it.second.size()!=6) ambiguousKeys.insert(it.first);
+
+  //
+  std::cout << "Removing " << ambiguousKeys.size() << " ambiguous keys out of " << data_.size() << std::endl;
+  for(auto k : ambiguousKeys) {
+    auto it=data_.find(k);
+    data_.erase(it);
+  }
   
+
+
   edm::LogInfo("HGCalModuleTreeReader") << "read " << data_.size() << " events.";
   it_data_ = data_.begin();
 }
