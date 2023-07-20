@@ -4,20 +4,26 @@ process = cms.Process("Calib")
 # argument parser
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('python')
+options.register('verb',1,mytype=VarParsing.varType.int,
+                 "Verbosity level, 0=normal, 1=debug (default)")
 options.register('inputFile',None,mytype=VarParsing.varType.string,
                  info="Path to input file. Absolute, or relative to CMSSW src directory,"
                       " e.g. CalibCalorimetry/HGCalPlugins/test/pedestals_test.txt")
 options.parseArguments()
-infname = options.inputFile
 #infname = '/afs/cern.ch/work/y/ykao/public/raw_data_handling/calibration_parameters.txt'
+infname = options.infname
+verb    = options.verb
+print(f">>> inputFile={infname}")
 
 process.MessageLogger = cms.Service("MessageLogger",
+    debugModules = cms.untracked.vstring("HGCalPedestalsESSource*"),
     cerr = cms.untracked.PSet(
-        enable = cms.untracked.bool(False)
+        enable = cms.untracked.bool(True),
+        threshold = cms.untracked.string('DEBUG' if options.verb>=1 else 'INFO')
     ),
     cout = cms.untracked.PSet(
         enable = cms.untracked.bool(True),
-        threshold = cms.untracked.string('INFO')
+        threshold = cms.untracked.string('DEBUG' if options.verb>=1 else 'INFO')
     )
 )
 
@@ -29,7 +35,6 @@ process.source = cms.Source('EmptyIOVSource',
 )
 
 process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi')
-print(f">>> inputFile={infname}")
 if infname:
   process.hgCalPedestalsESSource.filename = infname
 else: # create test file with dummy variables
