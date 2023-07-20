@@ -66,6 +66,10 @@ class HGCalDigiFromDetIDTableProducer : public DigiInfoTableProducer< edm::View<
     return digi.adcm1();
   }
 
+  float getTctp(const HGCROCChannelDataFrameElecSpec& digi) {
+    return digi.tctp();
+  }
+
 };
 
 #include "FWCore/Framework/interface/MakerMacros.h"
