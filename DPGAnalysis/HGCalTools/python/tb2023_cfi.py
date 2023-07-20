@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 
 def configTBConditions(process,key='default'):
 
-    """maybe this should be done with eras/modifiers?"""
+    """ maybe this should be done with eras/modifiers? """
 
     process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
     process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
