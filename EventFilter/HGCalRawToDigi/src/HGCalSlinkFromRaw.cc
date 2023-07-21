@@ -55,6 +55,12 @@ FEDRawDataCollection SlinkFromRaw::next() {
     rStart->print();
     return next();
   }
+  if(record_->state()==hgcal_slinkfromraw::FsmState::Continuing) {
+    edm::LogInfo("SlinkFromRaw") << "RecordContinuing";
+    const hgcal_slinkfromraw::RecordContinuing *rCont((hgcal_slinkfromraw::RecordContinuing*)record_);
+    rCont->print();
+    return next();
+  }
 
   //analyze event
   edm::LogInfo("SlinkFromRaw: Reading record from file #") << ifile_ << "nevents=" << nEvents_ << "\n";

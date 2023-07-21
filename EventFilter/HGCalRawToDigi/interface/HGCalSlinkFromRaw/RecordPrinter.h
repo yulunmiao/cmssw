@@ -8,6 +8,7 @@
 #include "RecordRunning.h"
 #include "RecordStarting.h"
 #include "RecordStopping.h"
+#include "RecordContinuing.h"
 
 namespace hgcal_slinkfromraw {
 
