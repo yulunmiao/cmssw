@@ -71,6 +71,7 @@ void HGCalMetaDataTableProducer::produce(edm::Event& iEvent, const edm::EventSet
   out->addColumnValue<uint32_t>("trigTime", info.trigTime_, "Trig Time");
   out->addColumnValue<uint32_t>("trigWidth", info.trigWidth_, "Trig Width");
   out->addColumnValue<uint32_t>("injcalib", info.injcalib_, "injcalib");
+  out->addColumnValue<uint8_t>("injgain", int(info.injgain_), "injgain");
 
   iEvent.put(std::move(out), "hgcMetadata");
 
