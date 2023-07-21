@@ -17,8 +17,9 @@ process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEven
 # Logical mapping
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
-from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions
+from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions,addPerformanceReports
 configTBConditions(process)
+addPerformanceReports(process)
 
 process.hgCalDigisClient = cms.EDProducer(
     'HGCalDigisClient',

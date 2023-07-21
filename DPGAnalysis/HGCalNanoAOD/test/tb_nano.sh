@@ -19,7 +19,7 @@ cmsDriver.py NANO \
     --geometry Extended2026D95 \
     --era Phase2C17I13M9 \
     --python_filename nanocmsdriver_${jobtag}_cfg.py \
-    --customise DPGAnalysis/HGCalTools/tb2023_cfi.configTBConditions \
+    --customise DPGAnalysis/HGCalTools/tb2023_cfi.configTBConditions,DPGAnalysis/HGCalTools/tb2023_cfi.addPerformanceReports \
     --customise_commands "process.NANOAODoutput.compressionAlgorithm = 'ZSTD'\nprocess.NANOAODoutput.compressionLevel = 5\nprocess.MessageLogger.cerr.FwkReport.reportEvery = 50000\nprocess.options.wantSummary = True\n" \
     --no_exec
 
