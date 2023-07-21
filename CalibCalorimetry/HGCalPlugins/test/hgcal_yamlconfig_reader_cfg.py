@@ -16,24 +16,7 @@ print(f">>> inputFile={infname}")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = "DEBUG"
-process.MessageLogger.cout.threshold = "DEBUG"
 process.MessageLogger.debugModules = ["*"]
-# process.MessageLogger = cms.Service("MessageLogger",
-#     debugModules = cms.untracked.vstring("*"),
-#     destinations = cms.untracked.vstring('detailedInfo','critical'),
-#     cerr = cms.untracked.PSet(
-#         enable = cms.untracked.bool(True),
-#         threshold = cms.untracked.string('DEBUG' if verb>=1 else 'INFO'),
-#     ),
-#     cout = cms.untracked.PSet(
-#         enable = cms.untracked.bool(True),
-#         threshold = cms.untracked.string('DEBUG' if verb>=1 else 'INFO'),
-#     ),
-#     detailedInfo = cms.untracked.PSet(
-#         enable = cms.untracked.bool(True),
-#         threshold = cms.untracked.string('DEBUG' if verb>=1 else 'INFO'),
-#     ),
-# )
 
 process.source = cms.Source('EmptyIOVSource',
     timetype = cms.string('runnumber'),
