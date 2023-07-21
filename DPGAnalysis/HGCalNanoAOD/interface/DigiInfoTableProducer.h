@@ -92,6 +92,7 @@ template <typename T1, typename T2>
     auto siCellInfo = iSetup.getData(siModuleInfoToken_);
 
     ele2geo_=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,false);
+    geo2ele_=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,true);
       
   }
 
@@ -116,21 +117,25 @@ template <typename T1, typename T2>
 
     for (const auto& obj : *objs) {
       if (cut_(obj)) {
-	uint32_t eleID_ = findMatchEleId(obj, ele2geo_);
-	for (const auto& objdigi : *objdigis) {
-	  if ( objdigi.id().raw() == eleID_ ) {
-	    toavals.emplace_back(getTOA(objdigi));
-	    totvals.emplace_back(getTOT(objdigi));
-	    adcvals.emplace_back(getADC(objdigi));
-	    adcm1vals.emplace_back(getADCm1(objdigi));
-	    tctpvals.emplace_back(getTctp(objdigi));
-	    eleIDvals.emplace_back(getElecID(objdigi));
-	    econDIdxvals.emplace_back(getEconDIdx(objdigi));
-	    econDeRxvals.emplace_back(getEconDeRx(objdigi));
-	    halfrocChannelvals.emplace_back(getHalfRocChannel(objdigi));
-	    elecIDisCMvals.emplace_back(getElecIDisCM(objdigi));
-	  }
-	}
+        auto it = geo2ele_.find(obj.detid());
+        if (it != geo2ele_.end()) {
+          auto eleID = it->second;
+          auto it_digi = std::find_if(
+              objdigis->begin(), objdigis->end(), [&eleID](const auto& digi) { return digi.id() == eleID; });
+          if (it_digi != objdigis->end()) {
+            const auto& objdigi = *it_digi;
+            toavals.emplace_back(getTOA(objdigi));
+            totvals.emplace_back(getTOT(objdigi));
+            adcvals.emplace_back(getADC(objdigi));
+            adcm1vals.emplace_back(getADCm1(objdigi));
+            tctpvals.emplace_back(getTctp(objdigi));
+            eleIDvals.emplace_back(getElecID(objdigi));
+            econDIdxvals.emplace_back(getEconDIdx(objdigi));
+            econDeRxvals.emplace_back(getEconDeRx(objdigi));
+            halfrocChannelvals.emplace_back(getHalfRocChannel(objdigi));
+            elecIDisCMvals.emplace_back(getElecIDisCM(objdigi));
+          }
+        }
       }
     }
 
@@ -161,5 +166,6 @@ template <typename T1, typename T2>
   edm::ESGetToken<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd> siModuleInfoToken_;
 
   std::map<uint32_t,uint32_t> ele2geo_;
+  std::map<uint32_t,uint32_t> geo2ele_;
 
 };
