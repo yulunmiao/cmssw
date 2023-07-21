@@ -20,6 +20,15 @@ class HGCalDigiFromDetIDTableProducer : public DigiInfoTableProducer< edm::View<
   }
   ~HGCalDigiFromDetIDTableProducer() override {}
 
+  uint32_t findMatchEleId(const CaloRecHit& hit, const std::map<uint32_t,uint32_t> & ele2geo_) {
+
+    uint32_t eleId=-1;
+    for(auto it : ele2geo_) {
+      if (it.second==hit.detid().rawId()) eleId = it.first;
+    }
+    return eleId;
+  }
+
   bool findMatch(const CaloRecHit& hit, const HGCROCChannelDataFrameElecSpec& digi, const std::map<uint32_t,uint32_t> & ele2geo_) {
 
     bool foundMatch = false;

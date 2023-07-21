@@ -39,7 +39,11 @@ template <typename T1, typename T2>
   ~DigiInfoTableProducer() override {}
 
   bool virtual findMatch(const typename T1::value_type& hit, const typename T2::value_type& digi, const std::map<uint32_t,uint32_t>& info) {
-    throw cms::Exception("DigiInfoTableProducer:findMacth") << "Virtual function findMatch is not implemented!";
+    throw cms::Exception("DigiInfoTableProducer:findMatch") << "Virtual function findMatch is not implemented!";
+  }
+
+  uint32_t virtual findMatchEleId(const typename T1::value_type& hit, const std::map<uint32_t,uint32_t> & ele2geo_) {
+    throw cms::Exception("DigiInfoTableProducer:findMatchEleId") << "Virtual function findMatchEleId is not implemented!";
   }
 
   uint32_t virtual getElecID(const typename T2::value_type& digi) {
@@ -112,8 +116,9 @@ template <typename T1, typename T2>
 
     for (const auto& obj : *objs) {
       if (cut_(obj)) {
+	uint32_t eleID_ = findMatchEleId(obj, ele2geo_);
 	for (const auto& objdigi : *objdigis) {
-	  if ( findMatch(obj, objdigi, ele2geo_)) {
+	  if ( objdigi.id().raw() == eleID_ ) {
 	    toavals.emplace_back(getTOA(objdigi));
 	    totvals.emplace_back(getTOT(objdigi));
 	    adcvals.emplace_back(getADC(objdigi));
