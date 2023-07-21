@@ -152,7 +152,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
         [this](uint16_t fedid) { 
           return this->fed2slink_[fedid]; 
         });
-         
+    
     auto channeldata = unpacker_->channelData();
     auto commonModeSum=unpacker_->commonModeSum();
     for (unsigned int i = 0; i < channeldata.size(); i++) {

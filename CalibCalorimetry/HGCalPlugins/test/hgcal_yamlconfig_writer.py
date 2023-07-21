@@ -162,7 +162,7 @@ if __name__=='__main__':
   description = '''This script make creates YAML configuration file for (test) reconstructing raw HGCAL data.'''
   parser = ArgumentParser(prog='hgcal_yamlconfig_writer',description=description,epilog="Good luck!")
   parser.add_argument('-m', "--modulemap", help="Input file with map for HGCalModuleLocator, e.g. Geometry/HGCalMapping/data/modulelocator_tb.txt" )
-  parser.add_argument('-v', "--verbose", dest='verbosity', type=int, nargs='?', const=1, default=0,
-                                         help="set level of verbosity, default=%(default)s" )
+  parser.add_argument('-v', "--verbose",   dest='verbosity', type=int, nargs='?', const=1, default=0,
+                                           help="set level of verbosity, default=%(default)s" )
   args = parser.parse_args()
   main(args)

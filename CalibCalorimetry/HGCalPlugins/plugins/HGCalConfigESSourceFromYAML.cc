@@ -15,6 +15,7 @@
 #include "FWCore/Framework/interface/EventSetupRecordIntervalFinder.h"
 #include "FWCore/Framework/interface/ESProducts.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
@@ -91,13 +92,17 @@ private:
       cond->moduleConfigs[0] = HGCalModuleConfig();
       
       // PARSE MAPPER
+      LogDebug("HGCalConfigESSourceFromYAML") << "Loading " << filename << "...";
       const auto yaml_file = YAML::LoadFile(filename);
       const auto mapper = yaml_file["ECONs"];
       if (mapper.IsDefined()) {
         for (const auto& params : mapper) { // loop through sequence of unnamed nodes
           uint32_t id;
-          try { id = params["id"].as<uint32_t>(); }
-          catch (const YAML::ParserException& err) { throw cms::Exception("HGCalConfigESSourceFromYAML") << "Bad conversion for id!" << err.msg; }
+          try {
+            id = params["id"].as<uint32_t>();
+          } catch (const YAML::ParserException& err) {
+            throw cms::Exception("HGCalConfigESSourceFromYAML") << "Bad conversion for id!" << err.msg;
+          }
           std::string fname_ECOND = params["configs"]["ECOND"].as<std::string>();
           std::string fname_ECONT = params["configs"]["ECONT"].as<std::string>();
           //std::string fname_ROCs = params["configs"]["ROCs"].as<std::string>();
@@ -105,11 +110,16 @@ private:
             << ", ECOND=" << fname_ECOND << ", ECONT=" << fname_ECONT;
           //parseECONConfigYAML(fname_ECON,cond);
           //parseROCConfigYAML(fname_ROCs,cond);
-          cond->moduleConfigs[0].gains[id] = 1;
+          cond->moduleConfigs[0].gains[id+0*64] = 1;
+          cond->moduleConfigs[0].gains[id+1*64] = 1;
+          cond->moduleConfigs[0].gains[id+2*64] = 1;
+          cond->moduleConfigs[0].gains[id+3*64] = 1;
+          cond->moduleConfigs[0].gains[id+4*64] = 1;
+          cond->moduleConfigs[0].gains[id+5*64] = 1;
         }
       } else {
         edm::LogWarning("HGCalConfigESSourceFromYAML")
-            << "The YAML configuration is missing a 'metaData' node. The conditions format may hence be invalid.\n"
+            << "The YAML configuration is missing a 'ECONs' node. The conditions format may hence be invalid.\n"
             << filename;
       }
       

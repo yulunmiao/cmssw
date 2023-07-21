@@ -1,73 +1,77 @@
+import os # for os.environ
 import FWCore.ParameterSet.Config as cms
-import FWCore.ParameterSet.VarParsing as VarParsing
+from FWCore.ParameterSet.VarParsing import VarParsing
 
 process = cms.Process("TEST")
 
-options = VarParsing.VarParsing('standard')
-options.register('mode', 'hgcmodule', VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+options = VarParsing('standard')
+options.register('mode', 'hgcmodule', VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  'type of emulation')
-options.register('fedId', 0, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('fedId', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'emulated FED id')
-options.register('debug', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('debug', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'debugging mode')
-options.register('dumpFRD', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('debugModules', '*', VarParsing.multiplicity.list, VarParsing.varType.string,
+                 "debugging modules, default=['*']")
+options.register('dumpFRD', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also dump the FEDRawData content')
-options.register('numCaptureBlocks', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('numCaptureBlocks', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'number of capture blocks to emulate')
-options.register('numECONDs', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('numECONDs', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'number of ECON-Ds to emulate')
-options.register('numChannelsPerERx', 37, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('numChannelsPerERx', 37, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'number of channels enabled per ERx')
-options.register('numERxsPerECOND', 6, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('numERxsPerECOND', 6, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'number of ERxs enabled per ECON-D')
-options.register('activeECONDs', [0], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
+options.register('activeECONDs', [0], VarParsing.multiplicity.list, VarParsing.varType.int,
                  'list of ECON-Ds enabled')
-options.register('ECONDsInPassthrough', [0], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
+options.register('ECONDsInPassthrough', [0], VarParsing.multiplicity.list, VarParsing.varType.int,
                  'list of ECON-Ds in passthrough mode')
-options.register('ECONDsInCharacterisation', [], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
+options.register('ECONDsInCharacterisation', [ ], VarParsing.multiplicity.list, VarParsing.varType.int,
                  'list of ECON-Ds in characterisation mode')
-options.register('ECONDToTStatus', 3, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('ECONDToTStatus', 3, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'default ToT status bits (aka TcTp bits) value to be emulated')
-options.register('randomActiveCaptureBlocks', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('randomActiveCaptureBlocks', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'randomly activate capture blocks on emulation')
-options.register('randomActiveECOND', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('randomActiveECOND', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'randomly activate ECOn-Ds on emulation')
-options.register('storeOutput', True, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('storeOutput', True, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also store the output into an EDM file')
-options.register('storeRAWOutput', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('storeRAWOutput', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also store the RAW output into a streamer file')
-options.register('storeEmulatorInfo', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('storeEmulatorInfo', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also store the emulator metadata')
-options.register('slinkBOE', 0x2a, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for S-link')
-options.register('cbHeaderMarker', 0x5f, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for BE/capture block')
-options.register('econdHeaderMarker', 0x154, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for ECON-D')
-options.register('applyFWworkaround', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.bool,'Patch unpacker behavior to deal with firmware known features')
+options.register('slinkBOE', 0x2a, VarParsing.multiplicity.singleton, VarParsing.varType.int,'Begin of event marker for S-link')
+options.register('cbHeaderMarker', 0x5f, VarParsing.multiplicity.singleton, VarParsing.varType.int,'Begin of event marker for BE/capture block')
+options.register('econdHeaderMarker', 0x154, VarParsing.multiplicity.singleton, VarParsing.varType.int,'Begin of event marker for ECON-D')
+options.register('applyFWworkaround', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,'Patch unpacker behavior to deal with firmware known features')
 options.register('configFile',
-                 '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
-                 VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+                 f"{os.environ['CMSSW_BASE']}/src/CalibCalorimetry/HGCalPlugins/test/test_hgcal_yamlmapper.yaml",
+                 #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
+                 VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  'config yaml file')
 options.register('conditions',
                  'default',
-                 VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+                 VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  'conditions tag')
 options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
-                 VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+                 VarParsing.multiplicity.singleton, VarParsing.varType.string,
                  'input TB file')
-options.register('GPU', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+options.register('GPU', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'run on GPU')
-options.register('runNumber', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'run number')
-options.register('maxEventsPerLS', 100000, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'max. events per lumi section')
-options.register('firstLS', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'first lumi section')
+options.register('runNumber', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'run number')
+options.register('maxEventsPerLS', 100000, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'max. events per lumi section')
+options.register('firstLS', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'first lumi section')
 
 options.parseArguments()
 
 #message logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 50000
-if options.debug:    
-    process.MessageLogger.cerr.threshold = "DEBUG"
-    process.MessageLogger.debugModules = ["*"]
+if options.debug:
+    process.MessageLogger.cerr.threshold = 'DEBUG'
+    process.MessageLogger.debugModules = options.debugModules # default: ['*']
     process.MessageLogger.cerr.DEBUG = cms.untracked.PSet(
         limit = cms.untracked.int32(-1)
     )
@@ -175,7 +179,7 @@ if options.GPU:
         'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
         n_hits_scale = cms.int32(1),
-        pedestal_label = cms.string(''), # for HGCalPedestalsESSource
+        pedestal_label = cms.ESInputTag(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(4096),
         n_threads = cms.int32(1024),
     )
@@ -184,12 +188,14 @@ else:
         'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
         n_hits_scale = cms.int32(1),
-        pedestal_label = cms.string(''), # for HGCalPedestalsESSource
+        pedestal_label = cms.ESInputTag(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(1024),
         n_threads = cms.int32(4096),
     )
 
 #filter on empty events
+
+
 process.load('EventFilter.HGCalRawToDigi.hgCalEmptyEventFilter_cfi')
 process.hgCalEmptyEventFilter.src = process.hgcalDigis.src
 process.hgCalEmptyEventFilter.fedIds = process.hgcalDigis.fedIds

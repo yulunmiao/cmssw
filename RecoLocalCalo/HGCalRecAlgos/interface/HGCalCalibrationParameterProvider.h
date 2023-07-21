@@ -13,7 +13,8 @@ struct HGCalCalibrationParameterProviderConfig {
 };
 
 struct CalibrationParameter{
-    float gain, pedestal, cm_slope, cm_offset, kappa_bxm1;
+    uint32_t gain;
+    float pedestal, cm_slope, cm_offset, kappa_bxm1;
 }; 
 
 class HGCalCalibrationParameterProvider{

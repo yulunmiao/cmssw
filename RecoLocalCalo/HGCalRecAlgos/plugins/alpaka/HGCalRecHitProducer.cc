@@ -111,29 +111,39 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto hostDigis = HGCalDigiHostCollection(newSize, queue);
 
     // Check if there are new conditions and retrieve configuration from YAML files
+    LogDebug("HGCalRecHitProducer") << "here 1 gain!";
+    std::cout << "HGCalRecHitProducer: here 2 gain!" << std::endl;
     if (configWatcher_.check(iSetup)) {
+      std::cout << "HGCalRecHitProducer: here 3 gain!" << std::endl;
       auto conds = iSetup.getData(configToken_);
       size_t nmods = conds.moduleConfigs.size();
-      edm::LogInfo("HGCalRecHitProducer") << "Conditions retrieved for " << nmods << " modules:\n" << conds << std::endl;
+      LogDebug("HGCalRecHitProducer") << "Conditions retrieved for " << nmods << " modules:\n" << conds; //<< std::endl;
       for (auto it : conds.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
         HGCalModuleConfig moduleConfig(it.second);
-        edm::LogInfo("HGCalRecHitProducer") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
+        LogDebug("HGCalRecHitProducer") << "Module " << it.first << ": charMode=" << moduleConfig.charMode; //<< std::endl;
+        LogDebug("HGCalRecHitProducer") << "     ROC   elecID   gain"; //<< std::endl;
         for(auto it : moduleConfig.gains) {
-          HGCalElectronicsId id(it.first);
-          calibrationParameterProvider_[id.raw()].gain = it.second;
-          edm::LogInfo("HGCalRecHitProducer") << std::setw(5) << std::dec << (uint32_t)id.raw() << " "
-            << std::setw(6) << calibrationParameterProvider_[id.raw()].gain;
+          //HGCalElectronicsId rocid(it.first);
+          uint32_t rocid = it.first;
+          for(uint32_t ch=0; ch<=64; ch++) { // set gain for every channel
+            uint32_t chanid = rocid + ch;
+            calibrationParameterProvider_[chanid].gain = it.second;
+            LogDebug("HGCalRecHitProducer") << std::setw(8) << rocid << " " << std::setw(8) << chanid
+              << " " << std::setw(6) << calibrationParameterProvider_[chanid].gain;
+          }
         }
       }
     } // else: use previously loaded module configuration
 
     // Check if there are new conditions and read them from pedestal txt files
+    std::cout << "HGCalRecHitProducer: here 4 pedestals!" << std::endl;
     if (condWatcher_.check(iSetup)){
+      std::cout << "HGCalRecHitProducer: here 5 pedestals!" << std::endl;
       auto conds = iSetup.getData(tokenConds_);
       size_t nconds = conds.params_.size();
       LogDebug("HGCalRecHitProducer") << "Conditions retrieved:\n" << nconds;
       HGCalRecHitCalibrationAlgorithms::CalibParams calibParams;
-      LogDebug("HGCalRecHitProducer") << "   ID  eRx  Channel  isCM?  Gain  Pedestal  CM slope  CM offset  kappa(BX-1)" << std::endl;
+      LogDebug("HGCalRecHitProducer") << "   ID  eRx  Channel  isCM?  Gain  Pedestal  CM slope  CM offset  kappa(BX-1)"; //<< std::endl;
       for(auto it : conds.params_) {
         HGCalElectronicsId id(it.first);
         HGCalFloatPedestals table = conds.getFloatPedestals(it.second);
@@ -159,18 +169,18 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       hostDigis.view()[i].flags() = hostDigisIn.view()[i%oldSize].flags();
     }
 
-    LogDebug("HGCalRecHitProducer") << "Loaded host digis: " << hostDigis.view().metadata().size() << std::endl;
+    LogDebug("HGCalRecHitProducer") << "Loaded host digis: " << hostDigis.view().metadata().size(); //<< std::endl;
 
-    LogDebug("HGCalRecHitProducer") << "\n\nINFO -- calling calibrate method" << std::endl;
+    LogDebug("HGCalRecHitProducer") << "\n\nINFO -- calling calibrate method"; //<< std::endl;
 
     auto start = now();
     auto recHits = calibrator_.calibrate(queue, hostDigis);
     alpaka::wait(queue);
     auto stop = now();
 
-    LogDebug("HGCalRecHitProducer") << "Time: " << duration(start, stop) << std::endl;
+    LogDebug("HGCalRecHitProducer") << "Time: " << duration(start, stop); //<< std::endl;
 
-    LogDebug("HGCalRecHitProducer") << "\n\nINFO -- storing rec hits in the event" << std::endl;
+    LogDebug("HGCalRecHitProducer") << "\n\nINFO -- storing rec hits in the event"; //<< std::endl;
     iEvent.emplace(recHitsToken_, std::move(*recHits));
   }
 
@@ -180,7 +190,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     desc.add<int>("n_blocks", -1);
     desc.add<int>("n_threads", -1);
     desc.add<int>("n_hits_scale", -1);
-    desc.add<std::string>("pedestal_label", "");
+    desc.add<edm::ESInputTag>("pedestal_label", edm::ESInputTag(""))->setComment("label for HGCalPedestalsESSource reader");
+    desc.add<edm::ESInputTag>("config_label", edm::ESInputTag(""))->setComment("label for HGCalConfigESSourceFromYAML reader");
     desc.add<edm::ESInputTag>("ModuleInfo",edm::ESInputTag(""));
     descriptions.addWithDefaultLabel(desc);
   }
