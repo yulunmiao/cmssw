@@ -60,6 +60,9 @@ private:
   // ------------ member data ------------
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
   std::map<MonitorKey_t,MonitorKey_t> module_keys_;
+  const unsigned prescale_;
+  const unsigned min_num_evts_;
+  unsigned num_processed_ = 0;
 };
 
 //
@@ -67,7 +70,9 @@ private:
 HGCalDigisClient::HGCalDigisClient(const edm::ParameterSet& iConfig)
   : digisToken_(consumes<hgcaldigi::HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
     metadataToken_(consumes<HGCalTestSystemMetaData>(iConfig.getParameter<edm::InputTag>("MetaData"))),
-    moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("ModuleMapping")))
+    moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("ModuleMapping"))),
+    prescale_(std::max(1u, iConfig.getParameter<unsigned>("Prescale"))),
+    min_num_evts_(iConfig.getParameter<unsigned>("MinimumNumEvents"))
 {}
 
 //
@@ -77,6 +82,10 @@ HGCalDigisClient::~HGCalDigisClient() {
 
 //
 void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+  bool toProcess = (num_processed_ < min_num_evts_) || (num_processed_ % prescale_ == 0);
+  ++num_processed_;
+  if (!toProcess)
+    return;
 
   using namespace edm;
   
@@ -256,6 +265,8 @@ void HGCalDigisClient::fillDescriptions(edm::ConfigurationDescriptions& descript
   desc.add<edm::InputTag>("Digis",edm::InputTag("hgcalDigis","DIGI"));
   desc.add<edm::InputTag>("MetaData",edm::InputTag("hgcalEmulatedSlinkRawData","hgcalMetaData"));
   desc.add<edm::ESInputTag>("ModuleMapping",edm::ESInputTag(""));
+  desc.add<unsigned>("prescale", 1);
+  desc.add<unsigned>("MinimumNumEvents", 10000);
 }
 
 // define this as a plug-in

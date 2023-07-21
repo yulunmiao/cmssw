@@ -25,6 +25,8 @@ process.hgCalDigisClient = cms.EDProducer(
     Digis=cms.InputTag('hgcalDigis', ''),
     MetaData=cms.InputTag('hgcalEmulatedSlinkRawData', 'hgcalMetaData'),
     ModuleMapping=cms.ESInputTag(''),
+    Prescale=cms.uint32(1000),
+    MinimumNumEvents=cms.uint32(10000),
 )
 process.hgCalDigisClientHarvester = cms.EDProducer(
     'HGCalDigisClientHarvester',
