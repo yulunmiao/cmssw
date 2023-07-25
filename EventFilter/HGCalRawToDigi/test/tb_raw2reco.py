@@ -86,8 +86,9 @@ if options.debug:
     process.MessageLogger.cerr.DEBUG = cms.untracked.PSet(
         limit = cms.untracked.int32(-1)
     )
+process.options.wantSummary = cms.untracked.bool(True)
 
-
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(options.maxEvents))
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
     hgcalEmulatedSlinkRawData = cms.PSet(initialSeed = cms.untracked.uint32(42))
 )
