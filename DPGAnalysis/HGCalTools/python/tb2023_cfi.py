@@ -28,5 +28,7 @@ def configTBConditions(process,key='default'):
     }
     if hasattr(process,'hgCalPedestalsESSource'):
         process.hgCalPedestalsESSource.filename = pedestals[key]
+    if hasattr(process,'hgcalCalibrationESProducer'):
+        process.hgcalCalibrationESProducer.filename = pedestals[key]
 
     return process

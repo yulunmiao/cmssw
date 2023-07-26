@@ -181,6 +181,18 @@ if options.charMode in [0,1]: # manually override YAML files
 if options.gain in [1,2,4]: # manually override YAML files
     process.hgCalConfigESSourceFromYAML.gain = options.gain
 
+# Alpaka ESProducer
+process.hgcalCalibrationParameterESRecord = cms.ESSource('EmptyESSource',
+    recordName = cms.string('HGCalCondSerializableModuleInfoRcd'),
+    iovIsRunNotTime = cms.bool(True),
+    firstValid = cms.vuint32(1)
+)
+
+process.hgcalCalibrationESProducer = cms.ESProducer('HGCalRecHitCalibrationESProducer@alpaka',
+    filename = cms.string(''), # to be set up in configTBConditions
+    ModuleInfo = cms.ESInputTag('')
+)
+
 # CONDITIONS
 # RecHit producer: pedestal txt file for DIGI -> RECO calibration
 # Logical mapping
@@ -190,23 +202,22 @@ process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
 from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions,addPerformanceReports
 configTBConditions(process,options.conditions)
 
+process.load('HeterogeneousCore.CUDACore.ProcessAcceleratorCUDA_cfi')
 if options.GPU:
-    process.hgcalRecHit = cms.EDProducer(
-        'alpaka_cuda_async::HGCalRecHitProducer',
+    process.hgcalRecHit = cms.EDProducer( 'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
+        eventSetupSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
         n_hits_scale = cms.int32(1),
-        pedestal_label = cms.ESInputTag(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(4096),
-        n_threads = cms.int32(1024),
+        n_threads = cms.int32(1024)
     )
 else:
-    process.hgcalRecHit = cms.EDProducer(
-        'alpaka_serial_sync::HGCalRecHitProducer',
+    process.hgcalRecHit = cms.EDProducer( 'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
+        eventSetupSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
         n_hits_scale = cms.int32(1),
-        pedestal_label = cms.ESInputTag(''), # for HGCalPedestalsESSource
         n_blocks = cms.int32(1024),
-        n_threads = cms.int32(4096),
+        n_threads = cms.int32(4096)
     )
 
 #filter on empty events
