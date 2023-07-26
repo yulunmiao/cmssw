@@ -111,11 +111,11 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
 }
 
 //
-ECONDInput HGCalModuleTreeReader::next() {
+std::unique_ptr<ECONDInput> HGCalModuleTreeReader::next() {
   if (it_data_ == data_.end())
     throw cms::Exception("HGCalModuleTreeReader") << "Insufficient number of events were retrieved from input tree to proceed with the generation of emulated events.";
 
-  ECONDInput data{it_data_->first, it_data_->second};
+  auto data = std::make_unique<ECONDInput>(it_data_->first, it_data_->second);
   ++it_data_;
   return data;
 }

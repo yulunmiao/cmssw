@@ -3,7 +3,7 @@
 
 using namespace hgcal::econd;
 
-ECONDInput TrivialEmulator::next() {
+std::unique_ptr<ECONDInput> TrivialEmulator::next() {
   EventId evt_id{event_id_++, bx_id_++, orbit_id_++};
   ERxInput evt;
   for (const auto& erx_id : params_.enabled_erxs) {
@@ -18,5 +18,5 @@ ECONDInput TrivialEmulator::next() {
         .tot = std::vector<uint16_t>(params_.num_channels_per_erx, 0)};
     evt[id] = dummy_data;
   }
-  return ECONDInput{evt_id, evt};
+  return std::make_unique<ECONDInput>(evt_id, evt);
 }

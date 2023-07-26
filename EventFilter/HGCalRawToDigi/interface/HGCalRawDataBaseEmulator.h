@@ -21,7 +21,7 @@ namespace hgcal {
     virtual ~Emulator() = default;
 
     /// Fetch the next ECON-D event
-    virtual T next() = 0;
+    virtual std::unique_ptr<T> next() = 0;
 
     /// get the configuration parameters
     const C &config() { return params_; }

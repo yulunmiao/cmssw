@@ -211,7 +211,7 @@ namespace hgcal {
 
     std::vector<uint64_t> econd_event;
 
-    const auto event = emulator_->next();
+    const auto event = *emulator_->next();
     const auto& econd_params = econd_params_.at(econd_id);
     auto header_bits = generateStatusBits(econd_id);
     std::vector<econd::ERxChannelEnable> enabled_ch_per_erx;

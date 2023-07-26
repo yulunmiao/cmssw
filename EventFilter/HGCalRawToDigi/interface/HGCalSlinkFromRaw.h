@@ -19,7 +19,7 @@ namespace hgcal {
     /// \param[in] configuration parameters
     explicit SlinkFromRaw(const edm::ParameterSet &iConfig);
     
-    FEDRawDataCollection next() override;
+    std::unique_ptr<FEDRawDataCollection> next() override;
     HGCalTestSystemMetaData nextMetaData() override { return metaData_; }
     
   private:
