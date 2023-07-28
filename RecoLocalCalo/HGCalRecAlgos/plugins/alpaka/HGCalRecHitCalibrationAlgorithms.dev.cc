@@ -23,12 +23,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, HGCalRecHitDeviceCollection::View recHits) const {
       auto ToA_to_time = [&](uint32_t ToA) { return float(ToA)*0.024414062; }; // LSB=25 ns / 2^10b
-      auto ADC_to_float = [&](float ADC, uint32_t TOT, uint8_t tctp) { return float(tctp>0 ? TOT : ADC); };
+      auto ADC_to_float = [&](uint32_t ADC, uint32_t TOT, uint8_t tctp) { return float(tctp>0 ? TOT : ADC); };
       
       // dummy digis -> rechits conversion (to be replaced by the actual formula)
       for (auto index : elements_with_stride(acc, digis.metadata().size())) {
         recHits[index].detid() = static_cast<uint32_t>(digis[index].electronicsId());
-        recHits[index].energy() = ADC_to_float(recHits[index].energy(),digis[index].tot(),digis[index].tctp());
+        recHits[index].energy() = ADC_to_float(digis[index].adc(),digis[index].tot(),digis[index].tctp());
         recHits[index].time() = ToA_to_time(digis[index].toa());
         recHits[index].flags() = digis[index].flags();
       }
