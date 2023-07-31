@@ -181,14 +181,16 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
     if (me == nullptr) continue;
     
     //convert the sums to coefficients
-    for(int ibin=1; ibin< me->getNbinsX(); ibin++) {
+    for(int ibin=1; ibin<me->getNbinsX()+1; ibin++) {
       hgcal::CellStatistics stats;
+      ibin = ibin - 1; // somehow getBinContent starts from ibin = 0 ...
       stats.n      = me->getBinContent(ibin,1);
       stats.sum_x  = me->getBinContent(ibin,2);
-      stats.sum_xx  = me->getBinContent(ibin,3);
+      stats.sum_xx = me->getBinContent(ibin,3);
       stats.sum_s  = {me->getBinContent(ibin,4),me->getBinContent(ibin,7),me->getBinContent(ibin,10)};
       stats.sum_ss = {me->getBinContent(ibin,5),me->getBinContent(ibin,8),me->getBinContent(ibin,11)};
       stats.sum_xs = {me->getBinContent(ibin,6),me->getBinContent(ibin,9),me->getBinContent(ibin,12)};
+      ibin = ibin + 1; // reset ibin
       
       std::pair<double,double> obs = stats.getObservableStats();
       std::vector<double> Rs = stats.getPearsonCorrelation();
