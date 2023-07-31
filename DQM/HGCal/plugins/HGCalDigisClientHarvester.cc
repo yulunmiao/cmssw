@@ -122,8 +122,8 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
 
     ibooker.setCurrentFolder("HGCAL/Summary");    
     hex_channelId[k] = ibooker.book2DPoly("hex_channelId" + tag, "; x[cm]; y[cm];ID", -26 , 26 , -28 , 24);
-    hex_pedestal[k]  = ibooker.book2DPoly("hex_pedestal" + tag,  "; x[cm]; y[cm];Pedestal", -26 , 26 , -28 , 24);
-    hex_noise[k]     = ibooker.book2DPoly("hex_noise" + tag,     "; x[cm]; y[cm];Noise", -26 , 26 , -28 , 24);
+    hex_pedestal[k]  = ibooker.book2DPoly("hex_adc_avg" + tag,  "; x[cm]; y[cm];Average ADC", -26 , 26 , -28 , 24);
+    hex_noise[k]     = ibooker.book2DPoly("hex_adc_std" + tag,     "; x[cm]; y[cm];ADC standard deviation", -26 , 26 , -28 , 24);
     hex_cmrho[k]     = ibooker.book2DPoly("hex_cmrho" + tag,     "; x[cm]; y[cm];#rho(CM)", -26 , 26 , -28 , 24);
     hex_bxm1rho[k]   = ibooker.book2DPoly("hex_bxm1rho" + tag,   "; x[cm]; y[cm];#rho(ADC_{-1})", -26 , 26 , -28 , 24);
 
