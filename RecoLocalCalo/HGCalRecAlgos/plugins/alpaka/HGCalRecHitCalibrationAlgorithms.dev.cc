@@ -49,7 +49,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
   struct HGCalRecHitCalibrationKernel_chargeConversion {
     template <typename TAcc>
-    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, HGCalRecHitDeviceCollection::View recHits, uint32_t gain) const {
+    ALPAKA_FN_ACC void operator()(TAcc const& acc, HGCalDigiDeviceCollection::View digis, HGCalRecHitDeviceCollection::View recHits, uint8_t gain) const {
       auto ADC_to_charge = [&](float energy, uint8_t tctp, uint8_t gain) {
         return tctp>0 ? energy*1.953125 : energy*gain/0.078125; // fC
         //              TOT / 2^12 * 8000 fC = TOT * 1.953125 fC
@@ -118,7 +118,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after pedestal calibration: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
     
-    uint32_t gain = 1; // placeholder
+    uint8_t gain = 1; // placeholder
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_chargeConversion{}, device_digis.view(), device_recHits->view(), gain);
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after charge converstion: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
