@@ -41,28 +41,39 @@ options.register('storeRAWOutput', False, VarParsing.multiplicity.singleton, Var
                  'also store the RAW output into a streamer file')
 options.register('storeEmulatorInfo', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also store the emulator metadata')
-options.register('slinkBOE', 0x2a, VarParsing.multiplicity.singleton, VarParsing.varType.int,'Begin of event marker for S-link')
-options.register('cbHeaderMarker', 0x5f, VarParsing.multiplicity.singleton, VarParsing.varType.int,'Begin of event marker for BE/capture block')
-options.register('econdHeaderMarker', 0x154, VarParsing.multiplicity.singleton, VarParsing.varType.int,'Begin of event marker for ECON-D')
-options.register('applyFWworkaround', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,'Patch unpacker behavior to deal with firmware known features')
+options.register('slinkBOE', 0x2a, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Begin of event marker for S-link")
+options.register('cbHeaderMarker', 0x5f, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Begin of event marker for BE/capture block")
+options.register('econdHeaderMarker', 0x154, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Begin of event marker for ECON-D")
+options.register('applyFWworkaround', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
+                 "Patch unpacker behavior to deal with firmware known features")
 options.register('configFile',
                  f"{os.environ['CMSSW_BASE']}/src/CalibCalorimetry/HGCalPlugins/test/test_hgcal_yamlmapper.yaml",
                  #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
                  VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 'config yaml file')
+                 "config yaml file")
+options.register('charMode', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Manual override for characterization mode to unpack raw data")
+options.register('gain', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Manual override for gain (1: 80 fC, 2: 160 fC, 4: 320 fC)")
 options.register('conditions',
                  'default',
                  VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 'conditions tag')
+                 "conditions tag")
 options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
                  VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 'input TB file')
+                 "input TB file")
 options.register('GPU', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'run on GPU')
-options.register('runNumber', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'run number')
-options.register('maxEventsPerLS', 100000, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'max. events per lumi section')
-options.register('firstLS', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, 'first lumi section')
+                 "run on GPU")
+options.register('runNumber', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "run number")
+options.register('maxEventsPerLS', 100000, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "max. events per lumi section")
+options.register('firstLS', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "first lumi section")
 
 options.parseArguments()
 
@@ -164,6 +175,10 @@ process.load('RecoLocalCalo.HGCalRecAlgos.hgCalRecHitsFromSoAproducer_cfi')
 # Configuration from YAML files
 process.load('CalibCalorimetry.HGCalPlugins.hgCalConfigESSourceFromYAML_cfi') # read yaml config file(s)
 process.hgCalConfigESSourceFromYAML.filename = options.configFile
+if options.charMode in [0,1]: # manually override YAML files
+    process.hgCalConfigESSourceFromYAML.charMode = options.charMode
+if options.gain in [1,2,4]: # manually override YAML files
+    process.hgCalConfigESSourceFromYAML.gain = options.gain
 
 # CONDITIONS
 # RecHit producer: pedestal txt file for DIGI -> RECO calibration

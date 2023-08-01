@@ -22,11 +22,18 @@
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
 
 class HGCalConfigESSourceFromYAML : public edm::ESProducer, public edm::EventSetupRecordIntervalFinder {
+
 public:
+
   explicit HGCalConfigESSourceFromYAML(const edm::ParameterSet& iConfig)
-      : filename_(iConfig.getParameter<std::string>("filename")) {
+      : filename_(iConfig.getParameter<std::string>("filename")),
+        charMode_(iConfig.getParameter<int>("charMode")),
+        gain_(iConfig.getParameter<int>("gain")) {
     setWhatProduced(this);
     findingRecord<HGCalCondSerializableConfigRcd>();
+    //LogDebug("HGCalConfigESSourceFromYAML")
+    std::cout << "Init: filename=" << filename_ 
+      << ", override charMode=" << charMode_ << ", override gain=" << gain_ << "..." << std::endl;
   }
 
   std::unique_ptr<HGCalCondSerializableConfig> produce(const HGCalCondSerializableConfigRcd&) {
@@ -36,10 +43,16 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<std::string>("filename", {});
+    desc.add<int>("charMode",-1)->setComment("Manual override for characterization mode to unpack raw data");
+    desc.add<int>("gain",-1)->setComment("Manual override for gain (1: 80 fC, 2: 160 fC, 4: 320 fC)");
     descriptions.addWithDefaultLabel(desc);
   }
 
 private:
+
+  const std::string filename_;
+  const int charMode_; // manual override of YAML files
+  const int gain_; // manual override of YAML files
 
   void setIntervalFor(const edm::eventsetup::EventSetupRecordKey&,
                       const edm::IOVSyncValue&,
@@ -110,12 +123,13 @@ private:
             << ", ECOND=" << fname_ECOND << ", ECONT=" << fname_ECONT;
           //parseECONConfigYAML(fname_ECON,cond);
           //parseROCConfigYAML(fname_ROCs,cond);
-          cond->moduleConfigs[0].gains[id+0*64] = 1;
-          cond->moduleConfigs[0].gains[id+1*64] = 1;
-          cond->moduleConfigs[0].gains[id+2*64] = 1;
-          cond->moduleConfigs[0].gains[id+3*64] = 1;
-          cond->moduleConfigs[0].gains[id+4*64] = 1;
-          cond->moduleConfigs[0].gains[id+5*64] = 1;
+          uint8_t gain = (uint8_t) (gain_>=1 ? gain_ : 1); // manual override
+          cond->moduleConfigs[0].gains[id+0*64] = gain; // ROC 0, half 0
+          cond->moduleConfigs[0].gains[id+1*64] = gain; // ROC 0, half 1
+          cond->moduleConfigs[0].gains[id+2*64] = gain; // ROC 1, half 0
+          cond->moduleConfigs[0].gains[id+3*64] = gain; // ROC 1, half 1
+          cond->moduleConfigs[0].gains[id+4*64] = gain; // ROC 2, half 0
+          cond->moduleConfigs[0].gains[id+5*64] = gain; // ROC 2, half 1
         }
       } else {
         edm::LogWarning("HGCalConfigESSourceFromYAML")
@@ -124,9 +138,13 @@ private:
       }
       
       // PARSE META DATA NODE: place holders
-      cond->moduleConfigs[0].charMode = (bool) 0;
+      cond->moduleConfigs[0].charMode = (bool) (charMode_>=0 ? charMode_ : 0); // manual override
       cond->moduleConfigs[0].injcalib = 0;
       cond->moduleConfigs[0].injgain = 0;
+      LogDebug("HGCalConfigESSourceFromYAML") << "Placeholders: charMode=" << cond->moduleConfigs[0].charMode
+        << ", gain=" << cond->moduleConfigs[0].gains[0] << ", injcalib=" << cond->moduleConfigs[0].injcalib
+        << ", injgain=" << cond->moduleConfigs[0].injgain;
+      
       //const auto yaml_file = YAML::LoadFile(filename);
       //if (const auto config = yaml_file["metaData"]; config.IsDefined()) {
       //  int charMode = yaml_file["metaData"]["characMode"].as<int>();
@@ -152,8 +170,7 @@ private:
     }
     return cond;
   }
-
-  const std::string filename_;
+  
 };
 
 DEFINE_FWK_EVENTSETUP_SOURCE(HGCalConfigESSourceFromYAML);
