@@ -87,7 +87,7 @@ HGCalDigisClientHarvester::HGCalDigisClientHarvester(const edm::ParameterSet& iC
 void HGCalDigisClientHarvester::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::ESInputTag>("ModuleMapping",edm::ESInputTag(""));
-  desc.add<std::string>("HexTemplateFile","/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/hexagons_20230626.root");
+  desc.add<std::string>("HexTemplateFile","/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/hexagons_20230801.root");
   desc.add<std::string>("Level0CalibOut","level0_calibration_parameters.txt");
 }
 

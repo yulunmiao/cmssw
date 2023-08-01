@@ -32,7 +32,7 @@ process.hgCalDigisClient = cms.EDProducer(
 process.hgCalDigisClientHarvester = cms.EDProducer(
     'HGCalDigisClientHarvester',
     ModuleMapping=process.hgCalDigisClient.ModuleMapping,
-    HexTemplateFile=cms.string('/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/hexagons_20230626.root'),
+    HexTemplateFile=cms.string('/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/hexagons_20230801.root'),
     Level0CalibOut=cms.string('level0_calib_params.txt'),
 )
 
