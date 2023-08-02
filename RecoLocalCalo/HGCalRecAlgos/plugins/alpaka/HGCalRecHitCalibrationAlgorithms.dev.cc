@@ -81,7 +81,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       auto const& config_calib_param = calib.config();
       for (auto index : elements_with_stride(acc, rechits.metadata().size())) {
         uint32_t idx = config_calib_param.denseMap(digis[index].electronicsId());
-        float ADCmValue = calib[idx].BXm1_kappa() * digis[index].adcm1(); // placeholder
+        float ADCmValue = calib[idx].BXm1_slope() * digis[index].adcm1() + calib[idx].BXm1_offset(); // placeholder
         rechits[index].adc() -= ADCmValue;
       }
     }
@@ -113,7 +113,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- copying the digis to the device\n\n" << std::endl;
     HGCalDigiDeviceCollection device_digis(host_digis.view().metadata().size(), queue);
     alpaka::memcpy(queue, device_digis.buffer(), host_digis.const_buffer());
-    
+
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- allocating rechits buffer and initiating values" << std::endl;
     auto device_recHits = std::make_unique<HGCalRecHitDeviceCollection>(device_digis.view().metadata().size(), queue);
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.view(), device_recHits->view());

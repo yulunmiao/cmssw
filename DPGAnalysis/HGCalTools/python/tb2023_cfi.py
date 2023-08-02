@@ -24,7 +24,7 @@ def configTBConditions(process,key='default'):
     process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
 
     pedestals={
-        'default':'/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/calibration_parameters.txt',
+        'default':'/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/calibration_parameters_v2.txt',
     }
     if hasattr(process,'hgCalPedestalsESSource'):
         process.hgCalPedestalsESSource.filename = pedestals[key]

@@ -73,22 +73,23 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       std::ifstream file(fip.fullPath());
       std::string line;
       uint32_t id;
-      float ped,cm_slope,cm_off,kappa_bxm1;
+      float ped,noise,cm_slope,cm_offset,bxm1_slope,bxm1_offset;
       while(std::getline(file, line)) {
         if(line.find("Channel")!=std::string::npos || line.find("#")!=std::string::npos) continue;
 
         std::istringstream stream(line);
-        stream >> id >> ped >> cm_slope >> cm_off >> kappa_bxm1;
+        stream >> std::hex >> id >> std::dec >> ped >> noise >> cm_slope >> cm_offset >> bxm1_slope >> bxm1_offset;
 
         //reduce to half-point float and fill the pedestals of this channel
         uint32_t idx = ccp.denseMap(id); // convert electronicsId to idx from denseMap 
 
         // Comment: if planning to use MiniFloatConverter::float32to16(), a host function,
         // one needs to think how to perform MiniFloatConverter::float16to32() in kernels running on GPU (HGCalRecHitCalibrationAlgorithms.dev.cc)
-        product.view()[idx].pedestal()   = ped;
-        product.view()[idx].CM_slope()   = cm_slope;
-        product.view()[idx].CM_offset()  = cm_off;
-        product.view()[idx].BXm1_kappa() = kappa_bxm1;
+        product.view()[idx].pedestal()    = ped;
+        product.view()[idx].CM_slope()    = cm_slope;
+        product.view()[idx].CM_offset()   = cm_offset;
+        product.view()[idx].BXm1_slope()  = bxm1_slope;
+        product.view()[idx].BXm1_offset() = bxm1_offset;
       }
 
       return product;
