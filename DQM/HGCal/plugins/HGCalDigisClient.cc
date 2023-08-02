@@ -54,8 +54,8 @@ private:
   const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
   const edm::EDGetTokenT<HGCalTestSystemMetaData> metadataToken_;
 
-  std::map<MonitorKey_t, MonitorElement*> p_hitcount,p_maxadcvstrigtime,
-    p_adc, p_tot, p_adcm, p_toa, p_maxadc, p_sums, h_adc, h_adcm, h_tot, h_toa;
+  std::map<MonitorKey_t, MonitorElement*> p_hitcount,p_maxadcvstrigtime, p_adcvstrigtime, p_adcpedsubvstrigtime, p_totvstrigtime, p_toavstrigtime, p_adc, p_tot, p_adcm, p_toa, p_maxadc, p_sums, h_adc, h_adcm, h_tot, h_toa, h_adcpedsub;
+  MonitorElement *h_trigtime;
   MonitorElement *p_econdquality;
   std::map<MonitorKey_t,int> modbins_;
      
@@ -205,6 +205,9 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     p_maxadc[it.first]->Fill(adc);
   }
 
+  //fill histogram for trigtime distribution 
+  h_trigtime->Fill(trigTime);  
+
   //read flagged ECON-D list
   const auto& flagged_econds = iEvent.getHandle(econdQualityToken_);
   if(flagged_econds.isValid()) {
@@ -244,8 +247,11 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   p_econdquality->setBinLabel(7,"Payload (OF)",2);
   p_econdquality->setBinLabel(8,"Payload (mismatch)",2);
 
+  h_trigtime = ibook.book1D("trigtime", ";trigger phase; Counts",  100, 0, 100); 
+
   for(auto m : moduleInfo.params_) {
-    TString tag=Form("%d_%d_%d_%d",m.zside,m.plane,m.u,m.v);
+    TString tag=Form("zside%d_plane%d_u%d_v%d",m.zside,m.plane,m.u,m.v);
+
     MonitorKey_t k(m.zside,m.plane,m.u,m.v);
     modbins_[k]=modbins_.size();
     TString modlabel(tag);
@@ -253,7 +259,21 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
 
     int nch(39*6*(1+m.isHD));
     p_hitcount[k] = ibook.book1D("hitcount_"+tag,           ";Channel; #hits",   nch, 0, nch);
-    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, ";max ADC; Counts",  100, 0, 100, 100,0,1024);   
+    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, 
+					 ";trigger phase; max ADC of the event",  
+					 100, 0, 100, 100,0,1024);   
+    p_adcvstrigtime[k] = ibook.book2D("adc_vs_trigtime_"+tag, 
+				      ";trigger phase; ADC of channel with max <ADC-ADC_{-1}>",  
+				      100, 0, 100, 100,0,1024);   
+    p_adcpedsubvstrigtime[k] = ibook.book2D("adcpedsub_vs_trigtime_"+tag, 
+					    ";trigger phase; ADC-ADC_{-1} of channel with max <ADC-ADC_{-1}>", 
+					    100, 0, 100, 100,0,1024);   
+    p_totvstrigtime[k] = ibook.book2D("tot_vs_trigtime_"+tag, 
+				      ";trigger phase; TOT of channel with max <TOT>",  
+				      100, 0, 100, 100,0,4096);   
+    p_toavstrigtime[k] = ibook.book2D("toa_vs_trigtime_"+tag, 
+				      ";trigger phase; TOA of channel with max <ADC-ADC_{-1}>",  
+				      100, 0, 100, 100,0,1024);   
     p_sums[k]             = ibook.book2D("sums_"+tag, ";Channel;", nch,0,nch, 12,0,12);
     p_sums[k]->setBinLabel(1,"N",2);
     p_sums[k]->setBinLabel(2,"#sum ADC",2);
@@ -273,6 +293,8 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     p_tot[k]    = ibook.bookProfile("p_tot_" + tag,       ";Channel; TOT",     nch, 0, nch, 100, 0, 1024);
     p_adcm[k]   = ibook.bookProfile("p_adcm_"+ tag,       ";Channel; ADC(-1)", nch, 0, nch, 100, 0, 1024);
     p_toa[k]    = ibook.bookProfile("p_toa_" + tag,       ";Channel; TOA",     nch, 0, nch, 100, 0, 1024);
+    h_adc[k] = ibook.book1D("adc_"+tag,             ";ADC; Counts (all channels)",  100, 0, 1024); 
+    h_adcpedsub[k] = ibook.book1D("adcpedsub_"+tag, ";ADC-ADC_{-1}; Counts (all channels)",  100, 0, 1024); 
     h_adc[k] = ibook.book1D("adc_"+tag,             ";ADC; Counts (all channels)",  100, 0, 1024); 
     h_adcm[k] = ibook.book1D("adcm_"+tag,           ";ADC_{-1}; Counts (all channels)",  100, 0, 1024); 
     h_tot[k] = ibook.book1D("tot_"+tag,             ";TOT; Counts (all channels)",  100, 0, 4096); 
