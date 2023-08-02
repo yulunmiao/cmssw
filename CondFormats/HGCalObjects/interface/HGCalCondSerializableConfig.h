@@ -31,7 +31,7 @@ struct HGCalModuleConfig {
 class HGCalCondSerializableConfig {
 public:
   std::map<uint32_t,HGCalModuleConfig> moduleConfigs;
-  
+
   HGCalCondSerializableConfig();
   ~HGCalCondSerializableConfig();
 
