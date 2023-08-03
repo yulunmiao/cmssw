@@ -20,7 +20,7 @@ HGCalUnpacker::HGCalUnpacker(HGCalUnpackerConfig config)
       commonModeData_(config_.commonModeMax) {}
 
 void HGCalUnpacker::parseSLink(
-    const std::vector<uint32_t>& inputArray,
+    const std::vector<uint32_t>& inputArray0,
     const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
     const std::function<uint16_t(uint16_t fedid)>& fed2slink) {
   uint16_t sLink;
@@ -29,6 +29,7 @@ void HGCalUnpacker::parseSLink(
   commonModeDataSize_ = 0;
   badECOND_.clear();
 
+  std::vector<uint32_t> inputArray(inputArray0); // FIXME
   for (uint32_t iword = 0; iword < inputArray.size();) {  // loop through the S-Link
 
     //----- parse the S-Link header which is 128b long
@@ -41,6 +42,11 @@ void HGCalUnpacker::parseSLink(
                                             << inputArray[iword+1] << " | "
                                             << inputArray[iword+2] << " "
                                             << inputArray[iword+3];
+
+    if (config_.applyFWworkaround) {
+      std::swap(inputArray[iword], inputArray[iword + 1]);
+      std::swap(inputArray[iword + 2], inputArray[iword + 3]);
+    }
     if (((inputArray[iword+2] >> kSLinkBOEShift) & kSLinkBOEMask) != config_.sLinkBOE)  // sanity check
       throw cms::Exception("CorruptData")
         << "Expected a S-Link header at word "
@@ -58,6 +64,9 @@ void HGCalUnpacker::parseSLink(
     for (uint8_t captureBlock = 0; captureBlock < config_.sLinkCaptureBlockMax;
          captureBlock++) {  // loop through all capture blocks
       //----- parse the capture block header
+      if (config_.applyFWworkaround) {
+        std::swap(inputArray[iword], inputArray[iword + 1]);
+      }
       uint32_t cb_msb=inputArray[iword];      
       if (((cb_msb >> kCaptureBlockReservedShift) & kCaptureBlockReservedMask) !=
           config_.cbHeaderMarker)  // sanity check
@@ -79,25 +88,28 @@ void HGCalUnpacker::parseSLink(
 
         HGCalElectronicsId eleid(zside, sLink, captureBlock, econd, 0, 0);
         LogDebug("[HGCalUnpacker::parseSLink]") << std::dec << (uint32_t)zside << " " << (uint32_t)sLink << " " << (uint32_t)captureBlock << " " << (uint32_t)econd << std::endl;
-        //due to a bug in the firmware there is one extra 64b word after the CB which is to be ignored
-        //this will skip it but should be removed once the bug is fixed in the firmware
-        if(config_.applyFWworkaround) {
-          LogDebug("[HGCalUnpacker::parseSLink]") << std::dec << (uint32_t)(econd) << " is active skipping extra 64b bugged word"
-                                                  << std::hex << inputArray[iword-2] << " " << inputArray[iword-1] << std::endl
-                                                  << std::hex << inputArray[iword] << " " << inputArray[iword+1] << " <--- BE feature" << std::endl
-                                                  << std::hex << inputArray[iword+2] << " " << inputArray[iword+3] << " <--- ECON-D" << std::endl;
-          iword +=2;
-        }
+        // //due to a bug in the firmware there is one extra 64b word after the CB which is to be ignored
+        // //this will skip it but should be removed once the bug is fixed in the firmware
+        // if(config_.applyFWworkaround) {
+        //   LogDebug("[HGCalUnpacker::parseSLink]") << std::dec << (uint32_t)(econd) << " is active skipping extra 64b bugged word"
+        //                                           << std::hex << inputArray[iword-2] << " " << inputArray[iword-1] << std::endl
+        //                                           << std::hex << inputArray[iword] << " " << inputArray[iword+1] << " <--- BE feature" << std::endl
+        //                                           << std::hex << inputArray[iword+2] << " " << inputArray[iword+3] << " <--- ECON-D" << std::endl;
+        //   iword +=2;
+        // }
         
         //----- parse the ECON-D header
         // (the second word of ECON-D header contains no information for unpacking, use only the first one)
+        if (config_.applyFWworkaround) {
+          std::swap(inputArray[iword], inputArray[iword + 1]);
+        }
         if (((inputArray[iword] >> kHeaderShift) & kHeaderMask) != config_.econdHeaderMarker) {
           flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword,HGCalFlaggedECONDInfo::WRONGHEADERMARKER,eleid.raw()));
           throw cms::Exception("CorruptData")
             << "Expected a ECON-D header at word " << std::dec << iword << "/0x" << std::hex << iword
             << " (marker: 0x" << config_.econdHeaderMarker << "), got 0x" << inputArray[iword] << ".";
         }
-	
+
         const auto& econdHeader = inputArray[iword];
         iword += 2;  // length of ECON-D header (2 * 32 bits)
 
@@ -320,7 +332,7 @@ void HGCalUnpacker::parseSLink(
           LogDebug("HGCalUnpacker") << "Padding ECON-D payload to 2 32-bit words (remainder: " << (iword % 2) << ").";
           iword += 1;
         }
-      }
+        }
 
 
       
@@ -337,7 +349,7 @@ void HGCalUnpacker::parseSLink(
     // (no information is needed in unpacker)  
     iword += 4;  // length of the S-Link trailer (128 bits)
   }
-  
+
   channelData_.resize(channelDataSize_);
   commonModeSum_.resize(channelDataSize_);
   commonModeData_.resize(commonModeDataSize_);

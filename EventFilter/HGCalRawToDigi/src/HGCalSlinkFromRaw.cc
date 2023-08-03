@@ -111,9 +111,9 @@ std::unique_ptr<FEDRawDataCollection> SlinkFromRaw::next() {
   //so we invert the first 3 64b word (s-link + capture block)
   //unclear how the final system will be
   //payloadLength-=2;
-  for(auto i=0; i<payloadLength; i++) {
-    payload[i]=((payload[i]&0xffffffff)<<32) | payload[i]>>32;
-  }
+  // for(auto i=0; i<payloadLength; i++) {
+  //   payload[i]=((payload[i]&0xffffffff)<<32) | payload[i]>>32;
+  // }
 
   //put in the event (last word is a 0xdeadbeefdeadbeef which can be disregarded)
   auto raw_data = std::make_unique<FEDRawDataCollection>();
