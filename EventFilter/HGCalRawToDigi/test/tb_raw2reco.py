@@ -64,16 +64,17 @@ options.register('conditions',
                  "conditions tag")
 options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
-                 VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 "input TB file")
-options.register('GPU', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "run on GPU")
-options.register('runNumber', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "run number")
-options.register('maxEventsPerLS', 100000, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "max. events per lumi section")
-options.register('firstLS', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "first lumi section")
+                 VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string,
+                 'input TB file')
+options.register('inputTrigFiles',
+                 '',
+                 VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.string,
+                 'input Trigger link file')
+options.register('GPU', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
+                 'run on GPU')
+options.register('runNumber', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'run number')
+options.register('maxEventsPerLS', 100000, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'max. events per lumi section')
+options.register('firstLS', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'first lumi section')
 
 options.parseArguments()
 
@@ -113,6 +114,7 @@ if process.hgcalEmulatedSlinkRawData.emulatorType == 'hgcmodule':
     process.hgcalEmulatedSlinkRawData.storeEmulatorInfo = bool(options.storeEmulatorInfo)
 elif process.hgcalEmulatedSlinkRawData.emulatorType == 'slinkfromraw':
     process.hgcalEmulatedSlinkRawData.inputs = cms.untracked.vstring(options.inputFiles)
+    process.hgcalEmulatedSlinkRawData.trig_inputs = cms.untracked.vstring(options.inputTrigFiles)
 
 # steer the number of capture blocks
 if options.randomActiveCaptureBlocks:

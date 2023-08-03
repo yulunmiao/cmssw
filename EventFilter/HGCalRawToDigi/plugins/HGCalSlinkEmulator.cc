@@ -192,12 +192,15 @@ void HGCalSlinkEmulator::fillDescriptions(edm::ConfigurationDescriptions& descri
           edm::ParameterDescription<std::string>("emulatorType", "trivial", true),
           // trivial emulator
           "trivial" >> edm::EmptyGroupDescription() or
-          //slinkemulator
-          "slinkfromraw" >>  (edm::ParameterDescription<std::string>("treeName", "hgcroc_rawdata/eventdata", false) and
-                              edm::ParameterDescription<std::vector<std::string>>("inputs", {}, false)) or
-          // test beam tree content
-          "hgcmodule" >> (edm::ParameterDescription<std::string>("treeName", "hgcroc_rawdata/eventdata", false) and
-                          edm::ParameterDescription<std::vector<std::string>>("inputs", {}, false)))  ->setComment("emulator mode (trivial, or hgcmodule, or slinkfromraw)");
+              //slinkemulator
+              "slinkfromraw" >>
+                  (edm::ParameterDescription<std::string>("treeName", "hgcroc_rawdata/eventdata", false) and
+                   edm::ParameterDescription<std::vector<std::string>>("inputs", {}, false) and
+                   edm::ParameterDescription<std::vector<std::string>>("trig_inputs", {}, false)) or
+              // test beam tree content
+              "hgcmodule" >> (edm::ParameterDescription<std::string>("treeName", "hgcroc_rawdata/eventdata", false) and
+                              edm::ParameterDescription<std::vector<std::string>>("inputs", {}, false)))
+      ->setComment("emulator mode (trivial, or hgcmodule, or slinkfromraw)");
   desc.add<unsigned int>("fedId", 0)->setComment("FED number delivering the emulated frames");
   desc.add<bool>("fedHeaderTrailer", false)->setComment("also add FED header/trailer info");
   desc.add<bool>("storeEmulatorInfo", false)
