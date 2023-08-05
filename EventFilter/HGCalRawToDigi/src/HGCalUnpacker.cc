@@ -85,9 +85,12 @@ void HGCalUnpacker::parseSLink(
 
         auto econd_status_flag = ((captureBlockHeader >> (3 * econd)) & kCaptureBlockECONDStatusMask);
         if (config_.applyFWworkaround) {
-          if (econd_status_flag == 0b111 || econd_status_flag == 0b001)
+          // 0b101: No ECOND packet due to BCID and/or OrbitID mismatch.
+          // currently the packet is still kept (ECOND_pkt_conf.BX_mismatch_passthrough: 1)
+          if ((econd_status_flag == 0b001) || (econd_status_flag >= 0b100 && econd_status_flag != 0b101))
             continue;
         } else {
+          // TODO: check the final treatment of 0b001
           if (econd_status_flag >= 0b100)
             continue;  // only pick active ECON-Ds
         }
