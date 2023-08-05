@@ -10,6 +10,8 @@
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 #include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableSiCellChannelInfoRcd.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableSiPMTileInfoRcd.h"
@@ -31,7 +33,8 @@ template <typename T1, typename T2>
     srcDigis_(consumes<T2>(params.getParameter<edm::InputTag>("srcDigis"))),
     cut_(params.getParameter<std::string>("cut"), true),
     moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>()),
-    siModuleInfoToken_(esConsumes<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd,edm::Transition::BeginRun>())
+    siModuleInfoToken_(esConsumes<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd,edm::Transition::BeginRun>()),
+    configToken_(esConsumes<HGCalCondSerializableConfig, HGCalCondSerializableConfigRcd, edm::Transition::BeginRun>())
   {
     produces<nanoaod::FlatTable>();
   }
@@ -93,7 +96,9 @@ template <typename T1, typename T2>
 
     ele2geo_=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,false);
     geo2ele_=hgcal::mapSiGeoToElectronics(moduleInfo,siCellInfo,true);
-      
+
+    auto config = iSetup.getData(configToken_);
+    charMode_ = config.moduleConfigs[0].charMode;  // FIXME: for now use module with electronicsId = 0 as placeholder
   }
 
   void produce(edm::Event& iEvent, const edm::EventSetup& iSetup) override {
@@ -164,8 +169,9 @@ template <typename T1, typename T2>
   //tokens and record watches
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
   edm::ESGetToken<HGCalCondSerializableSiCellChannelInfo,HGCalCondSerializableSiCellChannelInfoRcd> siModuleInfoToken_;
+  edm::ESGetToken<HGCalCondSerializableConfig, HGCalCondSerializableConfigRcd> configToken_;
 
   std::map<uint32_t,uint32_t> ele2geo_;
   std::map<uint32_t,uint32_t> geo2ele_;
-
+  bool charMode_ = false;
 };

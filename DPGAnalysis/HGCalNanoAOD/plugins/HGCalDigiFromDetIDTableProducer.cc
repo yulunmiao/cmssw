@@ -64,15 +64,15 @@ class HGCalDigiFromDetIDTableProducer : public DigiInfoTableProducer< edm::View<
   }
 
   float getTOT(const HGCROCChannelDataFrameElecSpec& digi) {
-    return digi.tot();
+    return digi.tot(charMode_);
   }
 
   float getADC(const HGCROCChannelDataFrameElecSpec& digi) {
-    return digi.adc();
+    return digi.adc(charMode_);
   }
 
   float getADCm1(const HGCROCChannelDataFrameElecSpec& digi) {
-    return digi.adcm1();
+    return digi.adcm1(charMode_);
   }
 
   float getTctp(const HGCROCChannelDataFrameElecSpec& digi) {
