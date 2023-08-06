@@ -20,6 +20,8 @@ namespace hgcal {
     HGCalTestSystemMetaData nextMetaData() override { return metaData_; }
 
   private:
+    void readTriggerData(const hgcal_slinkfromraw::RecordRunning *);
+
     HGCalTestSystemMetaData metaData_;
 
     size_t ifile_;
