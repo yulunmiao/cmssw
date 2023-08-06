@@ -289,21 +289,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
 
     int nch(39*6*(1+m.isHD));
     p_hitcount[k] = ibook.book1D("hitcount_"+tag,           ";Channel; #hits",   nch, 0, nch);
-    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_"+tag, 
-					 ";trigger phase; max ADC of the event",  
-					 100, 0, 100, 100,0,1024);   
-    p_adcvstrigtime[k] = ibook.book2D("adc_vs_trigtime_"+tag, 
-				      ";trigger phase; ADC of channel with max <ADC-ADC_{-1}>",  
-				      100, 0, 100, 100,0,1024);   
-    p_adcpedsubvstrigtime[k] = ibook.book2D("adcpedsub_vs_trigtime_"+tag, 
-					    ";trigger phase; ADC-ADC_{-1} of channel with max <ADC-ADC_{-1}>", 
-					    100, 0, 100, 100,0,1024);   
-    p_totvstrigtime[k] = ibook.book2D("tot_vs_trigtime_"+tag, 
-				      ";trigger phase; TOT of channel with max <TOT>",  
-				      100, 0, 100, 100,0,4096);   
-    p_toavstrigtime[k] = ibook.book2D("toa_vs_trigtime_"+tag, 
-				      ";trigger phase; TOA of channel with max <ADC-ADC_{-1}>",  
-				      100, 0, 100, 100,0,1024);   
+    p_maxadcvstrigtime[k] = ibook.book2D("maxadc_vs_trigtime_" + tag, ";Trigtime;max ADC", 200, 0, 200, 100, 0, 1024);
     p_sums[k]             = ibook.book2D("sums_"+tag, ";Channel;", nch,0,nch, 12,0,12);
     p_sums[k]->setBinLabel(1,"N",2);
     p_sums[k]->setBinLabel(2,"#sum ADC",2);

@@ -45,7 +45,7 @@ std::unique_ptr<FEDRawDataCollection> SlinkFromRaw::next() {
 
     ifile_++;
     if (ifile_ >= inputfiles_.size())
-      throw cms::Exception("[HGCalSlinkFromRaw::next]") << "no more files";
+      throw cms::Exception("FileReadError") << "no more files";
 
     return next();
   }
