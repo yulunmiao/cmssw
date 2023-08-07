@@ -123,7 +123,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
   module_keys_ = moduleInfo.getAsSimplifiedModuleLocatorMap(true);
   for(auto m : moduleInfo.params_) {
 
-    TString tag=Form("%d_%d_%d_%d",m.zside,m.plane,m.u,m.v);
+    TString tag=Form("zside%d_plane%d_u%d_v%d",m.zside,m.plane,m.u,m.v);
     MonitorKey_t k(m.zside,m.plane,m.u,m.v);
     int nch(39*6*(1+m.isHD));
 
@@ -187,7 +187,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker & ibooke
   for(auto it : module_keys_) {
     
     MonitorKey_t k(it.second);
-    TString tag=Form("%d_%d_%d_%d",std::get<0>(k),std::get<1>(k),std::get<2>(k),std::get<3>(k));
+    TString tag=Form("zside%d_plane%d_u%d_v%d",std::get<0>(k),std::get<1>(k),std::get<2>(k),std::get<3>(k));
 
     std::string meName("HGCAL/Digis/sums_"+tag);
     const MonitorElement *me = igetter.get(meName);
