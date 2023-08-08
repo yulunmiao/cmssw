@@ -143,7 +143,12 @@ void SlinkFromRaw::readTriggerData(const hgcal_slinkfromraw::RecordRunning *rTrg
         while (p_scint <= p + length) {
           // Bits [31:  0] : External Trigger
           // Bits [63: 32] : 0xABCDFEED
-          assert((*p_scint >> 32) == 0xABCDFEED);
+          // assert((*p_scint >> 32) == 0xABCDFEED);
+          if ((*p_scint >> 32) != 0xABCDFEED) {
+            // FIXME
+            LogDebug("SlinkFromRaw") << "Cannot find pattern (0xABCDFEED) in the scintillator word: 0x" << std::hex
+                                     << std::setfill('0') << *p_scint;
+          }
           uint32_t trigbits = *p_scint & 0xFFFFFFFF;
           LogDebug("SlinkFromRaw") << "BX " << (p_scint - p) / 5 << ": " << std::hex << std::setfill('0') << "0x"
                                    << *p_scint << ", trigbits = "
