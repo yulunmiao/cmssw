@@ -41,23 +41,14 @@ options.register('storeRAWOutput', False, VarParsing.multiplicity.singleton, Var
                  'also store the RAW output into a streamer file')
 options.register('storeEmulatorInfo', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also store the emulator metadata')
-options.register('slinkBOE', 0x2a, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "Begin of event marker for S-link")
-options.register('cbHeaderMarker', 0x5f, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "Begin of event marker for BE/capture block")
-options.register('econdHeaderMarker', 0x154, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "Begin of event marker for ECON-D")
-options.register('applyFWworkaround', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
-                 "Patch unpacker behavior to deal with firmware known features")
-options.register('configFile',
-                 f"{os.environ['CMSSW_BASE']}/src/CalibCalorimetry/HGCalPlugins/test/test_hgcal_yamlmapper.yaml",
-                 #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
-                 VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 "config yaml file")
-options.register('charMode', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "Manual override for characterization mode to unpack raw data")
-options.register('gain', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 "Manual override for gain (1: 80 fC, 2: 160 fC, 4: 320 fC)")
+options.register('slinkBOE', 0x2a, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for S-link')
+options.register('cbHeaderMarker', 0x5f, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for BE/capture block')
+options.register('econdHeaderMarker', 0x154, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for ECON-D')
+options.register('applyFWworkaround', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.bool,'Patch unpacker behavior to deal with firmware known features')
+options.register(
+    'configFile',
+    '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0_characModeOFF.yaml',
+    VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, 'config yaml file')
 options.register('conditions',
                  'default',
                  VarParsing.multiplicity.singleton, VarParsing.varType.string,
