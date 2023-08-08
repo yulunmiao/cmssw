@@ -96,6 +96,9 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   const auto& digis = iEvent.getHandle(digisToken_);
   auto const& digis_view = digis->const_view();
   int32_t ndigis=digis_view.metadata().size();
+
+  int cm_size = 12;
+  int globalChannelId_cm[cm_size] = {37, 38, 76, 77, 115, 116, 154, 155, 193, 194, 232, 233};
   
   //start by computing the #fired TDC per e-Rx, average CM per e-Rx
   std::map<HGCalElectronicsId, float> nTDC,avgCM; 
@@ -113,6 +116,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     } else if( digi.tctp()>0 || digi.toa()>0) {
       nTDC[erxid] += 1;
     }
+    avgCM[erxid] = 0.5*digi.cm();
   }
   
   //fill the histograms / statistics
@@ -163,7 +167,14 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     else {
       h_adc[geomKey]->Fill(adc);
       p_adc[geomKey]->Fill(globalChannelId, adc);
-          
+
+      // Fill the p_adc plot for the common mode channels
+      int *cm_begin = globalChannelId_cm;
+      int *cm_end = cm_begin + cm_size;
+      if (cm_end != std::find(cm_begin, cm_end, globalChannelId+2)){
+         p_adc[geomKey]->Fill(globalChannelId+2, avgCM[erxid]);
+      }
+
       //after some events check which channel has the largest variance
       //it probably is where the beam is hitting, or the noisiest
       if(num_processed_>10) {
@@ -224,6 +235,17 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       for(size_t k=1; k<=tosum.size(); k++)
         p_sums[geomKey]->setBinContent(globalChannelId,k,
                                        p_sums[geomKey]->getBinContent(globalChannelId,k)+tosum[k-1]);
+
+      // For the last itetration, get the information from the CM and add it in the ADC row for the CM channels
+      // so that the hex_pedestal maps will be filled for the CM channels in the HGCalDigisClientHarvester.cc
+      if(i==ndigis-1) {
+         for(int icm=0; icm<cm_size; icm++){
+            p_sums[geomKey]->setBinContent(globalChannelId_cm[icm], 1, p_sums[geomKey]->getBinContent(globalChannelId_cm[icm]-2,1));
+            p_sums[geomKey]->setBinContent(globalChannelId_cm[icm], 2, p_sums[geomKey]->getBinContent(globalChannelId_cm[icm]-2,4));
+            p_sums[geomKey]->setBinContent(globalChannelId_cm[icm], 3, p_sums[geomKey]->getBinContent(globalChannelId_cm[icm]-2,5));
+	 }
+      }
+        
     }
   }
 
