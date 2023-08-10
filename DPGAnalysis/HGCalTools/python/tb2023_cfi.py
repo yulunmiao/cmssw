@@ -22,13 +22,16 @@ def configTBConditions(process,key='default'):
 
     process.hgCalModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/modulelocator_tb.txt'
     process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
-
-    pedestals={
+    
+    pedestals = {
         'default':'/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/calibration_parameters_v2.txt',
     }
+    
     if hasattr(process,'hgCalPedestalsESSource'):
         process.hgCalPedestalsESSource.filename = pedestals[key]
     if hasattr(process,'hgcalCalibrationESProducer'):
         process.hgcalCalibrationESProducer.filename = pedestals[key]
-
+    ###if hasattr(process,'hgcalConfigurationESProducer'):
+    ###    process.hgcalConfigurationESProducer.filename = yamls[key]
+    
     return process

@@ -18,8 +18,8 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
-#include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+//#include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
+//#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
 
 class HGCalConfigESSourceFromYAML : public edm::ESProducer, public edm::EventSetupRecordIntervalFinder {
 

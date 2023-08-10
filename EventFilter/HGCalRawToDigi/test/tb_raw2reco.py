@@ -6,9 +6,9 @@ process = cms.Process("TEST")
 
 options = VarParsing('standard')
 options.register('mode', 'hgcmodule', VarParsing.multiplicity.singleton, VarParsing.varType.string,
-                 'type of emulation')
-options.register('fedId', [0], VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.int,
-                 'emulated FED id')
+                 "type of emulation")
+options.register('fedId', [0], VarParsing.multiplicity.list, VarParsing.varType.int,
+                 "emulated FED id")
 options.register('debug', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'debugging mode')
 options.register('debugModules', '*', VarParsing.multiplicity.list, VarParsing.varType.string,
@@ -40,15 +40,25 @@ options.register('storeOutput', True, VarParsing.multiplicity.singleton, VarPars
 options.register('storeRAWOutput', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  'also store the RAW output into a streamer file')
 options.register('storeEmulatorInfo', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'also store the emulator metadata')
-options.register('slinkBOE', 0x2a, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for S-link')
-options.register('cbHeaderMarker', 0x5f, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for BE/capture block')
-options.register('econdHeaderMarker', 0x154, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,'Begin of event marker for ECON-D')
-options.register('applyFWworkaround', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.bool,'Patch unpacker behavior to deal with firmware known features')
-options.register(
-    'configFile',
-    '/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0_characModeOFF.yaml',
-    VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.string, 'config yaml file')
+                 "also store the emulator metadata")
+options.register('slinkBOE', 0x2a, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Begin of event marker for S-link")
+options.register('cbHeaderMarker', 0x5f, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Begin of event marker for BE/capture block")
+options.register('econdHeaderMarker', 0x154, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Begin of event marker for ECON-D")
+options.register('applyFWworkaround', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
+                 "Patch unpacker behavior to deal with firmware known features")
+options.register('configFile',
+                 f"{os.environ['CMSSW_BASE']}/src/CalibCalorimetry/HGCalPlugins/test/test_hgcal_yamlmapper.yaml",
+                 #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
+                 #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0_characModeOFF.yaml',
+                 VarParsing.multiplicity.singleton, VarParsing.varType.string,
+                 "config yaml file")
+options.register('charMode', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Manual override for characterization mode to unpack raw data")
+options.register('gain', -1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "Manual override for gain (1: 80 fC, 2: 160 fC, 4: 320 fC)")
 options.register('conditions',
                  'default',
                  VarParsing.multiplicity.singleton, VarParsing.varType.string,
@@ -187,10 +197,15 @@ process.hgcalCalibrationESProducer = cms.ESProducer('HGCalRecHitCalibrationESPro
     ModuleInfo = cms.ESInputTag('')
 )
 
+process.hgcalConfigESProducer = cms.ESProducer('HGCalRecHitConfigurationESProducer@alpaka',
+    #filename = cms.string(''), # to be set up in configTBConditions
+    ModuleInfo = cms.ESInputTag('')
+)
+
 # CONDITIONS
 # RecHit producer: pedestal txt file for DIGI -> RECO calibration
 # Logical mapping
-process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') 
+#process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # superseded by HGCalCalibrationESProducer
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
 from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions,addPerformanceReports
@@ -200,7 +215,8 @@ process.load('HeterogeneousCore.CUDACore.ProcessAcceleratorCUDA_cfi')
 if options.GPU:
     process.hgcalRecHit = cms.EDProducer( 'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        eventSetupSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
+        eventCalibSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
+        eventConfigSource = cms.ESInputTag('hgcalConfigParamESProducer', ''),
         n_hits_scale = cms.int32(1),
         n_blocks = cms.int32(4096),
         n_threads = cms.int32(1024)
@@ -208,7 +224,8 @@ if options.GPU:
 else:
     process.hgcalRecHit = cms.EDProducer( 'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        eventSetupSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
+        eventCalibSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
+        eventConfigSource = cms.ESInputTag('hgcalConfigParamESProducer', ''),
         n_hits_scale = cms.int32(1),
         n_blocks = cms.int32(1024),
         n_threads = cms.int32(4096)

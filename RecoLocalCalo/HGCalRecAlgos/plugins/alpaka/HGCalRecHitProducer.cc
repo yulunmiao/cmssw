@@ -67,7 +67,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     void beginRun(edm::Run const&, edm::EventSetup const&) override;
     edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> cfgWatcher_;
     const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
-    device::ESGetToken<hgcalrechit::HGCalCalibParamDeviceCollection, HGCalCondSerializableModuleInfoRcd> esToken_;
+    device::ESGetToken<hgcalrechit::HGCalCalibParamDeviceCollection, HGCalCondSerializableModuleInfoRcd> calibToken_;
+    device::ESGetToken<hgcalrechit::HGCalConfigParamDeviceCollection, HGCalCondSerializableModuleInfoRcd> configToken_;
     const device::EDPutToken<hgcalrechit::HGCalRecHitDeviceCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
     int n_hits_scale;
@@ -81,9 +82,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           iConfig.getParameter<int>("n_threads"))},
         n_hits_scale{iConfig.getParameter<int>("n_hits_scale")}
     {
-      esToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("eventSetupSource"));
+      calibToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("eventCalibSource"));
+      configToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("eventConfigSource"));
     }
-    
+
   void HGCalRecHitProducer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
     // auto moduleInfo = iSetup.getData(moduleInfoToken_);
     // std::tuple<uint16_t,uint8_t,uint8_t,uint8_t> denseIdxMax = moduleInfo.getMaxValuesForDenseIndex();    
@@ -99,19 +101,21 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto queue = iEvent.queue();
 
     // Read digis
-    auto const& deviceCalibrationParameterProvider = iSetup.getData(esToken_);
+    auto const& deviceCalibParamProvider = iSetup.getData(calibToken_);
+    auto const& deviceConfigParamProvider = iSetup.getData(configToken_);
     auto const& hostDigisIn = iEvent.get(digisToken_);
 
     // Check if there are new conditions and read them
     if (cfgWatcher_.check(iSetup)){
-      for(int i=0; i<deviceCalibrationParameterProvider.view().metadata().size(); i++) {
-          LogDebug("HGCalCalibrationParamter")
-                    << "idx = "         << i << ", "
-                    << "pedestal = "    << deviceCalibrationParameterProvider.view()[i].pedestal()    << ", "
-                    << "CM_slope = "    << deviceCalibrationParameterProvider.view()[i].CM_slope()    << ", "
-                    << "CM_offset = "   << deviceCalibrationParameterProvider.view()[i].CM_offset()   << ", "
-                    << "BXm1_slope = "  << deviceCalibrationParameterProvider.view()[i].BXm1_slope()  << ", "
-                    << "BXm1_offset = " << deviceCalibrationParameterProvider.view()[i].BXm1_offset() << std::endl;
+      for(int i=0; i<deviceCalibParamProvider.view().metadata().size(); i++) {
+          LogDebug("HGCalCalibrationParameter")
+              << "idx = "         << i << ", "
+              //<< "gain = "        << deviceConfigParamProvider.view()[i].gain()      << ", "
+              << "pedestal = "    << deviceCalibParamProvider.view()[i].pedestal()   << ", "
+              << "CM_slope = "    << deviceCalibParamProvider.view()[i].CM_slope()   << ", "
+              << "CM_offset = "   << deviceCalibParamProvider.view()[i].CM_offset()  << ", "
+              << "BXm1_slope = "  << deviceCalibParamProvider.view()[i].BXm1_slope() << ", "
+              << "BXm1_offset = " << deviceCalibParamProvider.view()[i].BXm1_offset();
       }
     }
 
@@ -135,7 +139,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     LogDebug("HGCalRecHitProducer") << "\n\nINFO -- calling calibrate method"; //<< std::endl;
 
     auto start = now();
-    auto recHits = calibrator_.calibrate(queue, hostDigis, deviceCalibrationParameterProvider);
+    auto recHits = calibrator_.calibrate(queue, hostDigis, deviceCalibParamProvider, deviceConfigParamProvider);
     alpaka::wait(queue);
     auto stop = now();
 
@@ -148,7 +152,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   void HGCalRecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("digis", edm::InputTag("hgcalDigis", "DIGI", "TEST"));
-    desc.add("eventSetupSource", edm::ESInputTag{});
+    desc.add("eventCalibSource", edm::ESInputTag{})->setComment("For calibration parameters");
+    desc.add("eventConfigSource", edm::ESInputTag{})->setComment("For ROC configuration parameters");
     desc.add<int>("n_blocks", -1);
     desc.add<int>("n_threads", -1);
     desc.add<int>("n_hits_scale", -1);

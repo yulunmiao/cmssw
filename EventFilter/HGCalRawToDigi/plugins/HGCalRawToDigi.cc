@@ -15,7 +15,7 @@
 #include "DataFormats/HGCalDigi/interface/HGCalDigiCollections.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiHostCollection.h"
 
-#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+//#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
@@ -36,8 +36,8 @@ private:
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecDigisToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecCMsToken_;
   const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
-  edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
-  edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
+  //edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
+  //edm::ESGetToken<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd> configToken_;
   edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> eleMapWatcher_;
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
 
@@ -57,8 +57,8 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       elecDigisToken_(produces<HGCalElecDigiCollection>("DIGI")),
       elecCMsToken_(produces<HGCalElecDigiCollection>("CM")),
       elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
-      configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
-                         iConfig.getParameter<edm::ESInputTag>("config_label"))),
+      //configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
+      //                   iConfig.getParameter<edm::ESInputTag>("config_label"))),
       moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(
                          iConfig.getParameter<edm::ESInputTag>("module_info_label"))),
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
@@ -92,17 +92,17 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   // retrieve the FED raw data
   const auto& raw_data = iEvent.get(fedRawToken_);
   
-  // retrieve configuration from YAML files
-  if (configWatcher_.check(iSetup)) {
-    auto conds = iSetup.getData(configToken_);
-    size_t nmods = conds.moduleConfigs.size();
-    edm::LogInfo("HGCalRawToDigi") << "Conditions retrieved for " << nmods << " modules:\n" << conds << std::endl;
-    for (auto it : conds.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
-      HGCalModuleConfig moduleConfig(it.second);
-      edm::LogInfo("HGCalRawToDigi") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
-    }
-    moduleConfig_ = conds.moduleConfigs[0]; // for now use module with electronicsId = 0 as placeholder
-  } // else: use previously loaded module configuration
+  //// retrieve configuration from YAML files
+  //if (configWatcher_.check(iSetup)) {
+  //  //auto conds = iSetup.getData(configToken_);
+  //  size_t nmods = conds.moduleConfigs.size();
+  //  edm::LogInfo("HGCalRawToDigi") << "Conditions retrieved for " << nmods << " modules:\n" << conds << std::endl;
+  //  for (auto it : conds.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
+  //    HGCalModuleConfig moduleConfig(it.second);
+  //    edm::LogInfo("HGCalRawToDigi") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
+  //  }
+  //  moduleConfig_ = conds.moduleConfigs[0]; // for now use module with electronicsId = 0 as placeholder
+  //} // else: use previously loaded module configuration
 
   // prepare the output
   HGCalDigiCollection digis;

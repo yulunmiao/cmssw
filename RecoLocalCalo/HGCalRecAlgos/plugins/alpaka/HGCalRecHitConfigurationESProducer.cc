@@ -2,12 +2,12 @@
 #include "FWCore/Framework/interface/SourceFactory.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/ESProducer.h"
-#include "FWCore/Framework/interface/ESProducts.h"
 #include "FWCore/Framework/interface/ESTransientHandle.h"
 #include "FWCore/Framework/interface/EventSetupRecordIntervalFinder.h"
 #include "FWCore/ParameterSet/interface/FileInPath.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/ESGetToken.h"
+#include "DataFormats/Math/interface/libminifloat.h"
 
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESGetToken.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/ESProducer.h"
@@ -19,7 +19,6 @@
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
 
-#include "DataFormats/Math/interface/libminifloat.h"
 
 #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterIndex.h"
 #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterHostCollection.h"
@@ -32,12 +31,11 @@
 
 namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
-  class HGCalRecHitCalibrationESProducer : public ESProducer {
+  class HGCalRecHitConfigurationESProducer : public ESProducer {
   public:
 
-    HGCalRecHitCalibrationESProducer(edm::ParameterSet const& iConfig)
-      : ESProducer(iConfig),
-        filename_(iConfig.getParameter<std::string>("filename")) {
+    HGCalRecHitConfigurationESProducer(edm::ParameterSet const& iConfig)
+      : ESProducer(iConfig) {
 
       auto cc = setWhatProduced(this);
       moduleInfoToken_ = cc.consumes();
@@ -45,12 +43,12 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
     static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
       edm::ParameterSetDescription desc;
-      desc.add<std::string>("filename", {});
+      //desc.add<std::string>("filename", {});
       desc.add<edm::ESInputTag>("ModuleInfo",edm::ESInputTag(""));
       descriptions.addWithDefaultLabel(desc);
     }
 
-    std::optional<hgcalrechit::HGCalCalibParamHostCollection> produce(HGCalCondSerializableModuleInfoRcd const& iRecord) {
+    std::optional<hgcalrechit::HGCalConfigParamHostCollection> produce(HGCalCondSerializableModuleInfoRcd const& iRecord) {
       auto const& moduleInfo = iRecord.get(moduleInfoToken_);
 
       // load config
@@ -61,36 +59,26 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       cpi.sLinkCaptureBlockMax = std::get<1>(denseIdxMax);
       cpi.captureBlockECONDMax = std::get<2>(denseIdxMax);
       cpi.econdERXMax          = std::get<3>(denseIdxMax);
-      cpi.erxChannelMax        = 37+2;//+2 for the two common modes
 
-      uint32_t const size = cpi.EventSLinkMax*cpi.sLinkCaptureBlockMax*cpi.captureBlockECONDMax*cpi.econdERXMax*cpi.erxChannelMax;
-      hgcalrechit::HGCalCalibParamHostCollection product(size, cms::alpakatools::host());
+      uint32_t const size = cpi.EventSLinkMax*cpi.sLinkCaptureBlockMax*cpi.captureBlockECONDMax*cpi.econdERXMax;
+      hgcalrechit::HGCalConfigParamHostCollection product(size, cms::alpakatools::host());
 
+
+      uint8_t gain = 1; //(uint8_t) (gain_>=1 ? gain_ : 1); // manual override
       product.view().config() = cpi;
-
-      // load calib parameters
-      edm::FileInPath fip(filename_);
-      std::ifstream file(fip.fullPath());
-      std::string line;
-      uint32_t id;
-      float ped,noise,cm_slope,cm_offset,bxm1_slope,bxm1_offset;
-      while(std::getline(file, line)) {
-        if(line.find("Channel")!=std::string::npos || line.find("#")!=std::string::npos) continue;
-
-        std::istringstream stream(line);
-        stream >> std::hex >> id >> std::dec >> ped >> noise >> cm_slope >> cm_offset >> bxm1_slope >> bxm1_offset;
-
-        //reduce to half-point float and fill the pedestals of this channel
-        uint32_t idx = cpi.denseMap(id); // convert electronicsId to idx from denseMap 
-
-        // Comment: if planning to use MiniFloatConverter::float32to16(), a host function,
-        // one needs to think how to perform MiniFloatConverter::float16to32() in kernels running on GPU (HGCalRecHitCalibrationAlgorithms.dev.cc)
-        product.view()[idx].pedestal()    = ped;
-        product.view()[idx].CM_slope()    = cm_slope;
-        product.view()[idx].CM_offset()   = cm_offset;
-        product.view()[idx].BXm1_slope()  = bxm1_slope;
-        product.view()[idx].BXm1_offset() = bxm1_offset;
-      }
+      //uint32_t idx = cpi.denseMap(id); // convert electronicsId to idx from denseMap 
+      product.view()[cpi.denseMap(0*1024+0*64)].gain() = gain; // ROC 0, half 0
+      product.view()[cpi.denseMap(0*1024+1*64)].gain() = gain; // ROC 0, half 1
+      product.view()[cpi.denseMap(0*1024+2*64)].gain() = gain; // ROC 1, half 0
+      product.view()[cpi.denseMap(0*1024+3*64)].gain() = gain; // ROC 1, half 1
+      product.view()[cpi.denseMap(0*1024+4*64)].gain() = gain; // ROC 2, half 0
+      product.view()[cpi.denseMap(0*1024+5*64)].gain() = gain; // ROC 2, half 1
+      product.view()[cpi.denseMap(1*1024+0*64)].gain() = gain; // ROC 0, half 0
+      product.view()[cpi.denseMap(1*1024+1*64)].gain() = gain; // ROC 0, half 1
+      product.view()[cpi.denseMap(1*1024+2*64)].gain() = gain; // ROC 1, half 0
+      product.view()[cpi.denseMap(1*1024+3*64)].gain() = gain; // ROC 1, half 1
+      product.view()[cpi.denseMap(1*1024+4*64)].gain() = gain; // ROC 2, half 0
+      product.view()[cpi.denseMap(1*1024+5*64)].gain() = gain; // ROC 2, half 1
 
       return product;
     } // end of produce()
@@ -98,10 +86,10 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
     HGCalCondSerializableModuleInfo moduleInfo;
+    //const std::string filename_;
 
-    const std::string filename_;
   };
 
 }  // namespace ALPAKA_ACCELERATOR_NAMESPACE
 
-DEFINE_FWK_EVENTSETUP_ALPAKA_MODULE(HGCalRecHitCalibrationESProducer);
+DEFINE_FWK_EVENTSETUP_ALPAKA_MODULE(HGCalRecHitConfigurationESProducer);

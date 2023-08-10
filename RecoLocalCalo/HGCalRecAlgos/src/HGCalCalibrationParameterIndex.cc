@@ -1,9 +1,9 @@
-// #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
+// #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterIndex.h"
 // #include "FWCore/MessageLogger/interface/MessageLogger.h"
 //
-// void HGCalCalibrationParameterProvider::initialize(HGCalCalibrationParameterProviderConfig config){
+// void HGCalCalibrationParameterIndex::initialize(HGCalCalibrationParameterIndexConfig config){
 //     config_=config;
-//     LogDebug("HGCalCalibrationParameterProvider")<<"initializing with EventSLinkMax="<<config_.EventSLinkMax
+//     LogDebug("HGCalCalibrationParameterIndex")<<"initializing with EventSLinkMax="<<config_.EventSLinkMax
 //                                                  <<",sLinkCaptureBlockMax="<<config_.sLinkCaptureBlockMax
 //                                                  <<",captureBlockECONDMax="<<config_.captureBlockECONDMax
 //                                                  <<",econdERXMax="<<config_.econdERXMax
@@ -11,7 +11,7 @@
 //     calibrationParameter_=std::vector<CalibrationParameter>(config_.EventSLinkMax*config_.sLinkCaptureBlockMax*config_.captureBlockECONDMax*config_.econdERXMax*config_.erxChannelMax);
 // }
 //
-// const uint32_t HGCalCalibrationParameterProvider::denseMap(uint32_t ElectronicsID) const{
+// const uint32_t HGCalCalibrationParameterIndex::denseMap(uint32_t ElectronicsID) const{
 //     uint32_t sLink = ((ElectronicsID >> kFEDIDShift) & kFEDIDMask);
 //     uint32_t captureBlock = ((ElectronicsID >> kCaptureBlockShift) & kCaptureBlockMask);
 //     uint32_t econd = ((ElectronicsID >> kECONDIdxShift) & kECONDIdxMask);
@@ -24,6 +24,6 @@
 //     return rtn;
 // }
 //
-// CalibrationParameter& HGCalCalibrationParameterProvider::operator[](uint32_t ElectronicsID){
+// CalibrationParameter& HGCalCalibrationParameterIndex::operator[](uint32_t ElectronicsID){
 //     return calibrationParameter_[denseMap(ElectronicsID)];
 // }
