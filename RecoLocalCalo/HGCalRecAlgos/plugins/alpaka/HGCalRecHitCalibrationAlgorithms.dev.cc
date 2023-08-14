@@ -130,14 +130,14 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after pedestal calibration: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
+    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, device_digis.view(), device_recHits->view(), calib_device.view());
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "Digis after CM calibration: " << std::endl;
+    print_digi_device(device_digis, n_hits_to_print);
+
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_chargeConversion{}, device_digis.view(), device_recHits->view(), config_device.view());
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after charge converstion: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
-    alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, device_digis.view(), device_recHits->view(), calib_device.view());
-    LogDebug("HGCalRecHitCalibrationAlgorithms") << "Digis after CM calibration: " << std::endl;
-    print_digi_device(device_digis, n_hits_to_print);
-    
     /*
     float ADCmValue = n_hits_to_print; // dummy value
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_ADCmCorrection{}, device_digis.view(), calib_device.view());
