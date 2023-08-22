@@ -57,14 +57,23 @@ std::unique_ptr<FEDRawDataCollection> SlinkFromRaw::next() {
     } else {
       // find the event matched to the first slink
       while (rEvent) {
-        if (rEvent->slinkBoe()->eventId() < eventId_) {
-          rEvent = reader->nextEvent();
-          continue;
-        }
         if (rEvent->slinkBoe()->eventId() == eventId_ && rEvent->slinkEoe()->bxId() == bxId_ &&
             rEvent->slinkEoe()->orbitId() == orbitId_) {
           copyToFEDRawData(rEvent, fedId);
           break;
+        } else {
+          edm::LogError("SlinkFromRaw") << "Mismatch in E/B/O counters for fedId=" << fedId
+                                        << ": expect eventId=" << eventId_ << ", bxId=" << bxId_
+                                        << ", orbitId=" << orbitId_
+                                        << ", got eventId = " << rEvent->slinkBoe()->eventId()
+                                        << ", bxId = " << rEvent->slinkEoe()->bxId()
+                                        << ", orbitId=" << rEvent->slinkEoe()->orbitId();
+          if (rEvent->slinkBoe()->eventId() < eventId_) {
+            rEvent = reader->nextEvent();
+            continue;
+          } else {
+            break;
+          }
         }
       }
     }
@@ -80,15 +89,24 @@ std::unique_ptr<FEDRawDataCollection> SlinkFromRaw::next() {
 
     while (rTrgEvent) {
       // find the trigger event matched to the first DAQ slink
-      if (rTrgEvent->slinkBoe()->eventId() < eventId_) {
-        rTrgEvent = reader->nextEvent();
-        continue;
-      }
       if (rTrgEvent->slinkBoe()->eventId() == eventId_ && rTrgEvent->slinkEoe()->bxId() == bxId_ &&
           rTrgEvent->slinkEoe()->orbitId() == orbitId_) {
         metaData_.trigType_ = rTrgEvent->slinkBoe()->l1aType();
         readTriggerData(rTrgEvent);
         break;
+      } else {
+        edm::LogError("SlinkFromRaw") << "Mismatch in E/B/O counters for the trigger link"
+                                      << ": expect eventId=" << eventId_ << ", bxId=" << bxId_
+                                      << ", orbitId=" << orbitId_
+                                      << ", got eventId = " << rTrgEvent->slinkBoe()->eventId()
+                                      << ", bxId = " << rTrgEvent->slinkEoe()->bxId()
+                                      << ", orbitId=" << rTrgEvent->slinkEoe()->orbitId();
+        if (rTrgEvent->slinkBoe()->eventId() < eventId_) {
+          rTrgEvent = reader->nextEvent();
+          continue;
+        } else {
+          break;
+        }
       }
     }
   }
