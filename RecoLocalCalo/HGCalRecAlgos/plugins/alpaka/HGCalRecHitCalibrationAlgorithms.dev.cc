@@ -112,9 +112,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     ) {
 
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- Start of calibrate\n\n" << std::endl;
-    LogDebug("HGCalRecHitCalibrationAlgorithms")<<"N blocks: "<<n_blocks<<"\tN threads: "<<n_threads<<std::endl;
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "N blocks: " << n_blocks << "\tN threads: " << n_threads << std::endl;
     auto grid = make_workdiv<Acc1D>(n_blocks, n_threads);
-    
+
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "\n\nINFO -- copying the digis to the device\n\n" << std::endl;
     HGCalDigiDeviceCollection device_digis(host_digis.view().metadata().size(), queue);
     alpaka::memcpy(queue, device_digis.buffer(), host_digis.const_buffer());

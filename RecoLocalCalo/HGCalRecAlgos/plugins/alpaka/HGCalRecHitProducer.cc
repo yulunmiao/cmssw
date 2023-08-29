@@ -15,25 +15,22 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/CopyToDevice.h"
 #include "RecoLocalCalo/HGCalRecAlgos/plugins/alpaka/HGCalRecHitCalibrationAlgorithms.h"
-
-// includes for loading pedestal txt file
-#include <iomanip> // for std::setw
 #include "FWCore/Framework/interface/MakerMacros.h"
-#include "FWCore/Framework/interface/ESWatcher.h"
-#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
-#include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
-#include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
-
-#include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterHostCollection.h"
-#include "RecoLocalCalo/HGCalRecAlgos/interface/alpaka/HGCalCalibrationParameterDeviceCollection.h"
+#include <iomanip> // for std::setw
 
 // // include for save calibration parameter
 // #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
 
-// includes for size parameters
+// includes for size, calibration, and configuration parameters
+#include "FWCore/Framework/interface/ESWatcher.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableConfig.h"
+//#include "CondFormats/DataRecord/interface/HGCalCondSerializablePedestalsRcd.h"
+//#include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
+#include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterHostCollection.h"
+#include "RecoLocalCalo/HGCalRecAlgos/interface/alpaka/HGCalCalibrationParameterDeviceCollection.h"
 
 // include for debug info
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -65,10 +62,11 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   private:
     void produce(device::Event&, device::EventSetup const&) override;
     void beginRun(edm::Run const&, edm::EventSetup const&) override;
-    edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> cfgWatcher_;
+    edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> calibWatcher_;
+    edm::ESWatcher<HGCalCondSerializableConfigRcd> configWatcher_;
     const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
     device::ESGetToken<hgcalrechit::HGCalCalibParamDeviceCollection, HGCalCondSerializableModuleInfoRcd> calibToken_;
-    device::ESGetToken<hgcalrechit::HGCalConfigParamDeviceCollection, HGCalCondSerializableModuleInfoRcd> configToken_;
+    device::ESGetToken<hgcalrechit::HGCalConfigParamDeviceCollection, HGCalCondSerializableConfigRcd> configToken_;
     const device::EDPutToken<hgcalrechit::HGCalRecHitDeviceCollection> recHitsToken_;
     HGCalRecHitCalibrationAlgorithms calibrator_;  // cannot be "const" because the calibrate() method is not const
     int n_hits_scale;
@@ -106,7 +104,15 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto const& hostDigisIn = iEvent.get(digisToken_);
 
     // Check if there are new conditions and read them
-    if (cfgWatcher_.check(iSetup)){
+    if (calibWatcher_.check(iSetup)){
+      for(int i=0; i<deviceConfigParamProvider.view().metadata().size(); i++) {
+          LogDebug("HGCalCalibrationParameter")
+            << "gain = " << deviceConfigParamProvider.view()[i].gain();
+      }
+    }
+
+    // Check if there are new conditions and read them
+    if (configWatcher_.check(iSetup)){
       for(int i=0; i<deviceCalibParamProvider.view().metadata().size(); i++) {
           LogDebug("HGCalCalibrationParameter")
               << "idx = "         << i << ", "
@@ -142,7 +148,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto recHits = calibrator_.calibrate(queue, hostDigis, deviceCalibParamProvider, deviceConfigParamProvider);
     alpaka::wait(queue);
     auto stop = now();
-
     LogDebug("HGCalRecHitProducer") << "Time: " << duration(start, stop); //<< std::endl;
 
     LogDebug("HGCalRecHitProducer") << "\n\nINFO -- storing rec hits in the event"; //<< std::endl;

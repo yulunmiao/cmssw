@@ -6,10 +6,16 @@
 
 namespace hgcalrechit {
 
-  // SoA with pedestal, CM_slope, CM_offset, BXm1_kappa in host memory
+  // SoA with channel-level calibration parameters in host memory:
+  //   pedestal, CM_slope, CM_offset, BXm1_kappa
   using HGCalCalibParamHostCollection = PortableHostCollection<HGCalCalibParamSoA>;
 
-  // SoA with gain in host memory
+  // SoA with channel-level configuration parameters in host memory:
+  //   ...
+  //using HGCalChannelConfigParamHostCollection = PortableHostCollection<HGCalChannelConfigParamSoA>;
+
+  // SoA with ROC-level configuration parameters in host memory:
+  //   gain
   using HGCalConfigParamHostCollection = PortableHostCollection<HGCalConfigParamSoA>;
 
 }  // namespace hgcalrechit

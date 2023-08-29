@@ -192,20 +192,21 @@ process.hgcalCalibrationParameterESRecord = cms.ESSource('EmptyESSource',
     firstValid = cms.vuint32(1)
 )
 
-process.hgcalCalibrationESProducer = cms.ESProducer('HGCalRecHitCalibrationESProducer@alpaka',
+# ESProducer to load calibration parameters from txt file, like pedestal
+process.hgcalCalibESProducer = cms.ESProducer('hgcalrechit::HGCalCalibrationESProducer@alpaka',
     filename = cms.string(''), # to be set up in configTBConditions
     ModuleInfo = cms.ESInputTag('')
 )
 
-process.hgcalConfigESProducer = cms.ESProducer('HGCalRecHitConfigurationESProducer@alpaka',
-    #filename = cms.string(''), # to be set up in configTBConditions
+# ESProducer to load configuration parameters from YAML files, like gain
+process.hgcalConfigESProducer = cms.ESProducer('hgcalrechit::HGCalConfigurationESProducer@alpaka',
     ModuleInfo = cms.ESInputTag('')
 )
 
 # CONDITIONS
 # RecHit producer: pedestal txt file for DIGI -> RECO calibration
 # Logical mapping
-#process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # superseded by HGCalCalibrationESProducer
+#process.load('CalibCalorimetry.HGCalPlugins.hgCalPedestalsESSource_cfi') # superseded by hgcalCalibESProducer
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
 from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions,addPerformanceReports
@@ -215,7 +216,7 @@ process.load('HeterogeneousCore.CUDACore.ProcessAcceleratorCUDA_cfi')
 if options.GPU:
     process.hgcalRecHit = cms.EDProducer( 'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        eventCalibSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
+        eventCalibSource = cms.ESInputTag('hgcalCalibESProducer', ''),
         eventConfigSource = cms.ESInputTag('hgcalConfigESProducer', ''),
         n_hits_scale = cms.int32(1),
         n_blocks = cms.int32(4096),
@@ -224,7 +225,7 @@ if options.GPU:
 else:
     process.hgcalRecHit = cms.EDProducer( 'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        eventCalibSource = cms.ESInputTag('hgcalCalibrationESProducer', ''),
+        eventCalibSource = cms.ESInputTag('hgcalCalibESProducer', ''),
         eventConfigSource = cms.ESInputTag('hgcalConfigESProducer', ''),
         n_hits_scale = cms.int32(1),
         n_blocks = cms.int32(1024),

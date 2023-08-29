@@ -43,7 +43,7 @@ private:
 
   HGCalCondSerializableModuleInfo::ERxBitPatternMap erxEnableBits_;
   std::map<uint16_t,uint16_t> fed2slink_;
-  
+
   const std::vector<unsigned int> fedIds_;
   const unsigned int badECONDMax_;
   const unsigned int numERxsInECOND_;
@@ -59,8 +59,8 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       elecDigisToken_(produces<HGCalElecDigiCollection>("DIGI")),
       elecCMsToken_(produces<HGCalElecDigiCollection>("CM")),
       elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
-      configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
-          iConfig.getParameter<edm::ESInputTag>("config_label"))),
+      //configToken_(esConsumes<HGCalCondSerializableConfig,HGCalCondSerializableConfigRcd>(
+      //    iConfig.getParameter<edm::ESInputTag>("config_label"))),
       moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(
               iConfig.getParameter<edm::ESInputTag>("module_info_label"))),
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
