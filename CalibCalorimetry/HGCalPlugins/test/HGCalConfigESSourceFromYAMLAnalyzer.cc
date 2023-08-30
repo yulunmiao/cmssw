@@ -40,7 +40,8 @@ private:
         HGCalModuleConfig moduleConfig(it.second);
         edm::LogInfo("HGCalConfigESSourceFromYAMLAnalyzer")
           << "  Module " << it.first << ":\n"
-          << "    charMode " << moduleConfig.charMode;
+          << "    charMode " << moduleConfig.charMode
+          << "    gain[0] " << moduleConfig.gains[0];
       }
     }
   }

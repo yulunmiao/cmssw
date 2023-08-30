@@ -80,8 +80,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           iConfig.getParameter<int>("n_threads"))},
         n_hits_scale{iConfig.getParameter<int>("n_hits_scale")}
     {
-      calibToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("eventCalibSource"));
-      configToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("eventConfigSource"));
+      calibToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("calibSource"));
+      configToken_ = esConsumes(iConfig.getParameter<edm::ESInputTag>("configSource"));
     }
 
   void HGCalRecHitProducer::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
@@ -157,8 +157,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
   void HGCalRecHitProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<edm::InputTag>("digis", edm::InputTag("hgcalDigis", "DIGI", "TEST"));
-    desc.add("eventCalibSource", edm::ESInputTag{})->setComment("For calibration parameters");
-    desc.add("eventConfigSource", edm::ESInputTag{})->setComment("For ROC configuration parameters");
+    desc.add("calibSource", edm::ESInputTag{})->setComment("Label for calibration parameters");
+    desc.add("configSource", edm::ESInputTag{})->setComment("Label for ROC configuration parameters");
     desc.add<int>("n_blocks", -1);
     desc.add<int>("n_threads", -1);
     desc.add<int>("n_hits_scale", -1);

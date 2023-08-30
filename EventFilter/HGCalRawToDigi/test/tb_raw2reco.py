@@ -162,13 +162,13 @@ process.hgcalDigis.captureBlockECONDMax = max(  # allows to mess with unconventi
     process.hgcalDigis.captureBlockECONDMax,
     len([ec for ec in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs if ec.active]))
 
-process.hgcalDigis.config_label = cms.ESInputTag('') # for HGCalConfigESSourceFromYAML
-process.hgcalDigis.module_info_label = cms.ESInputTag('') # for HGCalModuleInfoESSource
+process.hgcalDigis.configSource = cms.ESInputTag('') # for HGCalConfigESSourceFromYAML
+process.hgcalDigis.moduleInfoSource = cms.ESInputTag('') # for HGCalModuleInfoESSource
 process.hgcalDigis.slinkBOE=cms.uint32(options.slinkBOE)
 process.hgcalDigis.cbHeaderMarker=cms.uint32(options.cbHeaderMarker)
 process.hgcalDigis.econdHeaderMarker=cms.uint32(options.econdHeaderMarker)
 process.hgcalDigis.applyFWworkaround=options.applyFWworkaround
-    
+
 #
 # TRANSLATOR TO PHASE I COLLECTION
 #
@@ -195,12 +195,12 @@ process.hgcalCalibrationParameterESRecord = cms.ESSource('EmptyESSource',
 # ESProducer to load calibration parameters from txt file, like pedestal
 process.hgcalCalibESProducer = cms.ESProducer('hgcalrechit::HGCalCalibrationESProducer@alpaka',
     filename = cms.string(''), # to be set up in configTBConditions
-    ModuleInfo = cms.ESInputTag('')
+    moduleInfoSource = cms.ESInputTag('')
 )
 
 # ESProducer to load configuration parameters from YAML files, like gain
 process.hgcalConfigESProducer = cms.ESProducer('hgcalrechit::HGCalConfigurationESProducer@alpaka',
-    ModuleInfo = cms.ESInputTag('')
+    configSource = cms.ESInputTag('')
 )
 
 # CONDITIONS
@@ -216,8 +216,8 @@ process.load('HeterogeneousCore.CUDACore.ProcessAcceleratorCUDA_cfi')
 if options.GPU:
     process.hgcalRecHit = cms.EDProducer( 'alpaka_cuda_async::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        eventCalibSource = cms.ESInputTag('hgcalCalibESProducer', ''),
-        eventConfigSource = cms.ESInputTag('hgcalConfigESProducer', ''),
+        calibSource = cms.ESInputTag('hgcalCalibESProducer', ''),
+        configSource = cms.ESInputTag('hgcalConfigESProducer', ''),
         n_hits_scale = cms.int32(1),
         n_blocks = cms.int32(4096),
         n_threads = cms.int32(1024)
@@ -225,8 +225,8 @@ if options.GPU:
 else:
     process.hgcalRecHit = cms.EDProducer( 'alpaka_serial_sync::HGCalRecHitProducer',
         digis = cms.InputTag('hgcalDigis', '', 'TEST'),
-        eventCalibSource = cms.ESInputTag('hgcalCalibESProducer', ''),
-        eventConfigSource = cms.ESInputTag('hgcalConfigESProducer', ''),
+        calibSource = cms.ESInputTag('hgcalCalibESProducer', ''),
+        configSource = cms.ESInputTag('hgcalConfigESProducer', ''),
         n_hits_scale = cms.int32(1),
         n_blocks = cms.int32(1024),
         n_threads = cms.int32(4096)

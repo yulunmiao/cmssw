@@ -13,7 +13,7 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/ESProducer.h"
 #include "FWCore/Framework/interface/EventSetupRecordIntervalFinder.h"
-#include "FWCore/Framework/interface/ESProducts.h"
+//#include "FWCore/Framework/interface/ESProducts.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableConfigRcd.h"
@@ -43,6 +43,7 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
     desc.add<std::string>("filename", {});
+    //desc.add<edm::ESInputTag>("configSource",edm::ESInputTag(""))->setComment("Label for ROC configuration parameters");
     desc.add<int>("charMode",-1)->setComment("Manual override for characterization mode to unpack raw data");
     desc.add<int>("gain",-1)->setComment("Manual override for gain (1: 80 fC, 2: 160 fC, 4: 320 fC)");
     descriptions.addWithDefaultLabel(desc);

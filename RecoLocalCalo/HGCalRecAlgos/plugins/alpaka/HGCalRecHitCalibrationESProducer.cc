@@ -40,13 +40,13 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         : ESProducer(iConfig),
           filename_(iConfig.getParameter<std::string>("filename")) {
         auto cc = setWhatProduced(this);
-        moduleInfoToken_ = cc.consumes();
+        moduleInfoToken_ = cc.consumes(iConfig.getParameter<edm::ESInputTag>("moduleInfoSource"));
       }
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
         edm::ParameterSetDescription desc;
         desc.add<std::string>("filename", {});
-        desc.add<edm::ESInputTag>("ModuleInfo",edm::ESInputTag(""));
+        desc.add<edm::ESInputTag>("moduleInfoSource",edm::ESInputTag(""))->setComment("Label for module info to calculate size");
         descriptions.addWithDefaultLabel(desc);
       }
 
@@ -58,8 +58,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         cpi.setMaxValues(moduleInfo);
         const uint32_t size = cpi.getSize(true); // ROC-level size
         hgcalrechit::HGCalCalibParamHostCollection product(size, cms::alpakatools::host());
-        product.view().config() = cpi; // set dense indexing
-        
+        product.view().config() = cpi; // set dense indexing in SoA
+
         // load calib parameters
         edm::FileInPath fip(filename_);
         std::ifstream file(fip.fullPath());

@@ -37,52 +37,65 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         : ESProducer(iConfig),
           charMode_(iConfig.getParameter<int>("charMode")),
           gain_(iConfig.getParameter<int>("gain")) {
-        auto cc = setWhatProduced(this,dependsOn(&HGCalConfigurationESProducer::setIndexFromModuleInfo));
-        configToken_ = cc.consumes();
-        moduleInfoToken_ = cc.consumes();
+        auto cc = setWhatProduced(this);
+        //findingRecord<HGCalCondSerializableConfigRcd>();
+        configToken_ = cc.consumes(iConfig.getParameter<edm::ESInputTag>("configSource"));
+        moduleInfoToken_ = cc.consumes(iConfig.getParameter<edm::ESInputTag>("configSource"));
       }
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
         edm::ParameterSetDescription desc;
-        desc.add<edm::ESInputTag>("ModuleInfo",edm::ESInputTag(""));
+        desc.add<edm::ESInputTag>("configSource",edm::ESInputTag(""))->setComment("Label for ROC configuration parameters");
         desc.add<int>("charMode",-1)->setComment("Manual override for characterization mode to unpack raw data");
         desc.add<int>("gain",-1)->setComment("Manual override for gain (1: 80 fC, 2: 160 fC, 4: 320 fC)");
         descriptions.addWithDefaultLabel(desc);
       }
 
-      void setIndexFromModuleInfo(const HGCalCondSerializableModuleInfoRcd& iRecord) {
-        const auto& moduleInfo = iRecord.get(moduleInfoToken_);
-        cpi_.setMaxValues(moduleInfo);
-      }
-
       std::optional<hgcalrechit::HGCalConfigParamHostCollection> produce(const HGCalCondSerializableConfigRcd& iRecord) {
         const auto& config = iRecord.get(configToken_);
-        
-        const uint32_t size =  cpi_.getSize(true); // ROC-level size
-        hgcalrechit::HGCalConfigParamHostCollection product(size, cms::alpakatools::host());
+        //const auto& moduleInfo = iRecord.get(moduleInfoToken_);
+        const auto& moduleInfo = iRecord.getRecord<HGCalCondSerializableModuleInfoRcd>().get(moduleInfoToken_);
 
+        // load dense indexing
+        HGCalCalibrationParameterIndex cpi;
+        cpi.setMaxValues(moduleInfo);
+        const uint32_t size = cpi.getSize(true); // ROC-level size
+        hgcalrechit::HGCalConfigParamHostCollection product(size, cms::alpakatools::host());
+        product.view().config() = cpi; // set dense indexing in SoA
+
+        // fill SoA
         uint8_t gain = (uint8_t) (gain_>=1 ? gain_ : 1); // manual override
-        product.view().config() = cpi_; // set dense indexing
-        //uint32_t idx = cpi_.denseMap(id); // convert electronicsId to idx from denseMap
-        product.view()[cpi_.denseROCMap(0*1024+0*64)].gain() = gain; // ROC 0, half 0
-        product.view()[cpi_.denseROCMap(0*1024+1*64)].gain() = gain; // ROC 0, half 1
-        product.view()[cpi_.denseROCMap(0*1024+2*64)].gain() = gain; // ROC 1, half 0
-        product.view()[cpi_.denseROCMap(0*1024+3*64)].gain() = gain; // ROC 1, half 1
-        product.view()[cpi_.denseROCMap(0*1024+4*64)].gain() = gain; // ROC 2, half 0
-        product.view()[cpi_.denseROCMap(0*1024+5*64)].gain() = gain; // ROC 2, half 1
-        product.view()[cpi_.denseROCMap(1*1024+0*64)].gain() = gain; // ROC 0, half 0
-        product.view()[cpi_.denseROCMap(1*1024+1*64)].gain() = gain; // ROC 0, half 1
-        product.view()[cpi_.denseROCMap(1*1024+2*64)].gain() = gain; // ROC 1, half 0
-        product.view()[cpi_.denseROCMap(1*1024+3*64)].gain() = gain; // ROC 1, half 1
-        product.view()[cpi_.denseROCMap(1*1024+4*64)].gain() = gain; // ROC 2, half 0
-        product.view()[cpi_.denseROCMap(1*1024+5*64)].gain() = gain; // ROC 2, half 1
+        //uint32_t idx = cpi.denseMap(id); // convert electronicsId to idx from denseMap
+        product.view()[cpi.denseROCMap(0*1024+0*64)].gain() = gain; // ROC 0, half 0
+        product.view()[cpi.denseROCMap(0*1024+1*64)].gain() = gain; // ROC 0, half 1
+        product.view()[cpi.denseROCMap(0*1024+2*64)].gain() = gain; // ROC 1, half 0
+        product.view()[cpi.denseROCMap(0*1024+3*64)].gain() = gain; // ROC 1, half 1
+        product.view()[cpi.denseROCMap(0*1024+4*64)].gain() = gain; // ROC 2, half 0
+        product.view()[cpi.denseROCMap(0*1024+5*64)].gain() = gain; // ROC 2, half 1
+        product.view()[cpi.denseROCMap(1*1024+0*64)].gain() = gain; // ROC 0, half 0
+        product.view()[cpi.denseROCMap(1*1024+1*64)].gain() = gain; // ROC 0, half 1
+        product.view()[cpi.denseROCMap(1*1024+2*64)].gain() = gain; // ROC 1, half 0
+        product.view()[cpi.denseROCMap(1*1024+3*64)].gain() = gain; // ROC 1, half 1
+        product.view()[cpi.denseROCMap(1*1024+4*64)].gain() = gain; // ROC 2, half 0
+        product.view()[cpi.denseROCMap(1*1024+5*64)].gain() = gain; // ROC 2, half 1
 
         //LogDebug("HGCalConfigurationESProducer") << "Placeholders: charMode=" << charMode_
         //  << ", gain=" << gain;
         std::cout << "HGCalConfigurationESProducer: Placeholders: charMode=" << charMode_
           << ", gain=" << (int) gain
-          //<< "; YAML:" << config.moduleConfigs[0].gains[0]
+          << "; YAML: size=" << config.moduleConfigs.size() //[0].gains[0]
+          //<< "; YAML: gain[0][0]=" << config.moduleConfigs[0].gains[0]
           << std::endl;
+
+        size_t nmods = config.moduleConfigs.size();
+        std::cout << "HGCalConfigurationESProducer: Configuration retrieved for " << nmods << " modules: " << config << std::endl;
+        for(auto it : config.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
+          HGCalModuleConfig moduleConfig(it.second);
+          std::cout << "HGCalConfigurationESProducer: Module " << it.first << ":"
+            << " charMode=" << moduleConfig.charMode
+            << ", ngains=" << moduleConfig.gains.size()
+            << ", gain[0]=" << moduleConfig.gains[0] << std::endl;
+        }
 
         return product;
       }  // end of produce()
@@ -90,7 +103,6 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     private:
       edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
       edm::ESGetToken<HGCalCondSerializableConfig, HGCalCondSerializableConfigRcd> configToken_;
-      HGCalCalibrationParameterIndex cpi_; // for dense indexing
       const int charMode_; // manual override of YAML files
       const int gain_; // manual override of YAML files
 
