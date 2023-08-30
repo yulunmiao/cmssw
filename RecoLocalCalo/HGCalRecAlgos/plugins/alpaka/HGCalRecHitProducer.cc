@@ -3,9 +3,11 @@
 #include "DataFormats/HGCalDigi/interface/alpaka/HGCalDigiDeviceCollection.h"
 #include "DataFormats/HGCalRecHit/interface/HGCalRecHitHostCollection.h"
 #include "DataFormats/HGCalRecHit/interface/alpaka/HGCalRecHitDeviceCollection.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/Utilities/interface/StreamID.h"
 #include "HeterogeneousCore/AlpakaCore/interface/alpaka/stream/EDProducer.h"
@@ -15,11 +17,8 @@
 #include "HeterogeneousCore/AlpakaInterface/interface/config.h"
 #include "HeterogeneousCore/AlpakaInterface/interface/CopyToDevice.h"
 #include "RecoLocalCalo/HGCalRecAlgos/plugins/alpaka/HGCalRecHitCalibrationAlgorithms.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
 #include <iomanip> // for std::setw
-
-// // include for save calibration parameter
-// #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterProvider.h"
+#include <future>
 
 // includes for size, calibration, and configuration parameters
 #include "FWCore/Framework/interface/ESWatcher.h"
@@ -31,11 +30,6 @@
 //#include "CondFormats/HGCalObjects/interface/HGCalCondSerializablePedestals.h"
 #include "RecoLocalCalo/HGCalRecAlgos/interface/HGCalCalibrationParameterHostCollection.h"
 #include "RecoLocalCalo/HGCalRecAlgos/interface/alpaka/HGCalCalibrationParameterDeviceCollection.h"
-
-// include for debug info
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-
-#include <future>
 
 template<class T> double duration(T t0,T t1)
 {

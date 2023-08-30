@@ -79,7 +79,7 @@ options.register('firstLS', 1, VarParsing.VarParsing.multiplicity.singleton, Var
 
 options.parseArguments()
 
-#message logger
+# message logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 50000
 if options.debug:
@@ -95,14 +95,14 @@ process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService
     hgcalEmulatedSlinkRawData = cms.PSet(initialSeed = cms.untracked.uint32(42))
 )
 
-#source is empty source
+# source is empty source
 process.source = cms.Source("EmptySource",
                             numberEventsInRun = cms.untracked.uint32(options.maxEvents),
                             firstRun = cms.untracked.uint32(options.runNumber),
                             numberEventsInLuminosityBlock = cms.untracked.uint32(options.maxEvents), #could use maxEventsPerLS),
                             firstLuminosityBlock = cms.untracked.uint32(options.firstLS) )
 
-#RAW 2 DIGI and UNPACKER
+# RAW 2 DIGI and UNPACKER
 process.load('EventFilter.HGCalRawToDigi.hgcalEmulatedSlinkRawData_cfi')
 process.load('EventFilter.HGCalRawToDigi.hgcalDigis_cfi')
 process.load('Configuration.StandardSequences.Accelerators_cff')
@@ -200,6 +200,7 @@ process.hgcalCalibESProducer = cms.ESProducer('hgcalrechit::HGCalCalibrationESPr
 
 # ESProducer to load configuration parameters from YAML files, like gain
 process.hgcalConfigESProducer = cms.ESProducer('hgcalrechit::HGCalConfigurationESProducer@alpaka',
+    #gain = options.gain, # manually override gain
     configSource = cms.ESInputTag('')
 )
 
@@ -232,16 +233,15 @@ else:
         n_threads = cms.int32(4096)
     )
 
-#filter on empty events
+# filter on empty events
 
 
 process.load('EventFilter.HGCalRawToDigi.hgCalEmptyEventFilter_cfi')
 process.hgCalEmptyEventFilter.src = process.hgcalDigis.src
 process.hgCalEmptyEventFilter.fedIds = process.hgcalDigis.fedIds
 
-
-#main path
-process.p = cms.Path(process.hgcalEmulatedSlinkRawData #*process.hgCalEmptyEventFilter #RAW GENERATION (filtered on empty)
+# main path
+process.p = cms.Path(process.hgcalEmulatedSlinkRawData*process.hgCalEmptyEventFilter #RAW GENERATION (filtered on empty)
                      *process.hgcalDigis                                             #RAW->DIGI
                      *process.hgcalRecHit                                            #DIGI->RECO
                      *process.hgCalRecHitsFromSoAproducer                            #Phase I format translator (RecHits for NANO)                     
@@ -256,7 +256,7 @@ if options.dumpFRD:
     process.p *= process.dump
 
 
-#output
+# output
 process.outpath = cms.EndPath()
 if options.storeOutput:
     process.output = cms.OutputModule("PoolOutputModule",

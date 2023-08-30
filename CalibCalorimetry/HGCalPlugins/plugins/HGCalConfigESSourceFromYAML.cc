@@ -63,24 +63,24 @@ private:
 
   void parseNode(const std::string& node_name,
                  const YAML::Node& node,
-                 std::unique_ptr<HGCalCondSerializableConfig>& cond) const {
+                 std::unique_ptr<HGCalCondSerializableConfig>& config) const {
     switch (node.Type()) {
       case YAML::NodeType::Null: {
-        cond->addParameter(node_name, {});
+        config->addParameter(node_name, {});
       } break;
       case YAML::NodeType::Scalar: {
         try {
-          cond->addParameter(node_name, node.as<int>());
+          config->addParameter(node_name, node.as<int>());
         } catch (const YAML::BadConversion&) {
           return;
         }
       } break;
       case YAML::NodeType::Sequence:
-        cond->addParameter(node_name, node.as<std::vector<int> >());
+        config->addParameter(node_name, node.as<std::vector<int> >());
         break;
       case YAML::NodeType::Map: {
         for (const auto& subnode : node)
-          parseNode(node_name + ":" + subnode.first.as<std::string>(), subnode.second, cond);
+          parseNode(node_name + ":" + subnode.first.as<std::string>(), subnode.second, config);
       } break;
       default:
         throw cms::Exception("HGCalConfigESSourceFromYAML")
@@ -90,23 +90,24 @@ private:
 
   //void parseMetaDataNode(const std::string& node_name,
   //               const YAML::Node& node,
-  //               std::unique_ptr<HGCalCondSerializableConfig>& cond) const {
+  //               std::unique_ptr<HGCalCondSerializableConfig>& config) const {
   //  
   //}
 
   //void parseRunNode(const std::string& node_name,
   //               const YAML::Node& node,
-  //               std::unique_ptr<HGCalCondSerializableConfig>& cond) const {
+  //               std::unique_ptr<HGCalCondSerializableConfig>& config) const {
   //  
   //}
 
   std::unique_ptr<HGCalCondSerializableConfig> parseYAML(const std::string& filename) {
-    auto cond = std::make_unique<HGCalCondSerializableConfig>();
+    auto config = std::make_unique<HGCalCondSerializableConfig>();
     try {
-      cond->moduleConfigs[0] = HGCalModuleConfig();
+      config->moduleConfigs[0] = HGCalModuleConfig();
       
       // PARSE MAPPER
-      LogDebug("HGCalConfigESSourceFromYAML") << "Loading " << filename << "...";
+      //LogDebug("HGCalConfigESSourceFromYAML") << "Loading " << filename << "...";
+      std::cout << "HGCalConfigESSourceFromYAML: Loading " << filename << "..." << std::endl;
       const auto yaml_file = YAML::LoadFile(filename);
       const auto mapper = yaml_file["ECONs"];
       if (mapper.IsDefined()) {
@@ -120,17 +121,19 @@ private:
           std::string fname_ECOND = params["configs"]["ECOND"].as<std::string>();
           std::string fname_ECONT = params["configs"]["ECONT"].as<std::string>();
           //std::string fname_ROCs = params["configs"]["ROCs"].as<std::string>();
-          LogDebug("HGCalConfigESSourceFromYAML") << "Found module id=" << std::hex << id
-            << ", ECOND=" << fname_ECOND << ", ECONT=" << fname_ECONT;
-          //parseECONConfigYAML(fname_ECON,cond);
-          //parseROCConfigYAML(fname_ROCs,cond);
+          //LogDebug("HGCalConfigESSourceFromYAML")
+          std::cout << "HGCalConfigESSourceFromYAML: Found module id="
+            << id << " (0x" << std::hex << id << std::dec
+            << "), ECOND=" << fname_ECOND << ", ECONT=" << fname_ECONT << std::endl;
+          //parseECONConfigYAML(fname_ECON,config);
+          //parseROCConfigYAML(fname_ROCs,config);
           uint8_t gain = (uint8_t) (gain_>=1 ? gain_ : 1); // manual override
-          cond->moduleConfigs[0].gains[id+0*64] = gain; // ROC 0, half 0
-          cond->moduleConfigs[0].gains[id+1*64] = gain; // ROC 0, half 1
-          cond->moduleConfigs[0].gains[id+2*64] = gain; // ROC 1, half 0
-          cond->moduleConfigs[0].gains[id+3*64] = gain; // ROC 1, half 1
-          cond->moduleConfigs[0].gains[id+4*64] = gain; // ROC 2, half 0
-          cond->moduleConfigs[0].gains[id+5*64] = gain; // ROC 2, half 1
+          config->moduleConfigs[id].gains[id+0*64] = gain; // ROC 0, half 0
+          config->moduleConfigs[id].gains[id+1*64] = gain; // ROC 0, half 1
+          config->moduleConfigs[id].gains[id+2*64] = gain; // ROC 1, half 0
+          config->moduleConfigs[id].gains[id+3*64] = gain; // ROC 1, half 1
+          config->moduleConfigs[id].gains[id+4*64] = gain; // ROC 2, half 0
+          config->moduleConfigs[id].gains[id+5*64] = gain; // ROC 2, half 1
         }
       } else {
         edm::LogWarning("HGCalConfigESSourceFromYAML")
@@ -138,26 +141,26 @@ private:
             << filename;
       }
       
-      // PARSE META DATA NODE: place holders
-      cond->moduleConfigs[0].charMode = (bool) (charMode_>=0 ? charMode_ : 0); // manual override
-      cond->moduleConfigs[0].injcalib = 0;
-      cond->moduleConfigs[0].injgain = 0;
-      LogDebug("HGCalConfigESSourceFromYAML") << "Placeholders: charMode=" << cond->moduleConfigs[0].charMode
-        << ", gain=" << cond->moduleConfigs[0].gains[0] << ", injcalib=" << cond->moduleConfigs[0].injcalib
-        << ", injgain=" << cond->moduleConfigs[0].injgain;
+      // FIXME: PARSE META DATA NODE: place holders
+      config->moduleConfigs[0].charMode = (bool) (charMode_>=0 ? charMode_ : 0); // manual override
+      config->moduleConfigs[0].injcalib = 0;
+      config->moduleConfigs[0].injgain = 0;
+      std::cout << "HGCalConfigESSourceFromYAML: Placeholders: charMode=" << config->moduleConfigs[0].charMode
+        << ", gain=" << config->moduleConfigs[0].gains[0] << ", injcalib=" << config->moduleConfigs[0].injcalib
+        << ", injgain=" << config->moduleConfigs[0].injgain << std::endl;
       
       //const auto yaml_file = YAML::LoadFile(filename);
       //if (const auto config = yaml_file["metaData"]; config.IsDefined()) {
       //  int charMode = yaml_file["metaData"]["characMode"].as<int>();
       //  assert(charMode==0 or charMode==1);
-      //  cond->moduleConfigs[0].charMode = (bool) charMode;
+      //  config->moduleConfigs[0].charMode = (bool) charMode;
       //
-      //  cond->moduleConfigs[0].injcalib = 0;
+      //  config->moduleConfigs[0].injcalib = 0;
       //  if(yaml_file["metaData"]["chip_params"]["Calib"])
-      //    cond->moduleConfigs[0].injcalib = yaml_file["metaData"]["chip_params"]["Calib"].as<int>();
-      //  cond->moduleConfigs[0].injgain = 0;
+      //    config->moduleConfigs[0].injcalib = yaml_file["metaData"]["chip_params"]["Calib"].as<int>();
+      //  config->moduleConfigs[0].injgain = 0;
       //  if(yaml_file["metaData"]["chip_params"]["Inj_gain"])
-      //    cond->moduleConfigs[0].injgain = yaml_file["metaData"]["chip_params"]["Inj_gain"].as<int>();
+      //    config->moduleConfigs[0].injgain = yaml_file["metaData"]["chip_params"]["Inj_gain"].as<int>();
       //} else {
       //  edm::LogWarning("HGCalConfigESSourceFromYAML")
       //      << "The YAML configuration is missing a 'metaData' node. The conditions format may hence be invalid.\n"
@@ -169,7 +172,7 @@ private:
     } catch (const YAML::ParserException& err) {
       throw cms::Exception("HGCalConfigESSourceFromYAML") << "Parser exception: " << err.msg;
     }
-    return cond;
+    return config;
   }
   
 };

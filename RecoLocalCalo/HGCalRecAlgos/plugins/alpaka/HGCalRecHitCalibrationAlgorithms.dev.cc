@@ -123,19 +123,24 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto device_recHits = std::make_unique<HGCalRecHitDeviceCollection>(device_digis.view().metadata().size(), queue);
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_digisToRecHits{}, device_digis.view(), device_recHits->view());
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "Input recHits: " << std::endl;
+    std::cout << "HGCalRecHitCalibrationAlgorithms: Input recHits: " << std::endl;
     int n_hits_to_print = 10;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_pedestalCorrection{}, device_digis.view(), device_recHits->view(), calib_device.view());
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after pedestal calibration: " << std::endl;
+    std::cout << "HGCalRecHitCalibrationAlgorithms: RecHits after pedestal calibration: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_commonModeCorrection{}, device_digis.view(), device_recHits->view(), calib_device.view());
     LogDebug("HGCalRecHitCalibrationAlgorithms") << "Digis after CM calibration: " << std::endl;
-    print_digi_device(device_digis, n_hits_to_print);
+    std::cout << "HGCalRecHitCalibrationAlgorithms: Digis after CM calibration: " << std::endl;
+    //print_digi_device(device_digis, n_hits_to_print);
+    print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
     alpaka::exec<Acc1D>(queue, grid, HGCalRecHitCalibrationKernel_chargeConversion{}, device_digis.view(), device_recHits->view(), config_device.view());
-    LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after charge converstion: " << std::endl;
+    LogDebug("HGCalRecHitCalibrationAlgorithms") << "RecHits after charge conversion: " << std::endl;
+    std::cout << "HGCalRecHitCalibrationAlgorithms: RecHits after charge conversion: " << std::endl;
     print_recHit_device(queue, *device_recHits, n_hits_to_print);
 
     /*
