@@ -56,7 +56,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         // load dense indexing
         HGCalCalibrationParameterIndex cpi;
         cpi.setMaxValues(moduleInfo);
-        const uint32_t size = cpi.getSize(true); // ROC-level size
+        const uint32_t size = cpi.getSize(); // channel-level size
         hgcalrechit::HGCalCalibParamHostCollection product(size, cms::alpakatools::host());
         product.view().config() = cpi; // set dense indexing in SoA
 
@@ -82,6 +82,8 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           product.view()[idx].CM_offset()   = cm_offset;
           product.view()[idx].BXm1_slope()  = bxm1_slope;
           product.view()[idx].BXm1_offset() = bxm1_offset;
+          std::cout << "HGCalCalibrationESProducer: cm_slope=" << cm_slope << ", cm_offset=" << cm_offset << std::endl;
+          std::cout << "HGCalCalibrationESProducer: cm_slope=" << product.view()[idx].CM_slope() << ", cm_offset=" << product.view()[idx].CM_offset() << std::endl;
         }
 
         return product;

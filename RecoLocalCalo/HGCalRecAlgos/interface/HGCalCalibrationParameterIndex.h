@@ -1,10 +1,10 @@
-#ifndef RecoLocalCalo_HGCalRecAlgos_HGCalCalibrationParameterIndex
-#define RecoLocalCalo_HGCalRecAlgos_HGCalCalibrationParameterIndex
+#ifndef RecoLocalCalo_HGCalRecAlgos_HGCalCalibrationParameterIndex_h
+#define RecoLocalCalo_HGCalRecAlgos_HGCalCalibrationParameterIndex_h
 
 #include <cstdint>
 #include <vector>
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
-#include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h" // for HGCalElectronicsIdMask
+#include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h" // for HGCalElectronicsIdMask, HGCalElectronicsIdShift
 
 struct HGCalCalibrationParameterIndex {
     uint32_t eventSLinkMax{1000};         ///< maximum number of S-Links in one Event
@@ -61,7 +61,11 @@ struct HGCalCalibrationParameterIndex {
         sLinkCaptureBlockMax = std::get<1>(denseIdxMax);
         captureBlockECONDMax = std::get<2>(denseIdxMax);
         econdERXMax          = std::get<3>(denseIdxMax);
-        erxChannelMax        = 37 + commonMode; //+2 for the two common modes
+        erxChannelMax        = 37 + commonMode; // +2 for the two common modes
+        //std::cout << "HGCalCalibrationParameterIndex"
+        //  << ": eventSLinkMax=" << cpi.eventSLinkMax << ", sLinkCaptureBlockMax=" << cpi.sLinkCaptureBlockMax
+        //  << ", captureBlockECONDMax=" << cpi.captureBlockECONDMax << ", econdERXMax=" << cpi.econdERXMax
+        //  << ", erxChannelMax=" << cpi.erxChannelMax << std::endl;
     }
 
     constexpr uint32_t getSize(bool roclevel=false) const{
