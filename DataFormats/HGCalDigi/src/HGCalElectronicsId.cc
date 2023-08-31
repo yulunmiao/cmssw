@@ -42,3 +42,9 @@ uint8_t HGCalElectronicsId::rocChannel() const {
   if(isCM()) return cmWord()+2*(econdeRx()%2);
   return halfrocChannel()+37*(econdeRx()%2);
 }
+
+//
+uint32_t HGCalElectronicsId::econdIdxRawId() const { return value_ & kECONDIdxMask32Bit; };
+
+//
+uint32_t HGCalElectronicsId::econdeRxRawId() const { return value_ & kECONDeRxMask32Bit; };

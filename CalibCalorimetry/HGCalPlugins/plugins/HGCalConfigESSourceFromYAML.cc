@@ -31,9 +31,9 @@ public:
         gain_(iConfig.getParameter<int>("gain")) {
     setWhatProduced(this);
     findingRecord<HGCalCondSerializableConfigRcd>();
-    //LogDebug("HGCalConfigESSourceFromYAML")
-    std::cout << "Init: filename=" << filename_ 
-      << ", override charMode=" << charMode_ << ", override gain=" << gain_ << "..." << std::endl;
+    LogDebug("HGCalConfigESSourceFromYAML")
+      << "Init: filename=" << filename_ 
+      << ", override charMode=" << charMode_ << ", override gain=" << gain_ << "..."; //<< std::endl;
   }
 
   std::unique_ptr<HGCalCondSerializableConfig> produce(const HGCalCondSerializableConfigRcd&) {
@@ -106,8 +106,8 @@ private:
       config->moduleConfigs[0] = HGCalModuleConfig();
       
       // PARSE MAPPER
-      //LogDebug("HGCalConfigESSourceFromYAML") << "Loading " << filename << "...";
-      std::cout << "HGCalConfigESSourceFromYAML: Loading " << filename << "..." << std::endl;
+      LogDebug("HGCalConfigESSourceFromYAML") << "Loading " << filename << "...";
+      //std::cout << "HGCalConfigESSourceFromYAML: Loading " << filename << "..." << std::endl;
       const auto yaml_file = YAML::LoadFile(filename);
       const auto mapper = yaml_file["ECONs"];
       if (mapper.IsDefined()) {
@@ -121,9 +121,8 @@ private:
           std::string fname_ECOND = params["configs"]["ECOND"].as<std::string>();
           std::string fname_ECONT = params["configs"]["ECONT"].as<std::string>();
           //std::string fname_ROCs = params["configs"]["ROCs"].as<std::string>();
-          //LogDebug("HGCalConfigESSourceFromYAML")
-          std::cout << "HGCalConfigESSourceFromYAML: Found module id="
-            << id << " (0x" << std::hex << id << std::dec
+          LogDebug("HGCalConfigESSourceFromYAML")
+            << "Found module id=" << id << " (0x" << std::hex << id << std::dec
             << "), ECOND=" << fname_ECOND << ", ECONT=" << fname_ECONT << std::endl;
           //parseECONConfigYAML(fname_ECON,config);
           //parseROCConfigYAML(fname_ROCs,config);
@@ -145,9 +144,10 @@ private:
       config->moduleConfigs[0].charMode = (bool) (charMode_>=0 ? charMode_ : 0); // manual override
       config->moduleConfigs[0].injcalib = 0;
       config->moduleConfigs[0].injgain = 0;
-      std::cout << "HGCalConfigESSourceFromYAML: Placeholders: charMode=" << config->moduleConfigs[0].charMode
+      LogDebug("HGCalConfigESSourceFromYAML")
+        << "Placeholders: charMode=" << config->moduleConfigs[0].charMode
         << ", gain=" << config->moduleConfigs[0].gains[0] << ", injcalib=" << config->moduleConfigs[0].injcalib
-        << ", injgain=" << config->moduleConfigs[0].injgain << std::endl;
+        << ", injgain=" << (uint32_t)config->moduleConfigs[0].injgain; //<< std::endl;
       
       //const auto yaml_file = YAML::LoadFile(filename);
       //if (const auto config = yaml_file["metaData"]; config.IsDefined()) {

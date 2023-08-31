@@ -99,12 +99,10 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   if (configWatcher_.check(iSetup)) {
     config_ = iSetup.getData(configToken_);
     size_t nmods = config_.moduleConfigs.size();
-    //edm::LogInfo("HGCalRawToDigi::produce")
-    std::cout << "HGCalRawToDigi::produce: Configuration retrieved for " << nmods << " modules: " << config_ << std::endl;
+    edm::LogInfo("HGCalRawToDigi::produce") << "Configuration retrieved for " << nmods << " modules: " << config_; //<< std::endl;
     for (auto it : config_.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
       HGCalModuleConfig moduleConfig(it.second);
-      //edm::LogInfo("HGCalRawToDigi::produce")
-      std::cout << "HGCalRawToDigi::produce:   Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
+      edm::LogInfo("HGCalRawToDigi::produce") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode; //<< std::endl;
     }
   } // else: use previously loaded module configuration
 
@@ -166,7 +164,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       elec_digis.push_back(data);
       elecid.push_back(id.raw());
       tctp.push_back(data.tctp());
-      uint32_t modid = idraw & 0xFFFFFC00; // remove first 10 bits to get full electronics ID of ECON-D module 
+      uint32_t modid = id.econdIdxRawId(); // remove first 10 bits to get full electronics ID of ECON-D module
       // FIXME: in the current HGCROC the calib channels (=18) is always in characterization model; to be fixed in ROCv3b
       auto charMode = config_.moduleConfigs[modid].charMode || (fixCalibChannel_ && id.halfrocChannel() == 18);
       adcm1.push_back(data.adcm1(charMode));

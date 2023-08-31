@@ -54,8 +54,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
 
       std::optional<hgcalrechit::HGCalConfigParamHostCollection> produce(const HGCalCondSerializableConfigRcd& iRecord) {
         const auto& config = iRecord.get(configToken_);
-        //const auto& moduleInfo = iRecord.get(moduleInfoToken_);
-        const auto& moduleInfo = iRecord.getRecord<HGCalCondSerializableModuleInfoRcd>().get(moduleInfoToken_);
+        const auto& moduleInfo = iRecord.get(moduleInfoToken_);
 
         // load dense indexing
         HGCalCalibrationParameterIndex cpi;
@@ -65,35 +64,21 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
         product.view().config() = cpi; // set dense indexing in SoA
 
         // fill SoA
-        //uint8_t gain = (uint8_t) (gain_>=1 ? gain_ : 1); // manual override
-        ////uint32_t idx = cpi.denseMap(id); // convert electronicsId to idx from denseMap
-        //product.view()[cpi.denseROCMap(0*1024+0*64)].gain() = gain; // ROC 0, half 0
-        //product.view()[cpi.denseROCMap(0*1024+1*64)].gain() = gain; // ROC 0, half 1
-        //product.view()[cpi.denseROCMap(0*1024+2*64)].gain() = gain; // ROC 1, half 0
-        //product.view()[cpi.denseROCMap(0*1024+3*64)].gain() = gain; // ROC 1, half 1
-        //product.view()[cpi.denseROCMap(0*1024+4*64)].gain() = gain; // ROC 2, half 0
-        //product.view()[cpi.denseROCMap(0*1024+5*64)].gain() = gain; // ROC 2, half 1
-        //product.view()[cpi.denseROCMap(1*1024+0*64)].gain() = gain; // ROC 0, half 0
-        //product.view()[cpi.denseROCMap(1*1024+1*64)].gain() = gain; // ROC 0, half 1
-        //product.view()[cpi.denseROCMap(1*1024+2*64)].gain() = gain; // ROC 1, half 0
-        //product.view()[cpi.denseROCMap(1*1024+3*64)].gain() = gain; // ROC 1, half 1
-        //product.view()[cpi.denseROCMap(1*1024+4*64)].gain() = gain; // ROC 2, half 0
-        //product.view()[cpi.denseROCMap(1*1024+5*64)].gain() = gain; // ROC 2, half 1
         size_t nmods = config.moduleConfigs.size();
-        std::cout << "HGCalConfigurationESProducer: Configuration retrieved for " << nmods << " modules: " << config << std::endl;
+          LogDebug("HGCalRecHitCalibrationAlgorithms") << "Configuration retrieved for " << nmods << " modules: " << config << std::endl;
         for(auto it : config.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
           HGCalModuleConfig moduleConfig(it.second);
-          std::cout << "HGCalConfigurationESProducer: Module "
-            << it.first << std::hex << " (0x" << it.first << std::dec
+          LogDebug("HGCalRecHitCalibrationAlgorithms")
+            << "Module " << it.first << std::hex << " (0x" << it.first << std::dec
             << ") charMode=" << moduleConfig.charMode
-            << ", ngains=" << moduleConfig.gains.size() << std::endl;
+            << ", ngains=" << moduleConfig.gains.size(); //<< std::endl;
           for(auto rocit : moduleConfig.gains) {
             uint32_t rocid = rocit.first;
-            uint8_t gain = (gain_>=1 ? gain_ : rocit.second);
+            uint8_t gain = (gain_>=1 ? gain_ : rocit.second); // allow manual override
             product.view()[cpi.denseROCMap(rocid)].gain() = gain;
-            std::cout << "HGCalConfigurationESProducer:   ROC "
-              << std::setw(4) << rocid << std::hex << " (0x" << rocid << std::dec
-              << "): gain=" << (unsigned int) gain << " (override: " << gain_ << ")" << std::endl;
+            LogDebug("HGCalRecHitCalibrationAlgorithms")
+              << "  ROC " << std::setw(4) << rocid << std::hex << " (0x" << rocid << std::dec
+              << "): gain=" << (unsigned int) gain << " (override: " << gain_ << ")"; //std::endl;
           }
         }
 

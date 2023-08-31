@@ -98,26 +98,29 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
     auto const& hostDigisIn = iEvent.get(digisToken_);
 
     // Check if there are new conditions and read them
+    #ifdef EDM_ML_DEBUG
     if (calibWatcher_.check(iSetup)){
       for(int i=0; i<deviceConfigParamProvider.view().metadata().size(); i++) {
           LogDebug("HGCalCalibrationParameter")
             << "gain = " << deviceConfigParamProvider.view()[i].gain();
       }
     }
+    #endif
 
     // Check if there are new conditions and read them
+    #ifdef EDM_ML_DEBUG
     if (configWatcher_.check(iSetup)){
       for(int i=0; i<deviceCalibParamProvider.view().metadata().size(); i++) {
           LogDebug("HGCalCalibrationParameter")
               << "idx = "         << i << ", "
-              //<< "gain = "        << deviceConfigParamProvider.view()[i].gain()      << ", "
               << "pedestal = "    << deviceCalibParamProvider.view()[i].pedestal()   << ", "
               << "CM_slope = "    << deviceCalibParamProvider.view()[i].CM_slope()   << ", "
               << "CM_offset = "   << deviceCalibParamProvider.view()[i].CM_offset()  << ", "
               << "BXm1_slope = "  << deviceCalibParamProvider.view()[i].BXm1_slope() << ", "
-              << "BXm1_offset = " << deviceCalibParamProvider.view()[i].BXm1_offset();
+              << "BXm1_offset = " << deviceCalibParamProvider.view()[i].BXm1_offset(); //<< std::endl;
       }
     }
+    #endif
 
     int oldSize = hostDigisIn.view().metadata().size();
     int newSize = oldSize * n_hits_scale;
@@ -132,6 +135,9 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
       hostDigis.view()[i].toa() = hostDigisIn.view()[i%oldSize].toa();
       hostDigis.view()[i].cm() = hostDigisIn.view()[i%oldSize].cm();
       hostDigis.view()[i].flags() = hostDigisIn.view()[i%oldSize].flags();
+      //LogDebug("HGCalCalibrationParameter")
+      //  << "idx=" << i << ", elecId=" << hostDigis.view()[i].electronicsId()
+      //  << ", cm=" << hostDigis.view()[i].cm() << std::endl;
     }
 
     LogDebug("HGCalRecHitProducer") << "Loaded host digis: " << hostDigis.view().metadata().size(); //<< std::endl;

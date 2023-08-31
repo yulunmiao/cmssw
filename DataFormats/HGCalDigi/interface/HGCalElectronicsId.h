@@ -21,20 +21,28 @@
 class HGCalElectronicsId {
 public:
   enum HGCalElectronicsIdMask {
-    kZsideMask = 0x1,
-    kFEDIDMask = 0x3ff,
-    kCaptureBlockMask = 0xf,
-    kECONDIdxMask = 0xf,
-    kECONDeRxMask = 0xf,
+    kZsideMask          = 0x1,
+    kFEDIDMask          = 0x3ff,
+    kCaptureBlockMask   = 0xf,
+    kECONDIdxMask       = 0xf,
+    kECONDeRxMask       = 0xf,
     kHalfROCChannelMask = 0x3f
   };
   enum HGCalElectronicsIdShift {
-    kZsideShift = 28,
-    kFEDIDShift = 18,
-    kCaptureBlockShift = 14,
-    kECONDIdxShift = 10,
-    kECONDeRxShift = 6,
+    kZsideShift          = 28,
+    kFEDIDShift          = 18,
+    kCaptureBlockShift   = 14,
+    kECONDIdxShift       = 10,
+    kECONDeRxShift       = 6,
     kHalfROCChannelShift = 0
+  };
+  enum HGCalElectronicsIdMask32Bit {
+    kZsideMask32Bit          = (0xffffffff >> kZsideShift) << kZsideShift, // 0xf0000000
+    kFEDIDMask32Bit          = (0xffffffff >> kFEDIDShift) << kFEDIDShift, // 0xfffc0000
+    kCaptureBlockMask32Bit   = (0xffffffff >> kCaptureBlockShift) << kCaptureBlockShift, // 0xffffc000
+    kECONDIdxMask32Bit       = (0xffffffff >> kECONDIdxShift) << kECONDIdxShift, // 0xfffffc00
+    kECONDeRxMask32Bit       = (0xffffffff >> kECONDeRxShift) << kECONDeRxShift, // 0xffffffc0
+    kHalfROCChannelMask32Bit = (0xffffffff >> kHalfROCChannelShift) << kHalfROCChannelShift // 0xffffffff
   };
 
   /**
@@ -62,6 +70,8 @@ public:
   uint8_t halfrocChannel() const;
   uint8_t rocChannel() const;
   uint8_t cmWord() const;
+  uint32_t econdIdxRawId() const;
+  uint32_t econdeRxRawId() const;
   bool isCM() const;
   void print(std::ostream& out = std::cout) const {
     out << "Raw=0x" << std::hex << raw() << std::dec << std::endl
