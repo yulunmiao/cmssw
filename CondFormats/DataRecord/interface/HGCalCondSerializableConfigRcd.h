@@ -18,12 +18,10 @@
 // Created:     Mon, 29 May 2023 09:13:07 GMT
 //
 
-//#include "FWCore/Framework/interface/EventSetupRecordImplementation.h"
 #include "FWCore/Framework/interface/DependentRecordImplementation.h"
 #include "FWCore/Utilities/interface/mplVector.h"
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 
-//class HGCalCondSerializableConfigRcd : public edm::eventsetup::EventSetupRecordImplementation<HGCalCondSerializableConfigRcd> {};
 class HGCalCondSerializableConfigRcd
   : public edm::eventsetup::DependentRecordImplementation<HGCalCondSerializableConfigRcd,
       edm::mpl::Vector<HGCalCondSerializableModuleInfoRcd> > {};
