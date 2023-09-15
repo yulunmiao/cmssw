@@ -19,7 +19,7 @@ struct HGCalModuleInfo {
 };
 
 /**
-   @holder for the si cell channel mappeing
+   @holder for the si cell channel mapping
  */
 class HGCalCondSerializableModuleInfo {
   
@@ -40,9 +40,9 @@ public:
   }
 
   /**
-     @short retrieve module info from electronics id information (ECON-D idx, Capture Block idx, FED ID)
+     @short retrieve module info from electronics id information (ECON-D idx, Capture Block idx, FED ID, z-side)
   */
-  HGCalModuleInfo getModule(int ,int ,int) const;
+  HGCalModuleInfo getModule(int ,int ,int,bool) const;
 
   /**
      @short retrieve module info from electronics id
@@ -55,17 +55,17 @@ public:
   HGCalModuleInfo getModuleFromGeometry(int ,int ,int ,bool ,bool ) const;
   
   /**
-     @short Module location from electronics id information (plane,u,v,isSiPM)
+     @short Module location (plane,u,v,isSiPM) from electronics id information (ECON-D idx, Capture Block idx, FED ID,z-side)
   */
-  std::tuple<int,int,int,bool> getModuleLocation(int ,int ,int ) const;
+  std::tuple<int,int,int,bool> getModuleLocation(int ,int ,int, bool) const;
   
   /**
-     @short Module location from ElectronicsId (plane,u,v,isSiPM)
+     @short Module location (plane,u,v,isSiPM) from ElectronicsId 
   */
   std::tuple<int,int,int,bool> getModuleLocation(HGCalElectronicsId& ) const;
 
   /*
-    @short module electronics identifier (ECON-D idx, Capture Block idx, FED ID)
+    @short module electronics identifier (ECON-D idx, Capture Block idx, FED ID,z-side)
   */
   std::tuple<int,int,int> getModuleElectronicsIdentifiers(int ,int ,int ,bool , bool ) const;
 

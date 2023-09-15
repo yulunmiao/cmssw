@@ -62,7 +62,35 @@ hgcDigiTable = cms.EDProducer("HGCRecHitDigiTableProducer",
     extension = cms.bool(False), # this is the main table for the muons
 )
 
+hgcSoaDigiTable = cms.EDProducer("HGCalSoADigisTableProducer")
+
+hgcCMDigiTable = cms.EDProducer("SimpleHGCalDigiFlatTableProducer",
+                                src = cms.InputTag("hgcalDigis:CM"),
+                                cut = cms.string(""), 
+                                name = cms.string("HGCCM"),
+                                doc  = cms.string("Common mode words"),
+                                singleton = cms.bool(False), # the number of entries is variable
+                                extension = cms.bool(False),
+                                variables = cms.PSet(
+                                    eleid = Var('id().raw()', 'uint', precision=-1, doc='electronics id'),
+                                    zSide = Var('id().zSide()', 'bool', precision=-1, doc='z side'),
+                                    fedId = Var('id().fedId()','uint8', precision=-1, doc='FED index'),
+                                    captureBlock = Var('id().captureBlock()', 'uint8', precision=-1, doc='capture block index (with FED)'),
+                                    econdIdx = Var('id().econdIdx()', 'uint8', precision=-1, doc='ECON-D index (within capture block)'),
+                                    econdeRx = Var('id().econdeRx()', 'uint8', precision=-1, doc='ECON-D e-Rx (within ECON-D)'),
+                                    roc = Var('id().roc()','uint8', precision=-1, doc='roc'),
+                                    half = Var('id().half()','uint8', precision=-1, doc='HGCROC half'), #% not accepted?
+                                    halfrocChannel = Var('id().halfrocChannel()','uint8', precision=-1, doc='1/2 ROC channel'),
+                                    isCM = Var('id().isCM()','bool', precision=-1, doc='is common mode'),
+                                    cm = Var('adc', 'uint16', doc='common mode word'),
+                                )
+)
+
+
 tbMetaDataTable = cms.EDProducer("HGCalMetaDataTableProducer")
 
 hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEfrontRecHitsTable,hgcHEbackRecHitsTable,hgcEERecHitsPositionTable,hgcHEfrontRecHitsPositionTable)
-hgctbTask = cms.Task(hgctbRecHitsTable,hgctbRecHitsPositionTable,hgcDigiTable,tbMetaDataTable)
+hgctbTask = cms.Task(hgcSoaDigiTable,tbMetaDataTable,hgcCMDigiTable)
+#august version
+#hgctbTask = cms.Task(hgctbRecHitsTable,hgctbRecHitsPositionTable,hgcDigiTable,tbMetaDataTable)
+

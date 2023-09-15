@@ -1,5 +1,5 @@
 filein=$1
-[[ -z ${filein} ]] && filein="file:/afs/cern.ch/user/p/psilva/public/forMariarosaria/output_numEvent100_injscan_withcalibparams.root"
+[[ -z ${filein} ]] && filein="file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/CMSSW/ReReco_Aug16/Run_-1691497635/26459934-3c31-11ee-9fd4-b8ca3af74182/Run1691497635_Run1691497635_Link2_File0000000000_RECO.root"
 
 fileout=$2
 [[ -z ${fileout} ]] && fileout="hgcalnano_testcmsdriver.root"

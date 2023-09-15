@@ -59,6 +59,7 @@ namespace hgcal {
 
         uint16_t econderx = c.sipmcell/36;
         uint16_t halfrocch = c.sipmcell - 36*econderx;
+        //fedid -> slink?
         uint32_t elecid = HGCalElectronicsId(m.zside,m.fedid,m.captureblock,m.econdidx,econderx,halfrocch).raw();
 
         int layer = m.plane - 25;
@@ -76,4 +77,33 @@ namespace hgcal {
     return idmap;
   }
 
+  //
+  std::map<uint32_t,uint32_t> mapSiElectronicsToChannelInfoIdx(const HGCalCondSerializableModuleInfo &moduleInfo,
+                                                               const HGCalCondSerializableSiCellChannelInfo &siCellInfo) {
+
+    //loop over Si modules
+    std::map<uint32_t,uint32_t> idmap;
+    
+    for(auto m : moduleInfo.params_){
+      
+      if(m.isSiPM) continue;
+      
+      //loop over cells in this module
+      auto cells=siCellInfo.getAllCellsInModule(m.isHD,m.wafType);
+      for(uint32_t idx=0; idx<cells.size(); idx++) {
+        
+        //build the electronics id
+        auto c = cells[idx];
+        auto econderx = hgcal::getEcondErxFor(c.chip,c.half);
+        uint32_t id_key = HGCalElectronicsId(m.zside,m.slink,m.captureblock,m.econdidx,econderx,c.seq).raw(); 
+
+        //map
+        idmap[id_key] = idx;
+      }
+    }
+    
+    return idmap;
+  }
+
+  
 }

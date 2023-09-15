@@ -20,9 +20,17 @@ namespace hgcal {
   std::map<uint32_t,uint32_t> mapSiPMGeoToElectronics(const HGCalCondSerializableModuleInfo &, const HGCalCondSerializableSiPMTileInfo &,bool geo2ele);
 
   /**
+     @short returns a map of <ElectronicsId, SiCellChannelInfo index in the module info class>
+   */
+  std::map<uint32_t,uint32_t> mapSiElectronicsToChannelInfoIdx(const HGCalCondSerializableModuleInfo &moduleInfo,
+                                                               const HGCalCondSerializableSiCellChannelInfo &siCellInfo);
+  
+  /**
      @short formula to get ECOND e-Rx for a given ROC chip/half
    */
   uint16_t getEcondErxFor(uint16_t chip,uint16_t half) { return chip*2+half; }
+
+
 };
 
 #endif
