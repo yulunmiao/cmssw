@@ -13,6 +13,7 @@
 
 #include "DataFormats/HGCalDigi/interface/HGCROCChannelDataFrame.h"
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
+#include "DataFormats/HGCalDigi/interface/HGCalFlaggedECONDInfo.h"
 
 #include <cstdint>
 #include <functional>
@@ -106,8 +107,10 @@ public:
   const std::vector<uint16_t>& commonModeSum() const{ return commonModeSum_; }
   /// \return vector of HGCROCChannelDataFrame<ElecID>(ID, value) for common modes
   const std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> >& commonModeData() const { return commonModeData_; }
-  /// \return vector of badECOND index in 32-bit array
-  const std::vector<uint32_t>& badECOND() const { return badECOND_; }
+
+
+  /// \return vector of flagged ECOND information
+  const HGCalFlaggedECONDInfoCollection& flaggedECOND() const { return flaggedECOND_; }
 
 private:
   const uint32_t erxBodyLeftShift_[16] = {2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -135,7 +138,8 @@ private:
   std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> > channelData_;  ///< Array for unpacked channels
   std::vector<uint16_t> commonModeSum_;
   std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> > commonModeData_;   ///< Array for unpacked common modes
-  std::vector<uint32_t> badECOND_;         ///< Array of indices of bad ECON-Ds
+  HGCalFlaggedECONDInfoCollection flaggedECOND_;         ///< Array with flagged ECON-D information
+
 };
 
 #endif

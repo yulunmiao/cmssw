@@ -33,6 +33,7 @@ private:
   void beginRun(edm::Run const&, edm::EventSetup const&) override;
 
   const edm::EDGetTokenT<FEDRawDataCollection> fedRawToken_;
+  const edm::EDPutTokenT<HGCalFlaggedECONDInfoCollection> flaggedRawDataToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecDigisToken_;
   const edm::EDPutTokenT<HGCalElecDigiCollection> elecCMsToken_;
   const edm::EDPutTokenT<hgcaldigi::HGCalDigiHostCollection> elecDigisSoAToken_;
@@ -45,7 +46,7 @@ private:
   std::map<uint16_t,uint16_t> fed2slink_;
 
   const std::vector<unsigned int> fedIds_;
-  const unsigned int badECONDMax_;
+  const unsigned int flaggedECONDMax_;
   const unsigned int numERxsInECOND_;
   HGCalUnpackerConfig unpackerConfig_;
   HGCalCondSerializableConfig config_; // current configuration
@@ -56,6 +57,7 @@ private:
 
 HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
     : fedRawToken_(consumes<FEDRawDataCollection>(iConfig.getParameter<edm::InputTag>("src"))),
+      flaggedRawDataToken_(produces<HGCalFlaggedECONDInfoCollection>("UnpackerFlags")),
       elecDigisToken_(produces<HGCalElecDigiCollection>("DIGI")),
       elecCMsToken_(produces<HGCalElecDigiCollection>("CM")),
       elecDigisSoAToken_(produces<hgcaldigi::HGCalDigiHostCollection>()),
@@ -64,7 +66,7 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
       moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(
           iConfig.getParameter<edm::ESInputTag>("moduleInfoSource"))),
       fedIds_(iConfig.getParameter<std::vector<unsigned int> >("fedIds")),
-      badECONDMax_(iConfig.getParameter<unsigned int>("badECONDMax")),
+      flaggedECONDMax_(iConfig.getParameter<unsigned int>("flaggedECONDMax")),
       numERxsInECOND_(iConfig.getParameter<unsigned int>("numERxsInECOND")),
       unpackerConfig_(HGCalUnpackerConfig{.sLinkBOE = iConfig.getParameter<unsigned int>("slinkBOE"),
                                           .cbHeaderMarker = iConfig.getParameter<unsigned int>("cbHeaderMarker"),
@@ -108,6 +110,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   } // else: use previously loaded module configuration
 
   // prepare the output
+  HGCalFlaggedECONDInfoCollection flagged_econds;
   HGCalDigiCollection digis;
   HGCalElecDigiCollection elec_digis;
   HGCalElecDigiCollection elec_cms;
@@ -256,7 +259,7 @@ void HGCalRawToDigi::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<unsigned int>("payloadLengthMax", 469)->setComment("maximum length of payload length");
   desc.add<unsigned int>("channelMax", 7000000)->setComment("maximum number of channels unpacked");
   desc.add<unsigned int>("commonModeMax", 4000000)->setComment("maximum number of common modes unpacked");
-  desc.add<unsigned int>("badECONDMax", 200)->setComment("maximum number of bad ECON-D's");
+  desc.add<unsigned int>("flaggedECONDMax", 200)->setComment("maximum number of flagged ECON-Ds");
   desc.add<std::vector<unsigned int> >("fedIds", {});
   desc.add<unsigned int>("numERxsInECOND", 12)->setComment("number of eRxs in each ECON-D payload");
   desc.add<edm::ESInputTag>("configSource", edm::ESInputTag(""))->setComment("label for HGCalConfigESSourceFromYAML reader");

@@ -54,11 +54,11 @@ int main(int argc, char* argv[]) {
     auto raw = data.raw();
     std::cout << "id=" << idraw << ", raw=" << raw << std::endl;
   }
-  if (auto badECONDs = unpacker.badECOND(); !badECONDs.empty()) {
+  if (auto flaggedECONDs = unpacker.flaggedECOND(); !flaggedECONDs.empty()) {
     std::cerr << "bad ECON-Ds: " << std::dec;
     std::string sep;
-    for (auto badECOND : badECONDs)
-      std::cerr << sep << badECOND, sep = ", ";
+    for (auto flaggedECOND : flaggedECONDs)
+      std::cerr << sep << flaggedECOND.iword, sep = ", ";
     std::cerr << std::endl;
   }
   return 0;

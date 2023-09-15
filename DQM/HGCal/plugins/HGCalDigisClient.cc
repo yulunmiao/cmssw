@@ -9,6 +9,7 @@
 #include "DataFormats/HGCalDigi/interface/HGCalElectronicsId.h"
 #include "DataFormats/HGCalDigi/interface/HGCalTestSystemMetadata.h"
 #include "DataFormats/HGCalDigi/interface/HGCalDigiHostCollection.h"
+#include "DataFormats/HGCalDigi/interface/HGCalFlaggedECONDInfo.h"
 
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
@@ -52,6 +53,7 @@ private:
   void analyze(const edm::Event&, const edm::EventSetup&) override;
   
   const edm::EDGetTokenT<hgcaldigi::HGCalDigiHostCollection> digisToken_;
+  const edm::EDGetTokenT<HGCalFlaggedECONDInfoCollection> econdQualityToken_;
   const edm::EDGetTokenT<HGCalTestSystemMetaData> metadataToken_;
 
   std::map<MonitorKey_t, std::pair<int, double> > geomKey_maxADCpedsub;
@@ -72,6 +74,7 @@ private:
 
 HGCalDigisClient::HGCalDigisClient(const edm::ParameterSet& iConfig)
   : digisToken_(consumes<hgcaldigi::HGCalDigiHostCollection>(iConfig.getParameter<edm::InputTag>("Digis"))),
+    econdQualityToken_(consumes<HGCalFlaggedECONDInfoCollection>(iConfig.getParameter<edm::InputTag>("FlaggedECONDInfo"))),
     metadataToken_(consumes<HGCalTestSystemMetaData>(iConfig.getParameter<edm::InputTag>("MetaData"))),
     moduleInfoToken_(esConsumes<HGCalCondSerializableModuleInfo,HGCalCondSerializableModuleInfoRcd,edm::Transition::BeginRun>(iConfig.getParameter<edm::ESInputTag>("ModuleMapping"))),
     prescale_(std::max(1u, iConfig.getParameter<unsigned>("Prescale"))),
@@ -118,7 +121,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     }
     avgCM[erxid] = 0.5*digi.cm();
   }
-  
+
   //fill the histograms / statistics
   std::map<MonitorKey_t, std::pair<double,double> > maxVarADC;
   const auto& metadata = iEvent.get(metadataToken_);
@@ -134,6 +137,9 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     int ch=eleid.halfrocChannel();
     int globalChannelId = 39*eleid.econdeRx() + ch;
     MonitorKey_t logiKey(eleid.zSide(), eleid.fedId(),eleid.captureBlock(), eleid.econdIdx());
+    if(module_keys_.count(logiKey)==0) {
+      continue;
+    }
     MonitorKey_t geomKey = module_keys_[logiKey];
     LogDebug("HGCalDigisClient") << "Electronics Id= 0x" << std::hex << eleid.raw() << std::dec << std::endl
                                  << "adc = "             << digi.adc()                              << ", "
@@ -162,7 +168,6 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       p_tot[geomKey]->Fill(globalChannelId, tot);
       h_tot[geomKey]->Fill(tot);
     }    
-
     //ADC
     else {
       h_adc[geomKey]->Fill(adc);
@@ -174,7 +179,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       if (cm_end != std::find(cm_begin, cm_end, globalChannelId+2)){
          p_adc[geomKey]->Fill(globalChannelId+2, avgCM[erxid]);
       }
-
+      
       //after some events check which channel has the largest variance
       //it probably is where the beam is hitting, or the noisiest
       if(num_processed_>10) {
@@ -247,6 +252,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
         
     }
+
   }
 
   //read trigtime and fill monitoring elements for the leading hit
@@ -277,6 +283,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       if(econd.payloadMismatches()) p_econdquality->Fill(ibin,7);
     }
   }
+  
 }
 
 //
@@ -285,7 +292,8 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   //create module keys
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
   module_keys_ = moduleInfo.getAsSimplifiedModuleLocatorMap(true);
-  LogDebug("HGCalDigisClient") << "Read module info with " << module_keys_.size() << " entries";
+  size_t nmods=module_keys_.size();
+  LogDebug("HGCalDigisClient") << "Read module info with " << nmods << " entries";
 
   //book monitoring elements (histos, profiles, etc.)
   ibook.setCurrentFolder("HGCAL/Digis");
@@ -299,11 +307,11 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   p_econdquality->setBinLabel(7,"Payload (OF)",2);
   p_econdquality->setBinLabel(8,"Payload (mismatch)",2);
 
-  h_trigtime = ibook.book1D("trigtime", ";trigger phase; Counts",  100, 0, 100); 
+  h_trigtime = ibook.book1D("trigtime", ";trigger phase; Counts",  200, 0, 200); 
 
   for(auto m : moduleInfo.params_) {
+    
     TString tag=Form("zside%d_plane%d_u%d_v%d",m.zside,m.plane,m.u,m.v);
-
     MonitorKey_t k(m.zside,m.plane,m.u,m.v);
     modbins_[k]=modbins_.size();
     TString modlabel(tag);
@@ -359,6 +367,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
 void HGCalDigisClient::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("Digis",edm::InputTag("hgcalDigis","DIGI"));
+  desc.add<edm::InputTag>("FlaggedECONDInfo",edm::InputTag("hgcalDigis","UnpackerFlags"));
   desc.add<edm::InputTag>("MetaData",edm::InputTag("hgcalEmulatedSlinkRawData","hgcalMetaData"));
   desc.add<edm::ESInputTag>("ModuleMapping",edm::ESInputTag(""));
   desc.add<unsigned>("prescale", 1);

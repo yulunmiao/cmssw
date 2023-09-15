@@ -27,7 +27,7 @@ void HGCalUnpacker::parseSLink(
   bool zside(false); //fixme: this should be based on slink number (fedId)
   channelDataSize_ = 0;
   commonModeDataSize_ = 0;
-  badECOND_.clear();
+  flaggedECOND_.clear();
 
   std::vector<uint32_t> inputArray(inputArray0); // FIXME
   for (uint32_t iword = 0; iword < inputArray.size();) {  // loop through the S-Link
@@ -174,8 +174,6 @@ void HGCalUnpacker::parseSLink(
             //pick active eRx
             if ((enabledERX >> erx & 1) == 0)
               continue;
-
-            std::cout << uint32_t(erx) << " is enabled" << std::endl;
             
             //----- parse the eRX subpacket header
             //common mode
@@ -244,7 +242,6 @@ void HGCalUnpacker::parseSLink(
             if (bitCounter % 32 != 0)
               iword += 1;            
           }
-          std::cout << std::dec << iword << std::endl;
 
         }
         
@@ -374,7 +371,7 @@ void HGCalUnpacker::parseCaptureBlock(
 
   channelDataSize_ = 0;
   commonModeDataSize_ = 0;
-  badECOND_.clear();
+  flaggedECOND_.clear();
 
   for (uint32_t iword = 0; iword < inputArray.size();) {  // loop through all capture blocks
 
@@ -598,7 +595,7 @@ void HGCalUnpacker::parseECOND(
 
   channelDataSize_ = 0;
   commonModeDataSize_ = 0;
-  badECOND_.clear();
+  flaggedECOND_.clear();
 
   for (uint32_t iword = 0; iword < inputArray.size();) {  // loop through all ECON-Ds
     //----- parse the ECON-D header
@@ -630,10 +627,11 @@ void HGCalUnpacker::parseECOND(
                           (((econdHeader >> kTruncatedShift) & kTruncatedMask) == 1)*HGCalFlaggedECONDInfo::TRUNCATED);      
     if (econdQuality) {
       LogDebug("HGCalUnpack") << "ECON-D failed quality check, HT=" << (econdHeader >> kHTShift & kHTMask)
-                << ", EBO=" << (econdHeader >> kEBOShift & kEBOMask)
-                << ", M=" << (econdHeader >> kMatchShift & kMatchMask)
+                              << ", EBO=" << (econdHeader >> kEBOShift & kEBOMask)
+                              << ", M=" << (econdHeader >> kMatchShift & kMatchMask)
                               << ", T=" << (econdHeader >> kTruncatedShift & kTruncatedMask);
-      badECOND_.emplace_back(iword - 2);
+      HGCalElectronicsId eleid(zside, sLink, captureBlock, econd, 0, 0);
+      flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword - 2,econdQuality,eleid.raw()));
       iword += payloadLength;  // skip the current ECON-D (using the payload length parsed above)
 
       continue;  // go to the next ECON-D

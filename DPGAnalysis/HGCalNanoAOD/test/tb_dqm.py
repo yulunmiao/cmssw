@@ -10,7 +10,7 @@ options.parseArguments()
 
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-
+process.MessageLogger.cerr.FwkReport.reportEvery = 50000
 process.source = cms.Source("PoolSource",
                             fileNames=cms.untracked.vstring(options.inputFiles))
 
@@ -26,6 +26,7 @@ addPerformanceReports(process)
 process.hgCalDigisClient = cms.EDProducer(
     'HGCalDigisClient',
     Digis=cms.InputTag('hgcalDigis', ''),
+    FlaggedECONDInfo=cms.InputTag("hgcalDigis","UnpackerFlags"),
     MetaData=cms.InputTag('hgcalEmulatedSlinkRawData', 'hgcalMetaData'),
     ModuleMapping=cms.ESInputTag(''),
     Prescale=cms.uint32(options.prescale),

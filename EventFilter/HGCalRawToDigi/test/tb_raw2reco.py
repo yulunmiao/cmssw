@@ -10,35 +10,35 @@ options.register('mode', 'hgcmodule', VarParsing.multiplicity.singleton, VarPars
 options.register('fedId', [0], VarParsing.multiplicity.list, VarParsing.varType.int,
                  "emulated FED id")
 options.register('debug', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'debugging mode')
+                 "debugging mode")
 options.register('debugModules', '*', VarParsing.multiplicity.list, VarParsing.varType.string,
                  "debugging modules, default=['*']")
 options.register('dumpFRD', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'also dump the FEDRawData content')
+                 "also dump the FEDRawData content")
 options.register('numCaptureBlocks', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'number of capture blocks to emulate')
+                 "number of capture blocks to emulate")
 options.register('numECONDs', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'number of ECON-Ds to emulate')
+                 "number of ECON-Ds to emulate")
 options.register('numChannelsPerERx', 37, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'number of channels enabled per ERx')
+                 "number of channels enabled per ERx")
 options.register('numERxsPerECOND', 6, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'number of ERxs enabled per ECON-D')
+                 "number of ERxs enabled per ECON-D")
 options.register('activeECONDs', [0], VarParsing.multiplicity.list, VarParsing.varType.int,
-                 'list of ECON-Ds enabled')
+                 "list of ECON-Ds enabled")
 options.register('ECONDsInPassthrough', [0], VarParsing.multiplicity.list, VarParsing.varType.int,
-                 'list of ECON-Ds in passthrough mode')
+                 "list of ECON-Ds in passthrough mode")
 options.register('ECONDsInCharacterisation', [ ], VarParsing.multiplicity.list, VarParsing.varType.int,
-                 'list of ECON-Ds in characterisation mode')
+                 "list of ECON-Ds in characterisation mode")
 options.register('ECONDToTStatus', 3, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'default ToT status bits (aka TcTp bits) value to be emulated')
+                 "default ToT status bits (aka TcTp bits) value to be emulated")
 options.register('randomActiveCaptureBlocks', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'randomly activate capture blocks on emulation')
+                 "randomly activate capture blocks on emulation")
 options.register('randomActiveECOND', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'randomly activate ECOn-Ds on emulation')
+                 "randomly activate ECOn-Ds on emulation")
 options.register('storeOutput', True, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'also store the output into an EDM file')
+                 "also store the output into an EDM file")
 options.register('storeRAWOutput', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
-                 'also store the RAW output into a streamer file')
+                 "also store the RAW output into a streamer file")
 options.register('storeEmulatorInfo', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
                  "also store the emulator metadata")
 options.register('slinkBOE', 0x2a, VarParsing.multiplicity.singleton, VarParsing.varType.int,
@@ -67,18 +67,20 @@ options.register('conditions',
                  "conditions tag")
 options.register('inputFiles',
                  'file:/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/labtest/module822/pedestal_run0.root',
-                 VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.string,
-                 'input TB file')
+                 VarParsing.multiplicity.list, VarParsing.varType.string,
+                 "input TB file")
 options.register('inputTrigFiles',
                  '',
-                 VarParsing.VarParsing.multiplicity.list, VarParsing.VarParsing.varType.string,
-                 'input Trigger link file')
-options.register('GPU', False, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int,
-                 'run on GPU')
-options.register('runNumber', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'run number')
-options.register('maxEventsPerLS', 100000, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'max. events per lumi section')
-options.register('firstLS', 1, VarParsing.VarParsing.multiplicity.singleton, VarParsing.VarParsing.varType.int, 'first lumi section')
-
+                 VarParsing.multiplicity.list, VarParsing.varType.string,
+                 "input Trigger link file")
+options.register('GPU', False, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "run on GPU")
+options.register('runNumber', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "run number")
+options.register('maxEventsPerLS', 100000, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "max. events per lumi section")
+options.register('firstLS', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int,
+                 "first lumi section")
 options.parseArguments()
 
 # message logger
