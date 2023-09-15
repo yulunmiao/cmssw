@@ -51,7 +51,7 @@ private:
   HGCalCondSerializableConfig config_; // current configuration
   std::unique_ptr<HGCalUnpacker> unpacker_; // remove the const here to initialize in begin run
 
-  const bool fixCalibChannel_;
+  const bool fixCalibChannel_, swap32bendianness_;
 };
 
 HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
@@ -71,7 +71,8 @@ HGCalRawToDigi::HGCalRawToDigi(const edm::ParameterSet& iConfig)
                                           .econdHeaderMarker = iConfig.getParameter<unsigned int>("econdHeaderMarker"),
                                           .payloadLengthMax = iConfig.getParameter<unsigned int>("payloadLengthMax"),
                                           .applyFWworkaround = iConfig.getParameter<bool>("applyFWworkaround")}),
-      fixCalibChannel_(iConfig.getParameter<bool>("fixCalibChannel")) {}
+      fixCalibChannel_(iConfig.getParameter<bool>("fixCalibChannel")),
+      swap32bendianness_(iConfig.getParameter<bool>("swap32bendianness")) {}
 
 void HGCalRawToDigi::beginRun(edm::Run const& iRun, edm::EventSetup const& iSetup){
   auto moduleInfo = iSetup.getData(moduleInfoToken_);
@@ -125,12 +126,33 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     auto* ptr = fed_data.data();
     size_t fed_size = fed_data.size();
     std::vector<uint32_t> data_32bit;
-    for (size_t i = 0; i < fed_size; i += 4){
-      data_32bit.emplace_back( (((*(ptr + i) & 0xff) << 0) +
-                                (((i + 1) < fed_size) ? ((*(ptr + i + 1) & 0xff) << 8) : 0) +
-                                (((i + 2) < fed_size) ? ((*(ptr + i + 2) & 0xff) << 16) : 0) +
-                                (((i + 3) < fed_size) ? ((*(ptr + i + 3) & 0xff) << 24) : 0))
-                               );
+
+    //swap 32b endianness
+    if(swap32bendianness_) {
+      assert( fed_size%8 == 0 );
+      for (size_t i = 0; i < fed_size; i += 8){
+	data_32bit.emplace_back(  ((*(ptr + i + 4) & 0xff) << 0) +
+				  ((*(ptr + i + 5) & 0xff) << 8) +
+				  ((*(ptr + i + 6) & 0xff) << 16) +
+				  ((*(ptr + i + 7) & 0xff) << 24)
+				  );
+	data_32bit.emplace_back( ((*(ptr + i) & 0xff) << 0) +
+				 ((*(ptr + i + 1) & 0xff) << 8) +
+				 ((*(ptr + i + 2) & 0xff) << 16) +
+				 ((*(ptr + i + 3) & 0xff) << 24)
+				 );
+      }
+    }
+    //keep 32b pseudo-endianness
+    else {
+      assert( fed_size%4 == 0 );
+      for (size_t i = 0; i < fed_size; i += 4){
+	data_32bit.emplace_back( ((*(ptr + i) & 0xff) << 0) +
+				 ((*(ptr + i + 1) & 0xff) << 8) +
+				 ((*(ptr + i + 2) & 0xff) << 16) +
+				 ((*(ptr + i + 3) & 0xff) << 24)
+				 );
+      }
     }
     
     LogDebug("HGCalRawToDigi::produce")
@@ -228,6 +250,7 @@ void HGCalRawToDigi::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<unsigned int>("captureBlockECONDMax", 12)->setComment("maximum number of ECON-Ds in one capture block");
   desc.add<bool>("applyFWworkaround",false)->setComment("use to enable dealing with firmware features (e.g. repeated words)");
   desc.add<bool>("fixCalibChannel", true)->setComment("FIXME: always treat calib channels in characterization mode; to be fixed in ROCv3b");
+  desc.add<bool>("swap32bendianness",false)->setComment("use to swap 32b endianness");
   desc.add<unsigned int>("econdERXMax", 12)->setComment("maximum number of eRxs in one ECON-D");
   desc.add<unsigned int>("erxChannelMax", 37)->setComment("maximum number of channels in one eRx");
   desc.add<unsigned int>("payloadLengthMax", 469)->setComment("maximum length of payload length");

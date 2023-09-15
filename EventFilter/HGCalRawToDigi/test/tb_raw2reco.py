@@ -49,6 +49,8 @@ options.register('econdHeaderMarker', 0x154, VarParsing.multiplicity.singleton, 
                  "Begin of event marker for ECON-D")
 options.register('applyFWworkaround', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
                  "Patch unpacker behavior to deal with firmware known features")
+options.register('swap32bendianness', False, VarParsing.multiplicity.singleton, VarParsing.varType.bool,
+                 "Swap 32b endianness in the raw data")
 options.register('configFile',
                  f"{os.environ['CMSSW_BASE']}/src/CalibCalorimetry/HGCalPlugins/test/test_hgcal_yamlmapper.yaml",
                  #'/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/calibration_module815/calib_withOct2022/80fC/80fC_inj_lowgain_loop_module815_beamtest/pedestal_run/run_20230412_160049/pedestal_run0.yaml',
@@ -168,6 +170,7 @@ process.hgcalDigis.slinkBOE=cms.uint32(options.slinkBOE)
 process.hgcalDigis.cbHeaderMarker=cms.uint32(options.cbHeaderMarker)
 process.hgcalDigis.econdHeaderMarker=cms.uint32(options.econdHeaderMarker)
 process.hgcalDigis.applyFWworkaround=options.applyFWworkaround
+process.hgcalDigis.swap32bendianness=options.swap32bendianness
 
 #
 # TRANSLATOR TO PHASE I COLLECTION

@@ -1,9 +1,11 @@
 import FWCore.ParameterSet.Config as cms
-import FWCore.ParameterSet.VarParsing as VarParsing
+from FWCore.ParameterSet.VarParsing import VarParsing
 
 process = cms.Process("TESTDQM")
 
-options = VarParsing.VarParsing('analysis')
+options = VarParsing('analysis')
+options.register('minEvents', 10000, VarParsing.multiplicity.singleton, VarParsing.varType.int, "min. events to process sequentially")
+options.register('prescale',  1000,  VarParsing.multiplicity.singleton, VarParsing.varType.int, "prescale every N events")
 options.parseArguments()
 
 
@@ -26,8 +28,8 @@ process.hgCalDigisClient = cms.EDProducer(
     Digis=cms.InputTag('hgcalDigis', ''),
     MetaData=cms.InputTag('hgcalEmulatedSlinkRawData', 'hgcalMetaData'),
     ModuleMapping=cms.ESInputTag(''),
-    Prescale=cms.uint32(1000),
-    MinimumNumEvents=cms.uint32(10000),
+    Prescale=cms.uint32(options.prescale),
+    MinimumNumEvents=cms.uint32(options.minEvents),
 )
 process.hgCalDigisClientHarvester = cms.EDProducer(
     'HGCalDigisClientHarvester',
