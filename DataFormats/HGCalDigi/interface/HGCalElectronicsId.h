@@ -73,6 +73,8 @@ public:
   uint32_t econdIdxRawId() const;
   uint32_t econdeRxRawId() const;
   bool isCM() const;
+  inline uint8_t roc() const { return econdeRx()/2; }
+  inline uint8_t half() const { return econdeRx()%2; }
   void print(std::ostream& out = std::cout) const {
     out << "Raw=0x" << std::hex << raw() << std::dec << std::endl
         << "\tFED-ID: " << (uint32_t)fedId() << " Capture Block: " << (uint32_t)captureBlock()

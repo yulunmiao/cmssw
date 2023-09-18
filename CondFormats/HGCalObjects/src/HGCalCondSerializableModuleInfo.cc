@@ -2,19 +2,27 @@
 #include <algorithm>
 
 //
-HGCalModuleInfo HGCalCondSerializableModuleInfo::getModule(int econdidx, int captureblock, int fedid) const {
-  std::cout << "getModule: " << econdidx << ", " << captureblock << ", " << fedid << std::endl;
-  auto _electronicsMatch = [econdidx, captureblock, fedid](HGCalModuleInfo m){ 
-    return m.econdidx == econdidx && m.captureblock == captureblock && m.fedid == fedid;
+HGCalModuleInfo HGCalCondSerializableModuleInfo::getModule(int econdidx, int captureblock, int slink, bool zside) const {
+  auto _electronicsMatch = [econdidx, captureblock, slink, zside](HGCalModuleInfo m){
+    return m.econdidx == econdidx && m.captureblock == captureblock && m.slink == slink && m.zside==zside;
   };
+    
   auto it = std::find_if(begin(params_), end(params_), _electronicsMatch);
-  std::cout << "getModule: " << it->plane << ", " << it->u << ", " << it->v << ", " << it->isSiPM << std::endl;
+  if(it==params_.end()) {
+
+    std::cout << zside << " " << econdidx << " " << captureblock << " " << slink << " " << zside << std::endl;
+    for(auto mi : params_) {
+      std::cout << "\t" << mi.zside << " " << mi.econdidx << " " << mi.captureblock << " " << mi.slink << " " << mi.zside << std::endl;
+    }
+  }
+
+
   return *it;
 }
 
 //
 HGCalModuleInfo HGCalCondSerializableModuleInfo::getModule(HGCalElectronicsId& id) const {
-  return getModule((int)id.econdIdx(), (int)id.captureBlock(), (int)id.fedId());
+  return getModule((int)id.econdIdx(), (int)id.captureBlock(), (int)id.fedId(), (bool) id.zSide() );
 }
 
 //
@@ -27,14 +35,14 @@ HGCalModuleInfo HGCalCondSerializableModuleInfo::getModuleFromGeometry(int plane
 }
   
 //
-std::tuple<int,int,int,bool> HGCalCondSerializableModuleInfo::getModuleLocation(int econdidx, int captureblock, int fedid) const {
-  auto it = getModule(econdidx,captureblock,fedid);
+std::tuple<int,int,int,bool> HGCalCondSerializableModuleInfo::getModuleLocation(int econdidx, int captureblock, int slink,bool zside) const {
+  auto it = getModule(econdidx,captureblock,slink,zside);
   return std::make_tuple(it.plane, it.u, it.v, it.isSiPM);
 }
   
 //
 std::tuple<int,int,int,bool> HGCalCondSerializableModuleInfo::getModuleLocation(HGCalElectronicsId& id) const {
-  return getModuleLocation((int)id.econdIdx(), (int)id.captureBlock(), (int)id.fedId());
+  return getModuleLocation((int)id.econdIdx(), (int)id.captureBlock(), (int)id.fedId(),id.zSide());
 }
 
 //
@@ -46,7 +54,7 @@ std::tuple<int,int,int> HGCalCondSerializableModuleInfo::getModuleElectronicsIde
 //
 HGCalElectronicsId HGCalCondSerializableModuleInfo::getModuleElectronicsId(int plane, int u, int v, bool isSiPM, bool zside, uint8_t econderx, uint8_t halfrocch) const {
   auto it = getModuleFromGeometry(plane,u,v,isSiPM,zside);
-  return HGCalElectronicsId(it.zside, it.fedid, (uint8_t)it.captureblock, (uint8_t)it.econdidx, econderx, halfrocch);
+  return HGCalElectronicsId(it.zside, it.slink, (uint8_t)it.captureblock, (uint8_t)it.econdidx, econderx, halfrocch);
 }
 
 //
