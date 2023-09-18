@@ -6,6 +6,7 @@ process = cms.Process("TESTDQM")
 options = VarParsing('analysis')
 options.register('minEvents', 10000, VarParsing.multiplicity.singleton, VarParsing.varType.int, "min. events to process sequentially")
 options.register('prescale',  1000,  VarParsing.multiplicity.singleton, VarParsing.varType.int, "prescale every N events")
+options.register('tbEra',  'default',  VarParsing.multiplicity.singleton, VarParsing.varType.string, "test beam era")
 options.parseArguments()
 
 
@@ -20,7 +21,7 @@ process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEven
 process.load('Geometry.HGCalMapping.hgCalModuleInfoESSource_cfi')
 process.load('Geometry.HGCalMapping.hgCalSiModuleInfoESSource_cfi')
 from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions,addPerformanceReports
-configTBConditions(process)
+configTBConditions(process,key=options.tbEra)
 addPerformanceReports(process)
 
 process.hgCalDigisClient = cms.EDProducer(
