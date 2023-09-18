@@ -36,19 +36,28 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
   chain.SetBranchAddress("trigtime", &event.trigtime);
   chain.SetBranchAddress("trigwidth", &event.trigwidth);
 
+  std::set<EventId> ambiguousKeys;
   for (long long i = 0; i < chain.GetEntries(); ++i) {
     chain.GetEntry(i);
 
     // check if event already exists
     EventId key{(uint32_t)event.eventcounter, (uint32_t)event.bxcounter, (uint32_t)event.orbitcounter};
+
     if (data_.count(key) == 0)
       data_[key] = ERxInput{};
 
     // check if chip already exists
     ERxId_t erxKey{(uint8_t)event.chip, (uint8_t)event.half};
-    if (data_[key].count(erxKey) == 0)
+    if (data_[key].count(erxKey) == 0) {
       data_[key][erxKey] = ERxData{};
-
+      //add metadata
+      HGCalTestSystemMetaData md(0,event.trigtime,event.trigwidth);
+      metadata_[key]=md;
+    }else {
+      ambiguousKeys.insert(key);
+      continue;
+    }
+    
     // daqdata: header, CM, 37 ch, CRC32, idle
     if (const auto nwords = event.daqdata->size(); nwords != 41)
       throw cms::Exception("HGCalModuleTreeReader")
@@ -79,25 +88,44 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
 
     // copy CRC32
     data_[key][erxKey].crc32 = event.daqdata->at(39);
-
-    // we could assert the idle word from #40 if needed
-
-    // copy metadata
-    data_[key][erxKey].meta.push_back(event.trigtime);
-    data_[key][erxKey].meta.push_back(event.trigwidth);
   }
 
-  edm::LogInfo("HGCalModuleTreeReader") << "read " << data_.size() << " events.";
+  std::cout << "Found " << ambiguousKeys.size() << " ambiguous keys out of " << data_.size() << std::endl;
 
+  /*
+  //
+  for(auto it: data_) 
+    if(it.second.size()!=6) ambiguousKeys.insert(it.first);
+
+  //
+  std::cout << "Removing " << ambiguousKeys.size() << " ambiguous keys out of " << data_.size() << std::endl;
+  for(auto k : ambiguousKeys) {
+    auto it=data_.find(k);
+    data_.erase(it);
+  }
+  */
+
+
+  edm::LogInfo("HGCalModuleTreeReader") << "read " << data_.size() << " events.";
   it_data_ = data_.begin();
 }
 
 //
-ECONDInput HGCalModuleTreeReader::next() {
+std::unique_ptr<ECONDInput> HGCalModuleTreeReader::next() {
   if (it_data_ == data_.end())
-    throw cms::Exception("HGCalModuleTreeReader") << "Insufficient number of events were retrieved from input tree to "
-                                                     "proceed with the generation of emulated events.";
+    throw cms::Exception("HGCalModuleTreeReader") << "Insufficient number of events were retrieved from input tree to proceed with the generation of emulated events.";
 
+  auto data = std::make_unique<ECONDInput>(it_data_->first, it_data_->second);
   ++it_data_;
-  return ECONDInput{it_data_->first, it_data_->second};
+  return data;
+}
+
+//
+HGCalTestSystemMetaData HGCalModuleTreeReader::nextMetaData() {
+  auto it = it_data_;
+  --it;
+  auto key=it->first;
+  //auto key=it_data_->first;
+  if(metadata_.count(key)==0) return HGCalTestSystemMetaData();
+  return metadata_[key];
 }

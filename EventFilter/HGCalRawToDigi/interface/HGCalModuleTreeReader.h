@@ -10,12 +10,12 @@
 #ifndef EventFilter_HGCalRawToDigi_HGCalModuleTreeReader_h
 #define EventFilter_HGCalRawToDigi_HGCalModuleTreeReader_h
 
-#include "EventFilter/HGCalRawToDigi/interface/HGCalECONDEmulator.h"
+#include "EventFilter/HGCalRawToDigi/interface/HGCalRawDataBaseEmulator.h"
 
 namespace hgcal::econd {
   /// Read out a the relevant raw data produced by a module to memory and returns ECON-D frames on request
   /// \note The format is as agreed with system tests convenors so that it can be used in integration/beam tests
-  class HGCalModuleTreeReader : public Emulator {
+  class HGCalModuleTreeReader : public ECONDEmulatorBase {
   public:
     /// \param[in] tree_name Name of the TB events tree
     /// \param[in] filenames List of filenames to loop on
@@ -30,11 +30,14 @@ namespace hgcal::econd {
       int half, bxcounter, eventcounter, orbitcounter, trigtime, trigwidth;
       std::vector<unsigned int>* daqdata{nullptr};
     };
-    ECONDInput next() override;
+    std::unique_ptr<ECONDInput> next() override;
 
+    HGCalTestSystemMetaData nextMetaData() override;
+    
   private:
     ECONDInputColl data_;
     ECONDInputColl::const_iterator it_data_;
+    std::map<hgcal::econd::EventId,HGCalTestSystemMetaData> metadata_;
   };
 
 }  // namespace hgcal::econd
