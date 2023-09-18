@@ -38,10 +38,10 @@ void HGCalUnpacker::parseSLink(
     //          second word [b'0-31]
     //          third word  [b'96-127]
     //          fourth word [b'64-95]
-    LogDebug("[HGCalUnpacker::parseSLink]") << std::hex << inputArray[iword] << " "
-                                            << inputArray[iword+1] << " | "
-                                            << inputArray[iword+2] << " "
-                                            << inputArray[iword+3];
+    LogDebug("[HGCalUnpacker::parseSLink]")  << std::hex << inputArray[iword] << " "
+					     << inputArray[iword+1] << " | "
+					     << inputArray[iword+2] << " "
+					     << inputArray[iword+3];
 
     if (config_.applyFWworkaround) {
       std::swap(inputArray[iword], inputArray[iword + 1]);

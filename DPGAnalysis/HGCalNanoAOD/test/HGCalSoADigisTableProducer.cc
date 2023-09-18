@@ -147,7 +147,7 @@ private:
     out->addColumn<uint16_t>("fedId", fedId, "FED index");
     out->addColumn<uint8_t>("captureBlock", captureBlock, "capture block index (with FED)");
     out->addColumn<uint8_t>("econdIdx", econdIdx, "ECON-D index (within capture block)");
-    out->addColumn<uint8_t>("econdeRx", econdIdx, "ECON-D e-Rx (within ECON-D)");
+    out->addColumn<uint8_t>("econdeRx", econdeRx, "ECON-D e-Rx (within ECON-D)");
     out->addColumn<uint8_t>("half", half, "HGCROC half");
     out->addColumn<uint8_t>("roc", roc, "roc");
     out->addColumn<uint8_t>("halfrocChannel", halfrocChannel, "1/2 ROC channel");
