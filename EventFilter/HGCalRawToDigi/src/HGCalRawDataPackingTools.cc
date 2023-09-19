@@ -2,6 +2,7 @@
 #include "EventFilter/HGCalRawToDigi/interface/HGCalRawDataDefinitions.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Utilities/interface/Exception.h"
+#include <iostream>
 
 std::vector<uint32_t> hgcal::econd::produceERxData(const ERxChannelEnable& channel_enable,
                                                    const ERxData& erx,
@@ -73,6 +74,7 @@ std::vector<uint32_t> hgcal::econd::produceERxData(const ERxChannelEnable& chann
       *it_data |= word << msb;
     msb += nbits;
   }
+
   return data;
 }
 

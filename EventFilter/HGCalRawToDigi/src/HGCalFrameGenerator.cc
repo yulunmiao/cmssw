@@ -190,6 +190,7 @@ namespace hgcal {
       erx_data.insert(erx_data.end(), erx_chan_data.begin(), erx_chan_data.end());
       enabled_channels.emplace_back(chmap);
     }
+
     LogDebug("HGCalFrameGenerator").log([&erx_data](auto& log) { printWords(log, "erx", erx_data); });
     return erx_data;
   }
@@ -218,7 +219,7 @@ namespace hgcal {
     auto erx_payload = generateERxData(econd_id, event.second, enabled_ch_per_erx);
 
     //PEDRO : FIX this in pion runs
-    if( erx_payload.size() != 234) return produceECONEvent(econd_id,cb_id);
+    //if( erx_payload.size() != 234) return produceECONEvent(econd_id,cb_id);
 
     // ECON-D event content was just created, now prepend packet header
     const uint8_t hamming = 0, rr = 0;

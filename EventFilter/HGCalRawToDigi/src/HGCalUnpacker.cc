@@ -38,11 +38,12 @@ void HGCalUnpacker::parseSLink(
     //          second word [b'0-31]
     //          third word  [b'96-127]
     //          fourth word [b'64-95]
-    LogDebug("[HGCalUnpacker::parseSLink]")  << std::hex << inputArray[iword] << " "
-					     << inputArray[iword+1] << " | "
-					     << inputArray[iword+2] << " "
-					     << inputArray[iword+3];
-
+    LogDebug("[HGCalUnpacker::parseSLink]") << std::dec << iword << " th word / " << inputArray.size() << " "
+                                            << std::hex << inputArray[iword] << " "
+                                            << inputArray[iword+1] << " | "
+                                            << inputArray[iword+2] << " "
+                                            << inputArray[iword+3];
+    
     if (config_.applyFWworkaround) {
       std::swap(inputArray[iword], inputArray[iword + 1]);
       std::swap(inputArray[iword + 2], inputArray[iword + 3]);
@@ -57,7 +58,6 @@ void HGCalUnpacker::parseSLink(
     sLink=fed2slink(fedid);
     LogDebug("[HGCalUnpacker::parseSLink]") << "SLink=" << sLink << " index assigned from FED ID=" << fedid;
 
-    
     iword += 4;  // length of the S-Link header (128 bits)
 
     //----- parse the S-Link body
@@ -80,6 +80,7 @@ void HGCalUnpacker::parseSLink(
       const uint64_t captureBlockHeader = ((uint64_t)cb_msb << 32) | ((uint64_t)cb_lsb);
       iword += 2;  // length of capture block header (64 bits)
       LogDebug("[HGCalUnpacker::parseSLink]") << "Capture block=" << (int)captureBlock << ", capture block header=0x" << std::hex << captureBlockHeader;
+      
       //----- parse the capture block body
       for (uint8_t econd = 0; econd < config_.captureBlockECONDMax; econd++) {  // loop through all ECON-Ds
 
@@ -125,7 +126,8 @@ void HGCalUnpacker::parseSLink(
         //----- extract the payload length
         const uint32_t payloadLength = (econdHeader >> kPayloadLengthShift) & kPayloadLengthMask;
         LogDebug("[HGCalUnpacker::parseSLink]") << "ECON-D #" << (int)econd << ", first word of ECON-D header=0x" << std::hex << econdHeader
-                                                << "\t ECON-D payload=" << std::dec << payloadLength;
+                                                << "\t ECON-D payload=" << std::dec << payloadLength << "(max cfg=" << config_.payloadLengthMax << ")";
+
         // if payload length too big
         if (payloadLength > config_.payloadLengthMax) {
           flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword,HGCalFlaggedECONDInfo::PAYLOADOVERFLOWS,eleid.raw()));
@@ -255,7 +257,14 @@ void HGCalUnpacker::parseSLink(
 
             // only pick active eRxs
             if ((enabledERX >> erx & 1) == 0)
-              continue;  
+              continue;
+
+            //it was supposed to be enabled but we have exceeded the payload length already
+            if(iword>payloadLength) {
+              flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword,HGCalFlaggedECONDInfo::UNEXPECTEDTRUNCATED,eleid.raw()));
+              break;
+            }
+
 
             //check if e-RX is empty and skip it
             bool emptyERX( (inputArray[iword] & 0x1f) == 0b10000);
@@ -288,10 +297,7 @@ void HGCalUnpacker::parseSLink(
                                                                                                   ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask)<<10);
             uint16_t cmSum = ((inputArray[iword] >> kCommonmode0Shift) & kCommonmode0Mask) + ((inputArray[iword] >> kCommonmode1Shift) & kCommonmode1Mask);
 
-            //PEDRO : not sure how this could happen so i commented it out
-            //if (commonModeDataSize_ + 1 > config_.commonModeMax)
-            //  throw cms::Exception("HGCalUnpack") << "Too many common mode data unpacked: " << (commonModeDataSize_ + 1)
-            //                                      << " >= " << config_.commonModeMax << ".";
+
             commonModeDataSize_ += 2;            
             iword += 2;  // length of the standard eRx header (2 * 32 bits)
 
@@ -344,10 +350,10 @@ void HGCalUnpacker::parseSLink(
       
       //----- Capture block has no trailer
       // pad to 4 words
-      //if (iword % 4 != 0) {  //TODO: check this
-      //  LogDebug("HGCalUnpacker") << "Padding capture block to 4 32-bit words (remainder: " << (iword % 4) << ").";
-      //  iword += 4 - (iword % 4);
-      // }
+      if (iword % 4 != 0) {  //TODO: check this
+        LogDebug("HGCalUnpacker") << "Padding capture block to 4 32-bit words (remainder: " << (iword % 4) << ").";
+        iword += 4 - (iword % 4);
+      }
     }
 
     
