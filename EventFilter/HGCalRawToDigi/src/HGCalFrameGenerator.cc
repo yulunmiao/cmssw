@@ -190,7 +190,7 @@ namespace hgcal {
       erx_data.insert(erx_data.end(), erx_chan_data.begin(), erx_chan_data.end());
       enabled_channels.emplace_back(chmap);
     }
-    
+
     LogDebug("HGCalFrameGenerator").log([&erx_data](auto& log) { printWords(log, "erx", erx_data); });
     return erx_data;
   }

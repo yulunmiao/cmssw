@@ -14,7 +14,8 @@ class HGCalFlaggedECONDInfo
                    TRUNCATED=16,
                    WRONGHEADERMARKER=32,
                    PAYLOADOVERFLOWS=64,
-                   PAYLOADMISMATCHES=128};
+                   PAYLOADMISMATCHES=128,
+                   UNEXPECTEDTRUNCATED=256};
   
   HGCalFlaggedECONDInfo() : HGCalFlaggedECONDInfo(0,0,0) {}
   HGCalFlaggedECONDInfo(uint32_t loc, uint32_t flagbits, uint32_t id)
@@ -30,6 +31,7 @@ class HGCalFlaggedECONDInfo
   bool wrongHeaderMarker() { return (flags>>5) & 0x1; };
   bool payloadOverflows() { return (flags>>6) & 0x1; };
   bool payloadMismatches() { return (flags>>7) & 0x1; };
+  bool unexpectedTruncated() { return (flags>>8) & 0x1; };
     
   uint32_t iword,flags,eleid;
 };

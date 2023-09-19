@@ -98,20 +98,21 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
     data_[key][erxKey].crc32 = event.daqdata->at(39);
   }
 
-  std::cout << "Found " << ambiguousKeys.size() << " ambiguous keys out of " << data_.size() << std::endl;
+  //check now that we have a consistent number of erx
+  size_t nerxenabled=params_.enabled_erxs.size();
+  for(auto it: data_) {
+    if(it.second.size()==nerxenabled) continue;
+    ambiguousKeys.insert(it.first);
+  }
 
-  /*
-  //
-  for(auto it: data_) 
-    if(it.second.size()!=6) ambiguousKeys.insert(it.first);
+  std::cout << "Found " << ambiguousKeys.size() << " ambiguous keys out of " << data_.size() << " in HGCalModuleTreeReader" << std::endl;
 
-  //
+  //remove ambigous keys
   std::cout << "Removing " << ambiguousKeys.size() << " ambiguous keys out of " << data_.size() << std::endl;
   for(auto k : ambiguousKeys) {
     auto it=data_.find(k);
     data_.erase(it);
   }
-  */
 
 
   edm::LogInfo("HGCalModuleTreeReader") << "read " << data_.size() << " events.";
