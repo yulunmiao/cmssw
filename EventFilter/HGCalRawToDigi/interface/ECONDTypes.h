@@ -1,5 +1,5 @@
-#ifndef EventFilter_HGCalRawToDigi_SlinkTypes_h
-#define EventFilter_HGCalRawToDigi_SlinkTypes_h
+#ifndef EventFilter_HGCalRawToDigi_ECONDTypes_h
+#define EventFilter_HGCalRawToDigi_ECONDTypes_h
 
 #include <cstdint>
 #include <map>
@@ -21,7 +21,6 @@ namespace hgcal::econd {
     uint32_t cm0{0}, cm1{0};
     std::vector<ToTStatus> tctp;
     std::vector<uint16_t> adc, adcm, toa, tot;
-    std::vector<uint32_t> meta;  ///< additional words accompanying the e-rx data
     uint32_t crc32{0};
   };
 
