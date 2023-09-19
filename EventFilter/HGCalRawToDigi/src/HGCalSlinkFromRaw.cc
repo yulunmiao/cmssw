@@ -33,11 +33,16 @@ SlinkFromRaw::SlinkFromRaw(const edm::ParameterSet &iConfig)
 std::unique_ptr<FEDRawDataCollection> SlinkFromRaw::next() {
   auto raw_data = std::make_unique<FEDRawDataCollection>();
   auto copyToFEDRawData = [&raw_data](const hgcal_slinkfromraw::RecordRunning *rEvent, unsigned fedId) {
-    //rEvent->payloadLength() - 1: last word is a 0xdeadbeefdeadbeef which can be disregarded
-    size_t total_event_size = (rEvent->payloadLength() - 1) * sizeof(uint64_t) / sizeof(char);
+    constexpr size_t word_size = sizeof(uint64_t) / sizeof(char);
     auto &fed_data = raw_data->FEDData(fedId);
-    fed_data.resize(total_event_size);
-    memcpy(fed_data.data(), (const char *)rEvent->payload(), total_event_size);
+    fed_data.resize((rEvent->payloadLength() - 1) * word_size);  // last word (0xdeadbeefdeadbeef) can be disregarded
+    auto payload = rEvent->payload();
+    auto fed_data_ptr = fed_data.data();
+    for (uint16_t i = 0; i < rEvent->payloadLength() - 1; ++i) {
+      uint64_t word = ((payload[i] & 0xffffffff) << 32) | payload[i] >> 32;
+      memcpy(fed_data_ptr, (const char *)(&word), word_size);
+      fed_data_ptr += word_size;
+    }
   };
 
   // read DAQ Slinks
