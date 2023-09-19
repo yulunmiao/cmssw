@@ -96,6 +96,7 @@ HGCalCondSerializableModuleInfo::ERxBitPatternMap HGCalCondSerializableModuleInf
   for(auto m : params_) {
     uint32_t rtn = erxBitPatternMapDenseIndex(m.slink,m.captureblock,m.econdidx,maxCB,maxEcon);
     uint8_t nerx=6*(1+m.isHD);
+    if(!m.isHD and (m.wafType==3 || m.wafType==4)) nerx=3;
     erxbit[rtn]=(1<<nerx)-1;
   }
   return erxbit;

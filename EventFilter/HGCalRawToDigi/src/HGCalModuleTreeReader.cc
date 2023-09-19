@@ -41,13 +41,21 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
     chain.GetEntry(i);
 
     // check if event already exists
+    //event counter 6b wraps too fast for trigger rate, increment it artificially
     EventId key{(uint32_t)event.eventcounter, (uint32_t)event.bxcounter, (uint32_t)event.orbitcounter};
+    ERxId_t erxKey{(uint8_t)event.chip, (uint8_t)event.half};
+    uint32_t instance(0);
+    while(data_.count(key)!=0 && data_[key].count(erxKey) != 0) {
+      instance +=1;
+      uint32_t newevcounter=(uint32_t)event.eventcounter;
+      newevcounter += instance * 64;      
+      key =EventId{newevcounter, (uint32_t)event.bxcounter, (uint32_t)event.orbitcounter};      
+    }
 
     if (data_.count(key) == 0)
       data_[key] = ERxInput{};
 
-    // check if chip already exists
-    ERxId_t erxKey{(uint8_t)event.chip, (uint8_t)event.half};
+    //final check (should always be true)
     if (data_[key].count(erxKey) == 0) {
       data_[key][erxKey] = ERxData{};
       //add metadata
@@ -57,7 +65,7 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
       ambiguousKeys.insert(key);
       continue;
     }
-    
+
     // daqdata: header, CM, 37 ch, CRC32, idle
     if (const auto nwords = event.daqdata->size(); nwords != 41)
       throw cms::Exception("HGCalModuleTreeReader")
@@ -83,7 +91,7 @@ HGCalModuleTreeReader::HGCalModuleTreeReader(const EmulatorParameters& params,
       data_[key][erxKey].adcm.push_back(frame.adcm1());
       data_[key][erxKey].adc.push_back(tctp == ToTStatus::ZeroSuppressed ? frame.adc() : 0);
       data_[key][erxKey].tot.push_back(tctp == ToTStatus::ZeroSuppressed ? frame.rawtot() : 0);
-      data_[key][erxKey].toa.push_back(frame.toa());
+      data_[key][erxKey].toa.push_back(frame.toa());      
     }
 
     // copy CRC32

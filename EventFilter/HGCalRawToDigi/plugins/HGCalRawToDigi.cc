@@ -158,10 +158,9 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
       }
     }
     
-    LogDebug("HGCalRawToDigi::produce")
-      << std::dec << "FED ID=" << fed_id
-      << std::hex << " First words: 0x" << data_32bit[0] << " 0x" << data_32bit[1]  
-      << std::dec << " Data size=" << fed_size;
+    LogDebug("HGCalRawToDigi::produce")  << std::dec << "FED ID=" << fed_id
+                                         << std::hex << " First words: 0x" << data_32bit[0] << " 0x" << data_32bit[1]  
+                                         << std::dec << " Data size=" << fed_size;
 
     unpacker_->parseSLink(
         data_32bit,
