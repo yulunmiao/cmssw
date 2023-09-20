@@ -35,9 +35,10 @@ namespace hgcal::econd {
     HGCalTestSystemMetaData nextMetaData() override;
     
   private:
-    ECONDInputColl data_;
-    ECONDInputColl::const_iterator it_data_;
-    std::map<hgcal::econd::EventId,HGCalTestSystemMetaData> metadata_;
+    
+    uint32_t iEvent_,totalEvents_;    
+    std::map< ERxId_t, std::vector<std::tuple<EventId, ERxData>> > data_;
+    std::map< ERxId_t, std::vector<std::tuple<EventId, HGCalTestSystemMetaData>> > metadata_;    
   };
 
 }  // namespace hgcal::econd
