@@ -9,7 +9,6 @@ HGCalModuleInfo HGCalCondSerializableModuleInfo::getModule(int econdidx, int cap
     
   auto it = std::find_if(begin(params_), end(params_), _electronicsMatch);
   if(it==params_.end()) {
-
     std::cout << zside << " " << econdidx << " " << captureblock << " " << slink << " " << zside << std::endl;
     for(auto mi : params_) {
       std::cout << "\t" << mi.zside << " " << mi.econdidx << " " << mi.captureblock << " " << mi.slink << " " << mi.zside << std::endl;

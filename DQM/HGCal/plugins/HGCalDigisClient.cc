@@ -13,6 +13,9 @@
 
 #include "CondFormats/DataRecord/interface/HGCalCondSerializableModuleInfoRcd.h"
 #include "CondFormats/HGCalObjects/interface/HGCalCondSerializableModuleInfo.h"
+#include "CondFormats/DataRecord/interface/HGCalCondSerializableSiCellChannelInfoRcd.h"
+#include "CondFormats/HGCalObjects/interface/HGCalCondSerializableSiCellChannelInfo.h"
+#include "Geometry/HGCalMapping/interface/HGCalElectronicsMappingTools.h"
 
 #include <TString.h>
 
@@ -64,7 +67,9 @@ private:
 
   // ------------ member data ------------
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
+  edm::ESGetToken<HGCalCondSerializableSiCellChannelInfo, HGCalCondSerializableSiCellChannelInfoRcd> siModuleInfoToken_;
   std::map<MonitorKey_t, MonitorKey_t> module_keys_;
+  std::map<uint32_t, HGCalSiCellChannelInfo> eleidtoSiInfo_;
   const unsigned prescale_;
   const unsigned min_num_evts_;
   unsigned num_processed_ = 0;
@@ -79,6 +84,9 @@ HGCalDigisClient::HGCalDigisClient(const edm::ParameterSet& iConfig)
       metadataToken_(consumes<HGCalTestSystemMetaData>(iConfig.getParameter<edm::InputTag>("MetaData"))),
       moduleInfoToken_(
           esConsumes<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd, edm::Transition::BeginRun>()),
+      siModuleInfoToken_(esConsumes<HGCalCondSerializableSiCellChannelInfo,
+                         HGCalCondSerializableSiCellChannelInfoRcd,
+                         edm::Transition::BeginRun>()),
       prescale_(std::max(1u, iConfig.getParameter<unsigned>("Prescale"))),
       min_num_evts_(iConfig.getParameter<unsigned>("MinimumNumEvents")) {}
 
@@ -133,6 +141,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     bool isCM = eleid.isCM();
     int ch = eleid.halfrocChannel();
     int globalChannelId = 39 * eleid.econdeRx() + ch;
+    HGCalSiCellChannelInfo channelInfo=eleidtoSiInfo_[eleid.raw()];
     MonitorKey_t logiKey(eleid.zSide(), eleid.fedId(), eleid.captureBlock(), eleid.econdIdx());
     if (module_keys_.count(logiKey) == 0) {
       continue;
@@ -191,7 +200,8 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       }
 
       //find the channel with the maximum adc-adcm
-      if (num_processed_ > 400 && ch < 36) {
+      //do not use unconnected(-1) or calib (0)
+      if (num_processed_ > 400 && channelInfo.t==1) {  // ch < 36) {
         if (geomKey_maxADCpedsub.count(geomKey) == 0)
           geomKey_maxADCpedsub[geomKey] = std::pair<int, double>(-1, -1.);
         double sumADC = p_sums[geomKey]->getBinContent(globalChannelId, 2);
@@ -299,6 +309,10 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   size_t nmods = module_keys_.size();
   LogDebug("HGCalDigisClient") << "Read module info with " << nmods << " entries";
 
+  //map also the cell types
+  const auto &siCellInfo = iSetup.getData(siModuleInfoToken_);
+  eleidtoSiInfo_ = hgcal::mapEleIdToSiInfo(moduleInfo,siCellInfo); 
+  
   //book monitoring elements (histos, profiles, etc.)
   ibook.setCurrentFolder("HGCAL/Digis");
   p_econdquality = ibook.book2D("p_econdquality", ";ECON-D;Quality flags", nmods, 0, nmods, 8, 0, 8);
@@ -327,7 +341,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     p_adcvstrigtime[k] = ibook.book2D(
         "adc_vs_trigtime_" + tag, ";trigger phase; ADC of channel with max <ADC-ADC_{-1}>", 200, 0, 200, 100, 0, 1024);
     p_adcpedsubvstrigtime[k] = ibook.book2D("adcpedsub_vs_trigtime_" + tag,
-                                            ";trigger phase; ADC-ADC_{-1} of channel with max <ADC-ADC_{-1}>",
+                                            ";trigger phase; ADC of channel with max <ADC-ADC_{-1}>",
                                             200,
                                             0,
                                             200,

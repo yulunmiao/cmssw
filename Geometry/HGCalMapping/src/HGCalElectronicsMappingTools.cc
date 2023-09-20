@@ -41,6 +41,37 @@ namespace hgcal {
     return idmap;
   }
 
+  //
+  std::map<uint32_t,HGCalSiCellChannelInfo> mapEleIdToSiInfo(const HGCalCondSerializableModuleInfo &moduleInfo,
+                                                             const HGCalCondSerializableSiCellChannelInfo &siCellInfo)
+  {
+    
+    //loop over Si modules
+    std::map<uint32_t,HGCalSiCellChannelInfo> infomap;
+
+    for(auto m : moduleInfo.params_){
+      
+      if(m.isSiPM) continue;
+      
+      auto isHD=m.isHD;
+      auto wafType=m.wafType;
+
+      //loop over cells in this module skipping calibration and unconnected channels
+      auto cells=siCellInfo.getAllCellsInModule(isHD,wafType);
+      for(auto c : cells) {
+        
+        //build the electronics id
+        auto econderx = hgcal::getEcondErxFor(c.chip,c.half);
+        uint32_t elecid = HGCalElectronicsId(m.zside,m.slink,m.captureblock,m.econdidx,econderx,c.seq).raw(); 
+
+        infomap[elecid] = c;
+      }
+    }
+
+    return infomap;
+  }
+
+  //
   std::map<uint32_t,uint32_t> mapSiPMGeoToElectronics(const HGCalCondSerializableModuleInfo &moduleInfo,
                                                     const HGCalCondSerializableSiPMTileInfo &sipmCellInfo,
                                                     bool geo2ele)

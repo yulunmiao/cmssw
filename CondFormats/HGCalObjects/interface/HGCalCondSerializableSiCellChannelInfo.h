@@ -31,6 +31,9 @@ public:
     return *this;
   }
   std::vector<HGCalSiCellChannelInfo> getAllCellsInModule(bool isHD,uint16_t wafType) const;
+
+  HGCalSiCellChannelInfo getCellInfo(bool isHD, uint16_t wafType, uint16_t chip, uint16_t half, uint16_t seq) const;
+
   std::vector<HGCalSiCellChannelInfo> params_;
   
   COND_SERIALIZABLE;

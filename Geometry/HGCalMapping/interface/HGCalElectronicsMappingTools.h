@@ -30,7 +30,12 @@ namespace hgcal {
    */
   uint16_t getEcondErxFor(uint16_t chip,uint16_t half) { return chip*2+half; }
 
-
+  /**
+     returns a map of electronics id to si channel info
+  */
+  std::map<uint32_t,HGCalSiCellChannelInfo> mapEleIdToSiInfo(const HGCalCondSerializableModuleInfo &moduleInfo,
+                                                             const HGCalCondSerializableSiCellChannelInfo &siCellInfo);
+  
 };
 
 #endif
