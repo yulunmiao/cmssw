@@ -118,24 +118,24 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
       << "Retrieved : " << module_keys.size() << " module tags to harvest and defined hexmaps";
 
   for (const auto &m : moduleInfo.params_) {
-    TString module_type = TString::Format("%s %d", m.isHD ? "HD" : "LD", m.wafType);
+    TString module_type = TString::Format("%s_%d", m.isHD ? "HD" : "LD", m.wafType);
     TString tag = Form("zside%d_plane%d_u%d_v%d", m.zside, m.plane, m.u, m.v);
     MonitorKey_t k(m.zside, m.plane, m.u, m.v);
     int nch(39 * 6 * (1 + m.isHD));
 
+    // clang-format off
     ibooker.setCurrentFolder("HGCAL/Summary");
-    hex_channelId[k] =
-        ibooker.book2DPoly("hex_channelId_" + tag,
-                           module_type + " wafer with global channel id (readout sequence); x[cm]; y[cm];ID",
-                           -14, 14, -14, 14);
+    hex_channelId[k] = ibooker.book2DPoly(
+        "hex_channelId_" + tag + "_" + module_type, module_type + " wafer with global channel id (readout sequence); x[cm]; y[cm];ID", -14, 14, -14, 14);
     hex_hgcrocPin[k] = ibooker.book2DPoly(
-        "hex_hgcrocPin_" + tag, module_type + " wafer with HGCROC pin/chan; x[cm]; y[cm];ID", -14, 14, -14, 14);
+        "hex_hgcrocPin_" + tag + "_" + module_type, module_type + " wafer with HGCROC pin/chan; x[cm]; y[cm];ID", -14, 14, -14, 14);
     hex_sicellPadId[k] = ibooker.book2DPoly(
-        "hex_sicellPadId_" + tag, module_type + " wafer with Si cell pad Id; x[cm]; y[cm];ID", -14, 14, -14, 14);
-    hex_pedestal[k] = ibooker.book2DPoly("hex_adc_avg_" + tag, "; x[cm]; y[cm];Average ADC", -14, 14, -14, 14);
-    hex_noise[k] = ibooker.book2DPoly("hex_adc_std_" + tag, "; x[cm]; y[cm];ADC standard deviation", -14, 14, -14, 14);
-    hex_cmrho[k] = ibooker.book2DPoly("hex_cmrho_" + tag, "; x[cm]; y[cm];#rho(CM)", -14, 14, -14, 14);
-    hex_bxm1rho[k] = ibooker.book2DPoly("hex_bxm1rho_" + tag, "; x[cm]; y[cm];#rho(ADC_{-1})", -14, 14, -14, 14);
+        "hex_sicellPadId_" + tag + "_" + module_type, module_type + " wafer with Si cell pad Id; x[cm]; y[cm];ID", -14, 14, -14, 14);
+    hex_pedestal[k] = ibooker.book2DPoly("hex_adc_avg_" + tag + "_" + module_type, "; x[cm]; y[cm];Average ADC", -14, 14, -14, 14);
+    hex_noise[k] = ibooker.book2DPoly("hex_adc_std_" + tag + "_" + module_type, "; x[cm]; y[cm];ADC standard deviation", -14, 14, -14, 14);
+    hex_cmrho[k] = ibooker.book2DPoly("hex_cmrho_" + tag + "_" + module_type, "; x[cm]; y[cm];#rho(CM)", -14, 14, -14, 14);
+    hex_bxm1rho[k] = ibooker.book2DPoly("hex_bxm1rho_" + tag + "_" + module_type, "; x[cm]; y[cm];#rho(ADC_{-1})", -14, 14, -14, 14);
+    // clang-format on
 
     p_coeffs[k] = ibooker.book2D("coeffs_" + tag, ";Channel;", nch, 0, nch, 11, 0, 11);
     p_coeffs[k]->setBinLabel(1, "<ADC>", 2);
