@@ -140,20 +140,32 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
                                          << std::hex << " First words: 0x" << data_32bit[0] << " 0x" << data_32bit[1]  
                                          << std::dec << " Data size=" << fed_size;
 
-    unpacker_->parseSLink(
-        data_32bit,
-        [this](uint16_t sLink, uint8_t captureBlock, uint8_t econd) {
-          return this->erxEnableBits_[HGCalCondSerializableModuleInfo::erxBitPatternMapDenseIndex(
-              sLink, captureBlock, econd, 0, 0)];
-        },
-        [this](uint16_t fedid) {
-          if (auto it = this->fed2slink_.find(fedid); it != this->fed2slink_.end()) {
-            return this->fed2slink_.at(fedid);
-          } else {
-            // FIXME: throw an error or return 0?
-            return (uint16_t)0;
-          }
-        });
+    try{
+      unpacker_->parseSLink(
+                            data_32bit,
+                            [this](uint16_t sLink, uint8_t captureBlock, uint8_t econd) {
+                              return this->erxEnableBits_[HGCalCondSerializableModuleInfo::erxBitPatternMapDenseIndex(
+                                                                                                                      sLink, captureBlock, econd, 0, 0)];
+                            },
+                            [this](uint16_t fedid) {
+                              if (auto it = this->fed2slink_.find(fedid); it != this->fed2slink_.end()) {
+                                return this->fed2slink_.at(fedid);
+                              } else {
+                                // FIXME: throw an error or return 0?
+                                return (uint16_t)0;
+                              }
+                            });
+    } catch(cms::Exception &e) {
+      std::cout << "An exeption was caught while decoding raw data for FED " << fed_id << std::endl;
+      std::cout << e.what() << std::endl;
+      std::cout << "Event is: " << std::endl;
+      std::cout << "Total size (32b words) " << data_32bit.size() << std::endl;
+      for(size_t i=0; i<10; i++)
+        std::cout << std::hex << "0x" << std::setfill('0') << data_32bit[i] << std::endl;
+      std::cout << "..." << std::endl;
+      for(size_t i=data_32bit.size()-4; i<data_32bit.size(); i++)
+        std::cout << std::hex << "0x" << std::setfill('0') << data_32bit[i] << std::endl;
+    }
 
     auto channeldata = unpacker_->channelData();
     auto commonModeSum = unpacker_->commonModeSum();

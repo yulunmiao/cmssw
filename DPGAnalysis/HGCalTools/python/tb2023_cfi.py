@@ -19,6 +19,8 @@ def addPerformanceReports(process, addMemCheck=False):
 def configTBConditions_default(process):
     return configTBConditions(process, key='default')
 
+def configTBConditions_DTH(process):
+    return configTBConditions(process, key='DTH')
 
 def configTBConditions_MLFL00041(process):
     # cmsRun EventFilter/HGCalRawToDigi/test/tb_raw2reco.py mode=hgcmodule fedId=0 slinkBOE=0x2a cbHeaderMarker=0x0 econdHeaderMarker=0x154 ECONDsInPassthrough=0 activeECONDs=0 inputFiles=/eos/cms/store/group/dpg_hgcal/tb_hgcal/2023/BeamTestSep/SingleModuleTest/MLFL00041/position_scan/electron_200GeV/beam_run/run_20230914_153751/beam_run0_roc2root.root output=beam_run0_roc2root conditions=MLFL00041 runNumber=100000 maxEvents=1000000000 ECONDsInCharacterisation=0 numERxsPerECOND=6
@@ -45,6 +47,7 @@ def configTBConditions(process, key='default'):
 
     modulelocator_dict = {
         'default': 'Geometry/HGCalMapping/data/modulelocator_tb.txt',
+        'DTH': 'Geometry/HGCalMapping/data/modulelocator_tb_DTH.txt',
         'MLFL00041': 'Geometry/HGCalMapping/data/modulelocator_tb_MLFL00041.txt',
         'MLDSL57': 'Geometry/HGCalMapping/data/modulelocator_tb_MLDSL57.txt',
         'MLDSR01': 'Geometry/HGCalMapping/data/modulelocator_tb_MLDSR01.txt',
