@@ -314,7 +314,8 @@ void HGCalUnpacker::parseSLink(
           throw cms::Exception("CorruptData")
             << "Mismatch between unpacked and expected ECON-D #" << (int)econd << " payload length\n"
             << "  unpacked payload length=" << iword - econdBodyStart << "\n"
-            << "  expected payload length=" << payloadLength;
+            << "  expected payload length=" << payloadLength
+            << "  unpacked " << channelDataSize_ << " channels";
         }  
 
         // pad to 2 words
