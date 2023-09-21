@@ -86,11 +86,26 @@ hgcCMDigiTable = cms.EDProducer("SimpleHGCalDigiFlatTableProducer",
                                 )
 )
 
+unpackerFlagsTable = cms.EDProducer("SimpleHGCalUnpackerFlagsTableProducer",
+                                    src = cms.InputTag("hgcalDigis:UnpackerFlags"),
+                                    cut = cms.string(""), 
+                                    name = cms.string("HGCUnpackerFlags"),
+                                    doc  = cms.string("Unpacker quality flags"),
+                                    singleton = cms.bool(False), # the number of entries is variable
+                                    extension = cms.bool(False),
+                                    variables = cms.PSet(
+                                        eleid = Var('eleid', 'uint', precision=-1, doc='electronics id'),
+                                        flags = Var('flags', 'uint', precision=-1, doc='HGCalFlaggedECONDInfo flags word'),
+                                        iword = Var('iword', 'uint', precision=-1, doc='faulty word when unpacking'),
+                                    )
+)
+
+
 
 tbMetaDataTable = cms.EDProducer("HGCalMetaDataTableProducer")
 
 hgcRecHitsTask = cms.Task(hgcEERecHitsTable,hgcHEfrontRecHitsTable,hgcHEbackRecHitsTable,hgcEERecHitsPositionTable,hgcHEfrontRecHitsPositionTable)
-hgctbTask = cms.Task(hgcSoaDigiTable,tbMetaDataTable,hgcCMDigiTable)
+hgctbTask = cms.Task(hgcSoaDigiTable,tbMetaDataTable,hgcCMDigiTable,unpackerFlagsTable)
 #august version
 #hgctbTask = cms.Task(hgctbRecHitsTable,hgctbRecHitsPositionTable,hgcDigiTable,tbMetaDataTable)
 
