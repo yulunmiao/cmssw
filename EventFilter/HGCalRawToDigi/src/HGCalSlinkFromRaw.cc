@@ -153,7 +153,13 @@ void SlinkFromRaw::readTriggerData(const hgcal_slinkfromraw::RecordRunning *rTrg
     p += 4;  // (1 record header + 2 slink header + 1 trigger readout header)
     for (unsigned iblock = 0; iblock < 4 && p < (const uint64_t *)rTrgEvent + rTrgEvent->payloadLength(); ++iblock) {
       LogDebug("SlinkFromRaw") << "Header: " << std::hex << std::setfill('0') << "0x" << *p << std::endl;
-      assert((*p >> 8) == pkt_sep);
+      if((*p >> 8) != pkt_sep) {
+	throw cms::Exception("CorruptData")  << "Expected packet separator: 0x" << std::hex << pkt_sep << " read: 0x" << (*p >> 8) 
+					     << " Event id: 0x" << rTrgEvent->slinkBoe()->eventId()
+					     << " Bx id: 0x" << rTrgEvent->slinkEoe()->bxId()
+					     << " Orbit id: 0x" << rTrgEvent->slinkEoe()->orbitId()
+					     << " BOE header: 0x" << rTrgEvent->slinkBoe()->boeHeader();
+      }
       length = *p & pkt_mask;
       if (iblock == 2) {
         // scintillator
