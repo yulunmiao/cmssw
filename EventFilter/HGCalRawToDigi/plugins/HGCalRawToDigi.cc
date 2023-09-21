@@ -156,7 +156,7 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
                               }
                             });
     } catch(cms::Exception &e) {
-      std::cout << "An exeption was caught while decoding raw data for FED " << fed_id << std::endl;
+      std::cout << "An exeption was caught while decoding raw data for FED " << (uint32_t)fed_id << std::endl;
       std::cout << e.what() << std::endl;
       std::cout << "Event is: " << std::endl;
       std::cout << "Total size (32b words) " << data_32bit.size() << std::endl;

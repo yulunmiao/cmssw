@@ -76,6 +76,7 @@ void HGCalUnpacker::parseSLink(
       for (uint8_t econd = 0; econd < config_.captureBlockECONDMax; econd++) {  // loop through all ECON-Ds
 
         auto econd_status_flag = ((captureBlockHeader >> (3 * econd)) & kCaptureBlockECONDStatusMask);
+
         if (config_.applyFWworkaround) {
           // 0b101: No ECOND packet due to BCID and/or OrbitID mismatch.
           // currently the packet is still kept (ECOND_pkt_conf.BX_mismatch_passthrough: 1)
@@ -233,17 +234,15 @@ void HGCalUnpacker::parseSLink(
 
           const auto enabledERX = enabledERXMapping(sLink, captureBlock, econd);
           for(uint8_t erx = 0; erx < config_.econdERXMax; erx++) {  // loop through all eRxs
-
             // only pick active eRxs
             if ((enabledERX >> erx & 1) == 0)
               continue;  
 
             //it was supposed to be enabled but we have exceeded the payload length already
-            if(iword>payloadLength) {
+            if(iword-econdBodyStart>payloadLength) {
               flaggedECOND_.emplace_back(HGCalFlaggedECONDInfo(iword,HGCalFlaggedECONDInfo::UNEXPECTEDTRUNCATED,eleid.raw()));
               break;
             }
-
 
             //check if e-RX is empty and skip it
             bool emptyERX( (inputArray[iword] & 0x1f) == 0b10000);
@@ -256,7 +255,7 @@ void HGCalUnpacker::parseSLink(
             //----- parse the eRX subpacket header
             const uint64_t erxHeader = ((uint64_t)inputArray[iword] << 32) | ((uint64_t)inputArray[iword + 1]);
             LogDebug("[HGCalUnpacker::parseSLink]") << "e-RX=" << std::dec << erx << " header=0x" << std::hex << erxHeader;
-            
+
             //common mode
             const HGCalElectronicsId cm0id(zside, sLink, captureBlock, econd, erx, 37);
             const HGCalElectronicsId cm1id(zside, sLink, captureBlock, econd, erx, 38);
