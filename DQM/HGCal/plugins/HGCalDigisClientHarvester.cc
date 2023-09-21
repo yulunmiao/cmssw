@@ -72,7 +72,7 @@ private:
   edm::ESWatcher<HGCalCondSerializableModuleInfoRcd> miWatcher_;
 
   //output file with pedestals etc.
-  std::string level0CalibOut_;
+  std::string level0CalibOut_,level0DeadChannelsOut_;
 };
 
 //
@@ -84,7 +84,10 @@ HGCalDigisClientHarvester::HGCalDigisClientHarvester(const edm::ParameterSet &iC
       siModuleInfoToken_(esConsumes<HGCalCondSerializableSiCellChannelInfo,
                                     HGCalCondSerializableSiCellChannelInfoRcd,
                                     edm::Transition::EndLuminosityBlock>()),
-      level0CalibOut_(iConfig.getParameter<std::string>("Level0CalibOut")) {}
+      level0CalibOut_(iConfig.getParameter<std::string>("Level0CalibOut")),
+      level0DeadChannelsOut_(iConfig.getParameter<std::string>("Level0DeadChannelsOut")) {
+
+}
 
 //
 void HGCalDigisClientHarvester::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
@@ -92,6 +95,7 @@ void HGCalDigisClientHarvester::fillDescriptions(edm::ConfigurationDescriptions 
   desc.add<std::string>("HexTemplateFile",
                         "/eos/cms/store/group/dpg_hgcal/comm_hgcal/ykao/geometry_$MODULETYPE_wafer_20230919.root");
   desc.add<std::string>("Level0CalibOut", "level0_calib_params.txt");
+  desc.add<std::string>("Level0DeadChannelsOut", "level0_deadch.txt");
   descriptions.addWithDefaultLabel(desc);
 }
 
@@ -224,12 +228,15 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
         p_coeffs[k]->setBinContent(ibin, 5 + 3 * i, intercepts[i]);
       }
 
-      //fill hexplots
-      hex_pedestal[k]->setBinContent(ibin, obs.first);
-      hex_noise[k]->setBinContent(ibin, obs.second);
-      hex_cmrho[k]->setBinContent(ibin, Rs[0]);
-      hex_bxm1rho[k]->setBinContent(ibin, Rs[1]);
-
+      //require some dispersion of values as this may be a dead channel
+      //which will pollute the final summary
+      if(obs.second>1e-3){
+        hex_pedestal[k]->setBinContent(ibin, obs.first);
+        hex_noise[k]->setBinContent(ibin, obs.second);
+        hex_cmrho[k]->setBinContent(ibin, Rs[0]);
+        hex_bxm1rho[k]->setBinContent(ibin, Rs[1]);
+      }
+      
       //add to summary stats
       bool zside = std::get<0>(k);
       uint16_t slink = std::get<1>(k);
@@ -249,10 +256,12 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
 //
 void HGCalDigisClientHarvester::export_calibration_parameters(
     std::map<HGCalElectronicsId, hgcal::CellStatistics> &stats) {
-  //open txt file
-  std::ofstream myfile(level0CalibOut_);
 
-  myfile << "Channel Pedestal Noise CM_slope CM_offset BXm1_slope BXm1_offset\n";
+  //open txt files
+  std::ofstream calibfile(level0CalibOut_);
+  std::ofstream deadchfile(level0DeadChannelsOut_);
+
+  calibfile << "Channel Pedestal Noise CM_slope CM_offset BXm1_slope BXm1_offset\n";
   for (std::map<HGCalElectronicsId, hgcal::CellStatistics>::iterator it = stats.begin(); it != stats.end(); it++) {
     HGCalElectronicsId id = it->first;
     hgcal::CellStatistics s = it->second;
@@ -260,13 +269,19 @@ void HGCalDigisClientHarvester::export_calibration_parameters(
     std::vector<double> slopes = s.getSlopes();
     std::vector<double> intercepts = s.getIntercepts();
 
-    myfile << "0x" << std::hex << id.raw() << " " << std::dec << std::setprecision(3) << obs.first << " " << obs.second
+    calibfile << "0x" << std::setfill('0') << std::hex << id.raw() << " " << std::dec << std::setprecision(3) << obs.first << " " << obs.second
            << " " << slopes[0] << " " << intercepts[0] << " " << slopes[1] << " " << intercepts[1] << " " << std::endl;
+
+    //very low noise is a candidate/dispersion of values is candidate for dead channel
+    if(obs.second>1e-3) continue;
+    deadchfile << "0x" << std::hex << std::setfill('0') << id.raw() << std::endl;    
   }
 
-  myfile.close();
-
-  edm::LogInfo("HGCalDigisClient") << "Export CM parameters @ " << level0CalibOut_ << std::endl;
+  calibfile.close();
+  deadchfile.close();
+  
+  edm::LogInfo("HGCalDigisClient") << "Export level0 calibraiton parameters @ " << level0CalibOut_ << std::endl
+                                   << "Dead channels @ " << level0DeadChannelsOut_ << std::endl;
 }
 
 //
