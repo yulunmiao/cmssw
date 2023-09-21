@@ -5,5 +5,5 @@
 <use name="DQMServices/Core"/>
 <use name="CondFormats/DataRecord"/>
 <use name="CondFormats/HGCalObjects"/>
-
+<use name="Geometry/HGCalMapping"/>
 <flags EDM_PLUGIN="1"/>
