@@ -310,11 +310,11 @@ void HGCalUnpacker::parseSLink(
               channelData_[channelDataSize_] =
                 HGCROCChannelDataFrame<HGCalElectronicsId>(id, inputArray[iword]);
               commonModeSum_[channelDataSize_]=cmSum;
-              LogDebug("[HGCalUnpacker::parseSLink]") << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
-                                                      << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw()
-                                                      << "\n"
-                                                      << "extracted channel data=0x" << std::hex
-                                                      << channelData_.at(channelDataSize_).raw();
+              LogDebug("[HGCalUnpacker::parseSLink]")  << "Word " << channelDataSize_ << ", ECON-D:eRx:channel=" << (int)econd << ":"
+						       << (int)erx << ":" << (int)channel << ", HGCalElectronicsId=" << id.raw()
+						       << "\n"
+						       << "extracted channel data=0x" << std::hex
+						       << channelData_.at(channelDataSize_).raw();
               channelDataSize_++;
               iword++;
             }
@@ -357,9 +357,10 @@ void HGCalUnpacker::parseSLink(
     iword += 4;  // length of the S-Link trailer (128 bits)
   }
 
-  channelData_.resize(channelDataSize_);
-  commonModeSum_.resize(channelDataSize_);
-  commonModeData_.resize(commonModeDataSize_);
+  //in case an ECON was suppressed this will set the array to 0 ...
+  //channelData_.resize(channelDataSize_);
+  //commonModeSum_.resize(channelDataSize_);
+  //commonModeData_.resize(commonModeDataSize_);
   return;
 }
 
@@ -586,9 +587,9 @@ void HGCalUnpacker::parseCaptureBlock(
     }
     captureBlock++;  // the capture block has no trailer to parse
   }
-  channelData_.resize(channelDataSize_);
-  commonModeSum_.resize(channelDataSize_);
-  commonModeData_.resize(commonModeDataSize_);
+  //channelData_.resize(channelDataSize_);
+  //commonModeSum_.resize(channelDataSize_);
+  //commonModeData_.resize(commonModeDataSize_);
   return;
 }
 
@@ -780,8 +781,8 @@ void HGCalUnpacker::parseECOND(
           << "  unpacked payload length=" << iword - econdBodyStart << "\n"
           << "  expected payload length=" << payloadLength;
   }
-  channelData_.resize(channelDataSize_);
-  commonModeSum_.resize(channelDataSize_);
-  commonModeData_.resize(commonModeDataSize_);
+  //channelData_.resize(channelDataSize_);
+  //commonModeSum_.resize(channelDataSize_);
+  //commonModeData_.resize(commonModeDataSize_);
   return;
 }
