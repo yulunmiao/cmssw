@@ -63,8 +63,10 @@ private:
   std::string templateROOT_;
 
   //monitoring elements
-  std::map<MonitorKey_t, MonitorElement *> hex_channelId, hex_hgcrocPin, hex_sicellPadId, hex_pedestal, hex_noise,
-      hex_cmrho, hex_bxm1rho, p_coeffs;
+  std::map<MonitorKey_t, MonitorElement *> hex_channelId, hex_hgcrocPin, hex_sicellPadId, 
+    hex_pedestal, hex_noise, hex_cmrho, hex_bxm1rho, 
+    hex_toa_n, hex_toa_avg, hex_toa_std, hex_tot_avg, hex_tot_std, 
+    p_coeffs;
 
   //module mapper stuff
   edm::ESGetToken<HGCalCondSerializableModuleInfo, HGCalCondSerializableModuleInfoRcd> moduleInfoToken_;
@@ -139,8 +141,13 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
     hex_noise[k] = ibooker.book2DPoly("hex_adc_std_" + tag + "_" + module_type, "; x[cm]; y[cm];ADC standard deviation", -14, 14, -14, 14);
     hex_cmrho[k] = ibooker.book2DPoly("hex_cmrho_" + tag + "_" + module_type, "; x[cm]; y[cm];#rho(CM)", -14, 14, -14, 14);
     hex_bxm1rho[k] = ibooker.book2DPoly("hex_bxm1rho_" + tag + "_" + module_type, "; x[cm]; y[cm];#rho(ADC_{-1})", -14, 14, -14, 14);
-    // clang-format on
+    hex_toa_n[k]   = ibooker.book2DPoly("hex_toa_n_" + tag + "_" + module_type, "; x[cm]; y[cm];Hits with TOA", -14, 14, -14, 14);
+    hex_toa_avg[k] = ibooker.book2DPoly("hex_toa_avg_" + tag + "_" + module_type, "; x[cm]; y[cm];Average TOA", -14, 14, -14, 14);
+    hex_toa_std[k] = ibooker.book2DPoly("hex_toa_std_" + tag + "_" + module_type, "; x[cm]; y[cm];TOA standard deviation", -14, 14, -14, 14);
+    hex_tot_avg[k] = ibooker.book2DPoly("hex_tot_avg_" + tag + "_" + module_type, "; x[cm]; y[cm];Average TOT", -14, 14, -14, 14);
+    hex_tot_std[k] = ibooker.book2DPoly("hex_tot_std_" + tag + "_" + module_type, "; x[cm]; y[cm];TOT standard deviation", -14, 14, -14, 14);
 
+    // clang-format on
     p_coeffs[k] = ibooker.book2D("coeffs_" + tag, ";Channel;", nch, 0, nch, 11, 0, 11);
     p_coeffs[k]->setBinLabel(1, "<ADC>", 2);
     p_coeffs[k]->setBinLabel(2, "#sigma(ADC)", 2);
@@ -184,6 +191,11 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
       hex_sicellPadId[k]->addBin(gr);
       hex_sicellPadId[k]->setBinContent(i + 1, isCM ? 1e-6 : clip(siCells.at(idx).sicell));
       hex_pedestal[k]->addBin(gr);
+      hex_toa_n[k]->addBin(gr);
+      hex_toa_avg[k]->addBin(gr);
+      hex_toa_std[k]->addBin(gr);
+      hex_tot_avg[k]->addBin(gr);
+      hex_tot_std[k]->addBin(gr);
       hex_noise[k]->addBin(gr);
       hex_cmrho[k]->addBin(gr);
       hex_bxm1rho[k]->addBin(gr);
@@ -205,7 +217,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
       continue;
 
     //convert the sums to coefficients
-    for (int ibin = 1; ibin < me->getNbinsX() + 1; ibin++) {
+    for (int ibin = 1; ibin <=me->getNbinsX(); ibin++) {
       hgcal::CellStatistics stats;
       ibin = ibin - 1;  // somehow getBinContent starts from ibin = 0 ...
       stats.n = me->getBinContent(ibin, 1);
@@ -236,7 +248,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
         hex_cmrho[k]->setBinContent(ibin, Rs[0]);
         hex_bxm1rho[k]->setBinContent(ibin, Rs[1]);
       }
-      
+
       //add to summary stats
       bool zside = std::get<0>(k);
       uint16_t slink = std::get<1>(k);
@@ -246,6 +258,30 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
       uint16_t seq = (ibin - 1) % 39;
       HGCalElectronicsId eleid(zside, slink, captureblock, econd, erx, seq);
       summary_stats[eleid] = stats;
+
+      //TOA
+      hgcal::CellStatistics toastats;      
+      toastats.n = me->getBinContent(ibin, 13);
+      toastats.sum_x = me->getBinContent(ibin, 14);
+      toastats.sum_xx = me->getBinContent(ibin, 15);
+      std::pair<double, double> toaobs = toastats.getObservableStats();
+      if(toaobs.second>1e-3){
+	hex_toa_n[k]->setBinContent(ibin, toastats.n);
+	hex_toa_avg[k]->setBinContent(ibin, toaobs.first);
+	hex_toa_std[k]->setBinContent(ibin, toaobs.first);
+      }
+
+      //TOT
+      hgcal::CellStatistics totstats;      
+      totstats.n = me->getBinContent(ibin, 16);
+      totstats.sum_x = me->getBinContent(ibin, 17);
+      totstats.sum_xx = me->getBinContent(ibin, 18);
+      std::pair<double, double> totobs = totstats.getObservableStats();
+      if(totobs.second>1e-3){	
+	hex_tot_avg[k]->setBinContent(ibin, totobs.first);
+	hex_tot_std[k]->setBinContent(ibin, totobs.first);
+      }
+      
     }
   }
 

@@ -250,6 +250,18 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       for (size_t k = 1; k <= tosum.size(); k++)
         p_sums[geomKey]->setBinContent(
             globalChannelId, k, p_sums[geomKey]->getBinContent(globalChannelId, k) + tosum[k - 1]);
+      
+      //also add the TOA/TOT sums
+      if(toa>0){
+        p_sums[geomKey]->setBinContent( globalChannelId, 13, p_sums[geomKey]->getBinContent(globalChannelId, 13) + 1);
+        p_sums[geomKey]->setBinContent( globalChannelId, 14, p_sums[geomKey]->getBinContent(globalChannelId, 14) + double(toa));
+        p_sums[geomKey]->setBinContent( globalChannelId, 15, p_sums[geomKey]->getBinContent(globalChannelId, 15) + double(toa*toa));
+      }
+      if(tot>0){
+        p_sums[geomKey]->setBinContent( globalChannelId, 16, p_sums[geomKey]->getBinContent(globalChannelId, 16) + 1);
+        p_sums[geomKey]->setBinContent( globalChannelId, 17, p_sums[geomKey]->getBinContent(globalChannelId, 17) + double(tot));
+        p_sums[geomKey]->setBinContent( globalChannelId, 18, p_sums[geomKey]->getBinContent(globalChannelId, 18) + double(tot*tot));
+      }
 
       // For the last itetration, get the information from the CM and add it in the ADC row for the CM channels
       // so that the hex_pedestal maps will be filled for the CM channels in the HGCalDigisClientHarvester.cc
@@ -373,7 +385,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
         "tot_vs_trigtime_" + tag, ";trigger phase; TOT of channel with max <TOT>", 200, 0, 200, 100, 0, 4096);
     p_toavstrigtime[k] = ibook.book2D(
         "toa_vs_trigtime_" + tag, ";trigger phase; TOA of channel with max <ADC-ADC_{-1}>", 200, 0, 200, 100, 0, 1024);
-    p_sums[k] = ibook.book2D("sums_" + tag, ";Channel;", nch, 0, nch, 12, 0, 12);
+    p_sums[k] = ibook.book2D("sums_" + tag, ";Channel;", nch, 0, nch, 18, 0, 18);
     p_sums[k]->setBinLabel(1, "N", 2);
     p_sums[k]->setBinLabel(2, "#sum ADC", 2);
     p_sums[k]->setBinLabel(3, "#sum ADC^{2}", 2);
@@ -383,9 +395,16 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     p_sums[k]->setBinLabel(7, "#sum ADC_{-1}", 2);
     p_sums[k]->setBinLabel(8, "#sum ADC_{-1}^{2}", 2);
     p_sums[k]->setBinLabel(9, "#sum ADC*ADC_{-1}", 2);
-    p_sums[k]->setBinLabel(10, "#sum TDC", 2);
-    p_sums[k]->setBinLabel(11, "#sum TDC^{2}", 2);
-    p_sums[k]->setBinLabel(12, "#sum ADC*TDC", 2);
+    p_sums[k]->setBinLabel(10, "#sum N(TDC)", 2);
+    p_sums[k]->setBinLabel(11, "#sum N(TDC)^{2}", 2);
+    p_sums[k]->setBinLabel(12, "#sum ADC*N(TDC)", 2);
+    p_sums[k]->setBinLabel(13, "N(TOA)", 2);
+    p_sums[k]->setBinLabel(14, "#sum TOA", 2);
+    p_sums[k]->setBinLabel(15, "#sum TOA^{2}", 2);
+    p_sums[k]->setBinLabel(16, "N(TOT)", 2);
+    p_sums[k]->setBinLabel(17, "#sum TOT", 2);
+    p_sums[k]->setBinLabel(18, "#sum TOT^{2}", 2);
+
     p_maxadc[k] = ibook.book1D("maxadc_" + tag, ";max ADC; Counts", 100, 0, 1024);
     p_adc[k] = ibook.bookProfile("p_adc_" + tag, ";Channel; ADC", nch, 0, nch, 100, 0, 1024);
     p_adc[k]->setOption("s");  //save standard deviation instead of error mean for noise estimate
