@@ -61,8 +61,8 @@ private:
   std::map<MonitorKey_t, MonitorElement*> p_hitcount, p_maxadcvstrigtime, p_adcvstrigtime, p_adcpedsubvstrigtime,
       p_totvstrigtime, p_toavstrigtime, p_adc, p_tot, p_adcm, p_toa, p_maxadc, p_sums, h_adc, h_adcm, h_tot, h_toa,
       h_adcpedsub;
-  MonitorElement* h_trigtime;
-  MonitorElement* p_econdquality;
+  MonitorElement *h_trigtime;
+  MonitorElement *p_econdquality, *p_econdcbquality, *p_econdpayload;
   std::map<MonitorKey_t, int> modbins_;
 
   // ------------ member data ------------
@@ -155,7 +155,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
                                  << "channel = " << globalChannelId << ", CM=" << isCM;
 
     // fill monitoring elements for digis
-    uint8_t tctp = digi.tctp();
+    //uint8_t tctp = digi.tctp();
     uint16_t adc = digi.adc();
     uint16_t tot = digi.tot();
     uint16_t toa = digi.toa();
@@ -169,11 +169,14 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     p_toa[geomKey]->Fill(globalChannelId, toa);
     h_toa[geomKey]->Fill(toa);
 
-    if (tctp == 3) {
+    if (tot>0) {
       //TOT
       p_tot[geomKey]->Fill(globalChannelId, tot);
       h_tot[geomKey]->Fill(tot);
-    } else {
+    } 
+
+    if(adc>0) {
+
       //ADC
       h_adc[geomKey]->Fill(adc);
       p_adc[geomKey]->Fill(globalChannelId, adc);
@@ -219,9 +222,9 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
         double sumADCm = p_sums[geomKey]->getBinContent(globalChannelId, 7);
         double n = p_sums[geomKey]->getBinContent(globalChannelId, 1);
         double pedestal = sumADCm / n;
-        if (tctp == 3)
+        if (tot > 0)
           p_totvstrigtime[geomKey]->Fill(trigTime, tot);
-        else {
+        if(adc>0) {
           p_adcvstrigtime[geomKey]->Fill(trigTime, adc - pedestal);
           p_adcpedsubvstrigtime[geomKey]->Fill(trigTime, adc);
         }
@@ -247,6 +250,18 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
       for (size_t k = 1; k <= tosum.size(); k++)
         p_sums[geomKey]->setBinContent(
             globalChannelId, k, p_sums[geomKey]->getBinContent(globalChannelId, k) + tosum[k - 1]);
+      
+      //also add the TOA/TOT sums
+      if(toa>0){
+        p_sums[geomKey]->setBinContent( globalChannelId, 13, p_sums[geomKey]->getBinContent(globalChannelId, 13) + 1);
+        p_sums[geomKey]->setBinContent( globalChannelId, 14, p_sums[geomKey]->getBinContent(globalChannelId, 14) + double(toa));
+        p_sums[geomKey]->setBinContent( globalChannelId, 15, p_sums[geomKey]->getBinContent(globalChannelId, 15) + double(toa*toa));
+      }
+      if(tot>0){
+        p_sums[geomKey]->setBinContent( globalChannelId, 16, p_sums[geomKey]->getBinContent(globalChannelId, 16) + 1);
+        p_sums[geomKey]->setBinContent( globalChannelId, 17, p_sums[geomKey]->getBinContent(globalChannelId, 17) + double(tot));
+        p_sums[geomKey]->setBinContent( globalChannelId, 18, p_sums[geomKey]->getBinContent(globalChannelId, 18) + double(tot*tot));
+      }
 
       // For the last itetration, get the information from the CM and add it in the ADC row for the CM channels
       // so that the hex_pedestal maps will be filled for the CM channels in the HGCalDigisClientHarvester.cc
@@ -279,8 +294,11 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   if (flagged_econds.isValid()) {
     for (auto econd : *flagged_econds) {
       HGCalElectronicsId eleid(econd.eleid);
-      MonitorKey_t k(eleid.zSide(), eleid.fedId(), eleid.captureBlock(), eleid.econdIdx());
+      MonitorKey_t logiKey(eleid.zSide(), eleid.fedId(), eleid.captureBlock(), eleid.econdIdx());
+      MonitorKey_t k = module_keys_[logiKey];
       int ibin = modbins_[k];
+      p_econdpayload->Fill(ibin,econd.payload);
+      p_econdcbquality->Fill(ibin,econd.cbflags);
       if (econd.cbFlag())
         p_econdquality->Fill(ibin, 0);
       if (econd.htFlag())
@@ -315,7 +333,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   
   //book monitoring elements (histos, profiles, etc.)
   ibook.setCurrentFolder("HGCAL/Digis");
-  p_econdquality = ibook.book2D("p_econdquality", ";ECON-D;Quality flags", nmods, 0, nmods, 8, 0, 8);
+  p_econdquality = ibook.book2D("p_econdquality", ";ECON-D;Header quality flags", nmods, 0, nmods, 8, 0, 8);
   p_econdquality->setBinLabel(1, "CB", 2);
   p_econdquality->setBinLabel(2, "H/T", 2);
   p_econdquality->setBinLabel(3, "E/B/O", 2);
@@ -325,14 +343,29 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   p_econdquality->setBinLabel(7, "Payload (OF)", 2);
   p_econdquality->setBinLabel(8, "Payload (mismatch)", 2);
 
+  p_econdcbquality = ibook.book2D("p_econdcbquality", ";ECON-D;DAQ quality flags", nmods, 0, nmods, 8, 0, 8);
+  p_econdcbquality->setBinLabel(1, "Normal ", 2);
+  p_econdcbquality->setBinLabel(2, "Payload", 2);
+  p_econdcbquality->setBinLabel(3, "CRC Error", 2);
+  p_econdcbquality->setBinLabel(4, "EvID Mis.", 2);
+  p_econdcbquality->setBinLabel(5, "FSM T/O", 2);
+  p_econdcbquality->setBinLabel(6, "BCID/OrbitID", 2);
+  p_econdcbquality->setBinLabel(7, "MB Overflow", 2);
+  p_econdcbquality->setBinLabel(8, "Innactive", 2);
+
+  p_econdpayload= ibook.book2D("p_econdpayload", ";ECON-D;Payload", nmods, 0, nmods, 200, 0,500);
+
   h_trigtime = ibook.book1D("trigtime", ";trigger phase; Counts", 200, 0, 200);
 
   for (auto m : moduleInfo.params_) {
+
     TString tag = Form("zside%d_plane%d_u%d_v%d", m.zside, m.plane, m.u, m.v);
     MonitorKey_t k(m.zside, m.plane, m.u, m.v);
     modbins_[k] = modbins_.size();
     TString modlabel(tag);
     p_econdquality->setBinLabel(modbins_[k] + 1, modlabel.ReplaceAll("_", ",").Data(), 1);
+    p_econdcbquality->setBinLabel(modbins_[k] + 1, modlabel.ReplaceAll("_", ",").Data(), 1);
+    p_econdpayload->setBinLabel(modbins_[k] + 1, modlabel.ReplaceAll("_", ",").Data(), 1);
 
     int nch(39 * 6 * (1 + m.isHD));
     p_hitcount[k] = ibook.book1D("hitcount_" + tag, ";Channel; #hits", nch, 0, nch);
@@ -352,7 +385,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
         "tot_vs_trigtime_" + tag, ";trigger phase; TOT of channel with max <TOT>", 200, 0, 200, 100, 0, 4096);
     p_toavstrigtime[k] = ibook.book2D(
         "toa_vs_trigtime_" + tag, ";trigger phase; TOA of channel with max <ADC-ADC_{-1}>", 200, 0, 200, 100, 0, 1024);
-    p_sums[k] = ibook.book2D("sums_" + tag, ";Channel;", nch, 0, nch, 12, 0, 12);
+    p_sums[k] = ibook.book2D("sums_" + tag, ";Channel;", nch, 0, nch, 18, 0, 18);
     p_sums[k]->setBinLabel(1, "N", 2);
     p_sums[k]->setBinLabel(2, "#sum ADC", 2);
     p_sums[k]->setBinLabel(3, "#sum ADC^{2}", 2);
@@ -362,9 +395,16 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
     p_sums[k]->setBinLabel(7, "#sum ADC_{-1}", 2);
     p_sums[k]->setBinLabel(8, "#sum ADC_{-1}^{2}", 2);
     p_sums[k]->setBinLabel(9, "#sum ADC*ADC_{-1}", 2);
-    p_sums[k]->setBinLabel(10, "#sum TDC", 2);
-    p_sums[k]->setBinLabel(11, "#sum TDC^{2}", 2);
-    p_sums[k]->setBinLabel(12, "#sum ADC*TDC", 2);
+    p_sums[k]->setBinLabel(10, "#sum N(TDC)", 2);
+    p_sums[k]->setBinLabel(11, "#sum N(TDC)^{2}", 2);
+    p_sums[k]->setBinLabel(12, "#sum ADC*N(TDC)", 2);
+    p_sums[k]->setBinLabel(13, "N(TOA)", 2);
+    p_sums[k]->setBinLabel(14, "#sum TOA", 2);
+    p_sums[k]->setBinLabel(15, "#sum TOA^{2}", 2);
+    p_sums[k]->setBinLabel(16, "N(TOT)", 2);
+    p_sums[k]->setBinLabel(17, "#sum TOT", 2);
+    p_sums[k]->setBinLabel(18, "#sum TOT^{2}", 2);
+
     p_maxadc[k] = ibook.book1D("maxadc_" + tag, ";max ADC; Counts", 100, 0, 1024);
     p_adc[k] = ibook.bookProfile("p_adc_" + tag, ";Channel; ADC", nch, 0, nch, 100, 0, 1024);
     p_adc[k]->setOption("s");  //save standard deviation instead of error mean for noise estimate

@@ -7,6 +7,20 @@ class HGCalFlaggedECONDInfo
 {
  public:
 
+  /**
+     @short flags in the capture block header pertaining an ECON-D
+   */
+  enum CBFlagTypes { PAYLOADTOOLARGE=1,
+		     CRCERROR=2,
+		     EVENTIDMISMATCH=3,
+		     FSMTIMEOUT=4,
+		     BCorORBITIDMISMATCH=5,
+		     MAINBUFFEROVERFLOW=6,
+		     INACTIVEINPUT=7};
+
+  /**
+     @short flags in the ECON-D header
+   */
   enum FlagTypes { CBSTATUS=1,
                    HTBITS=2,
                    EBOBITS=4,
@@ -17,12 +31,15 @@ class HGCalFlaggedECONDInfo
                    PAYLOADMISMATCHES=128,
                    UNEXPECTEDTRUNCATED=256};
   
-  HGCalFlaggedECONDInfo() : HGCalFlaggedECONDInfo(0,0,0) {}
-  HGCalFlaggedECONDInfo(uint32_t loc, uint32_t flagbits, uint32_t id)
-    : iword(loc), flags(flagbits), eleid(id) {}
+  HGCalFlaggedECONDInfo() : HGCalFlaggedECONDInfo(0,0,0,0,0) {}
+  HGCalFlaggedECONDInfo(uint32_t loc, uint32_t cbflagbits, uint32_t flagbits, uint32_t id, uint32_t pl)
+    : iword(loc), cbflags(cbflagbits), flags(flagbits), eleid(id), payload(pl) {}
   HGCalFlaggedECONDInfo(const HGCalFlaggedECONDInfo &t)
-    : HGCalFlaggedECONDInfo(t.iword,t.flags,t.eleid) {}
-  
+    : HGCalFlaggedECONDInfo(t.iword,t.cbflags,t.flags,t.eleid,t.payload) {}
+
+  void setPayload(uint32_t v) { payload=v; }
+  void addFlag(FlagTypes f) { flags += f; } 
+  void addToFlag(uint32_t v) { flags += v; } 
   bool cbFlag() { return flags & 0x1; };
   bool htFlag() { return (flags>>1) & 0x1; };
   bool eboFlag() { return (flags>>2) & 0x1; };
@@ -33,7 +50,7 @@ class HGCalFlaggedECONDInfo
   bool payloadMismatches() { return (flags>>7) & 0x1; };
   bool unexpectedTruncated() { return (flags>>8) & 0x1; };
     
-  uint32_t iword,flags,eleid;
+  uint32_t iword,cbflags,flags,eleid,payload;
 };
 
 typedef std::vector<HGCalFlaggedECONDInfo> HGCalFlaggedECONDInfoCollection;
