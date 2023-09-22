@@ -96,7 +96,9 @@ unpackerFlagsTable = cms.EDProducer("SimpleHGCalUnpackerFlagsTableProducer",
                                     variables = cms.PSet(
                                         eleid = Var('eleid', 'uint', precision=-1, doc='electronics id'),
                                         flags = Var('flags', 'uint', precision=-1, doc='HGCalFlaggedECONDInfo flags word'),
-                                        iword = Var('iword', 'uint', precision=-1, doc='faulty word when unpacking'),
+                                        cbflags = Var('cbflags', 'uint', precision=-1, doc='Capture block flags for this ECON-D'),
+                                        payload = Var('payload', 'uint', precision=-1, doc='ECON-D payload in the header'),
+                                        iword = Var('iword', 'uint', precision=-1, doc='ECON-D 32b word position when unpacking FED data'),
                                     )
 )
 

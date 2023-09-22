@@ -61,8 +61,8 @@ private:
   std::map<MonitorKey_t, MonitorElement*> p_hitcount, p_maxadcvstrigtime, p_adcvstrigtime, p_adcpedsubvstrigtime,
       p_totvstrigtime, p_toavstrigtime, p_adc, p_tot, p_adcm, p_toa, p_maxadc, p_sums, h_adc, h_adcm, h_tot, h_toa,
       h_adcpedsub;
-  MonitorElement* h_trigtime;
-  MonitorElement* p_econdquality;
+  MonitorElement *h_trigtime;
+  MonitorElement *p_econdquality, *p_econdcbquality, *p_econdpayload;
   std::map<MonitorKey_t, int> modbins_;
 
   // ------------ member data ------------
@@ -155,7 +155,7 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
                                  << "channel = " << globalChannelId << ", CM=" << isCM;
 
     // fill monitoring elements for digis
-    uint8_t tctp = digi.tctp();
+    //uint8_t tctp = digi.tctp();
     uint16_t adc = digi.adc();
     uint16_t tot = digi.tot();
     uint16_t toa = digi.toa();
@@ -169,11 +169,14 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     p_toa[geomKey]->Fill(globalChannelId, toa);
     h_toa[geomKey]->Fill(toa);
 
-    if (tctp == 3) {
+    if (tot>0) {
       //TOT
       p_tot[geomKey]->Fill(globalChannelId, tot);
       h_tot[geomKey]->Fill(tot);
-    } else {
+    } 
+
+    if(adc>0) {
+
       //ADC
       h_adc[geomKey]->Fill(adc);
       p_adc[geomKey]->Fill(globalChannelId, adc);
@@ -219,9 +222,9 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
         double sumADCm = p_sums[geomKey]->getBinContent(globalChannelId, 7);
         double n = p_sums[geomKey]->getBinContent(globalChannelId, 1);
         double pedestal = sumADCm / n;
-        if (tctp == 3)
+        if (tot > 0)
           p_totvstrigtime[geomKey]->Fill(trigTime, tot);
-        else {
+        if(adc>0) {
           p_adcvstrigtime[geomKey]->Fill(trigTime, adc - pedestal);
           p_adcpedsubvstrigtime[geomKey]->Fill(trigTime, adc);
         }
@@ -279,8 +282,11 @@ void HGCalDigisClient::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   if (flagged_econds.isValid()) {
     for (auto econd : *flagged_econds) {
       HGCalElectronicsId eleid(econd.eleid);
-      MonitorKey_t k(eleid.zSide(), eleid.fedId(), eleid.captureBlock(), eleid.econdIdx());
+      MonitorKey_t logiKey(eleid.zSide(), eleid.fedId(), eleid.captureBlock(), eleid.econdIdx());
+      MonitorKey_t k = module_keys_[logiKey];
       int ibin = modbins_[k];
+      p_econdpayload->Fill(ibin,econd.payload);
+      p_econdcbquality->Fill(ibin,econd.cbflags);
       if (econd.cbFlag())
         p_econdquality->Fill(ibin, 0);
       if (econd.htFlag())
@@ -315,7 +321,7 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   
   //book monitoring elements (histos, profiles, etc.)
   ibook.setCurrentFolder("HGCAL/Digis");
-  p_econdquality = ibook.book2D("p_econdquality", ";ECON-D;Quality flags", nmods, 0, nmods, 8, 0, 8);
+  p_econdquality = ibook.book2D("p_econdquality", ";ECON-D;Header quality flags", nmods, 0, nmods, 8, 0, 8);
   p_econdquality->setBinLabel(1, "CB", 2);
   p_econdquality->setBinLabel(2, "H/T", 2);
   p_econdquality->setBinLabel(3, "E/B/O", 2);
@@ -325,14 +331,29 @@ void HGCalDigisClient::bookHistograms(DQMStore::IBooker& ibook, edm::Run const& 
   p_econdquality->setBinLabel(7, "Payload (OF)", 2);
   p_econdquality->setBinLabel(8, "Payload (mismatch)", 2);
 
+  p_econdcbquality = ibook.book2D("p_econdcbquality", ";ECON-D;DAQ quality flags", nmods, 0, nmods, 8, 0, 8);
+  p_econdcbquality->setBinLabel(1, "Normal ", 2);
+  p_econdcbquality->setBinLabel(2, "Payload", 2);
+  p_econdcbquality->setBinLabel(3, "CRC Error", 2);
+  p_econdcbquality->setBinLabel(4, "EvID Mis.", 2);
+  p_econdcbquality->setBinLabel(5, "FSM T/O", 2);
+  p_econdcbquality->setBinLabel(6, "BCID/OrbitID", 2);
+  p_econdcbquality->setBinLabel(7, "MB Overflow", 2);
+  p_econdcbquality->setBinLabel(8, "Innactive", 2);
+
+  p_econdpayload= ibook.book2D("p_econdpayload", ";ECON-D;Payload", nmods, 0, nmods, 200, 0,500);
+
   h_trigtime = ibook.book1D("trigtime", ";trigger phase; Counts", 200, 0, 200);
 
   for (auto m : moduleInfo.params_) {
+
     TString tag = Form("zside%d_plane%d_u%d_v%d", m.zside, m.plane, m.u, m.v);
     MonitorKey_t k(m.zside, m.plane, m.u, m.v);
     modbins_[k] = modbins_.size();
     TString modlabel(tag);
     p_econdquality->setBinLabel(modbins_[k] + 1, modlabel.ReplaceAll("_", ",").Data(), 1);
+    p_econdcbquality->setBinLabel(modbins_[k] + 1, modlabel.ReplaceAll("_", ",").Data(), 1);
+    p_econdpayload->setBinLabel(modbins_[k] + 1, modlabel.ReplaceAll("_", ",").Data(), 1);
 
     int nch(39 * 6 * (1 + m.isHD));
     p_hitcount[k] = ibook.book1D("hitcount_" + tag, ";Channel; #hits", nch, 0, nch);

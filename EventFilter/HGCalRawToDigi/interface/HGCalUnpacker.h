@@ -89,12 +89,16 @@ public:
   void parseSLink(const std::vector<uint32_t>& inputArray,
                   const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
                   const std::function<uint16_t(uint16_t fedid)>& fed2slink);
+
+  /// we should think of removing this method
   /// parse input in capture block format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from capture block indices to enabled eRx in this ECON-D
   void parseCaptureBlock(
       const std::vector<uint32_t>& inputArray,
       const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping);
+
+  /// we should think of removing this method
   /// parse input in ECON-D format
   /// \param[in] inputArray input as 32-bits words vector.
   /// \param[in] enabledERXMapping map from ECON-D indices to enabled eRx in this ECON-D
@@ -107,8 +111,6 @@ public:
   const std::vector<uint16_t>& commonModeSum() const{ return commonModeSum_; }
   /// \return vector of HGCROCChannelDataFrame<ElecID>(ID, value) for common modes
   const std::vector<HGCROCChannelDataFrame<HGCalElectronicsId> >& commonModeData() const { return commonModeData_; }
-
-
   /// \return vector of flagged ECOND information
   const HGCalFlaggedECONDInfoCollection& flaggedECOND() const { return flaggedECOND_; }
 

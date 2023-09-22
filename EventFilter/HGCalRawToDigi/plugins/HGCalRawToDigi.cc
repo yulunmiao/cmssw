@@ -156,15 +156,12 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
                               }
                             });
     } catch(cms::Exception &e) {
-      std::cout << "An exeption was caught while decoding raw data for FED " << (uint32_t)fed_id << std::endl;
+      std::cout << "An exeption was caught while decoding raw data for FED "  << std::dec << (uint32_t)fed_id << std::endl;
       std::cout << e.what() << std::endl;
       std::cout << "Event is: " << std::endl;
-      std::cout << "Total size (32b words) " << data_32bit.size() << std::endl;
-      for(size_t i=0; i<10; i++)
-        std::cout << std::hex << "0x" << std::setfill('0') << data_32bit[i] << std::endl;
-      std::cout << "..." << std::endl;
-      for(size_t i=data_32bit.size()-4; i<data_32bit.size(); i++)
-        std::cout << std::hex << "0x" << std::setfill('0') << data_32bit[i] << std::endl;
+      std::cout << "Total size (32b words) " << std::dec << data_32bit.size() << std::endl;
+      for(size_t i=0; i<data_32bit.size(); i++)
+        std::cout << std::dec << i << " | "  << std::hex << "0x" << std::setfill('0') << data_32bit[i] << std::endl;
     }
 
     auto channeldata = unpacker_->channelData();
