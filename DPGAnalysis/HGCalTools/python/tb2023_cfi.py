@@ -55,6 +55,22 @@ def configTBConditions(process, key='default'):
     }
     modulelocator = modulelocator_dict[key] if key in modulelocator_dict else modulelocator_dict['default']
 
+
+    #yet some additional era-dependent configs
+    if key in ['MLFL00041','MLDSL57','MLDSR01','MHDF56'] and hasattr(process, 'hgcalEmulatedSlinkRawData'):
+        process.hgCalConfigESSourceFromYAML.charMode = 1 if 'ped' in key else 0
+        maxERx=6
+        if 'MHDF56' in key: maxERx=12
+        if 'MLDSL57' in key or 'MLDSR01' in key: maxERx=3
+        econd_id=0
+        for econd in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs:
+            econd.passthroughMode=cms.bool(True)
+            econd.characterisationMode=cms.bool(True)
+            econd.enabledERxs=cms.vuint32([i for i in range(maxERx)])
+            econd.active=cms.bool( (econd_id==0) )
+            econd_id+=1
+        print(f'key is {key} maxERx set to {maxERx} and charMode={process.hgCalConfigESSourceFromYAML.charMode}')
+    
     process.hgCalModuleInfoESSource.filename = modulelocator
     process.hgCalSiModuleInfoESSource.filename = 'Geometry/HGCalMapping/data/WaferCellMapTraces.txt'
 
