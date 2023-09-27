@@ -104,7 +104,8 @@ void HGCalRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
     edm::LogInfo("HGCalRawToDigi::produce") << "Configuration retrieved for " << nmods << " modules: " << config_; //<< std::endl;
     for (auto it : config_.moduleConfigs) { // loop over map module electronicsId -> HGCalModuleConfig
       HGCalModuleConfig moduleConfig(it.second);
-      edm::LogInfo("HGCalRawToDigi::produce") << "  Module " << it.first << ": charMode=" << moduleConfig.charMode; //<< std::endl;
+      //edm::LogInfo("HGCalRawToDigi::produce")
+        std::cout << "  Module " << it.first << ": charMode=" << moduleConfig.charMode << std::endl;
     }
   } // else: use previously loaded module configuration
 

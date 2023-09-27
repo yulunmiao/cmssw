@@ -155,11 +155,6 @@ for econd in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs:
     econd.enabledERxs = cms.vuint32([i for i in range(options.numERxsPerECOND)])
     econd.numChannelsPerERx = cms.uint32(options.numChannelsPerERx)
     econd.defaultToTStatus = cms.uint32(options.ECONDToTStatus)
-    print('ECON-D {}: active? {}, enabled eRxs: {}, number of channels/eRx: {}, passthrough? {}, characterisation? {}'.format(
-        econd_id, bool(econd.active),
-        [i for i in econd.enabledERxs], econd.numChannelsPerERx.value(),
-        bool(econd.passthroughMode), bool(econd.characterisationMode)))
-    econd_id += 1
 
 # steer the unpacker
 process.hgcalDigis.src = cms.InputTag('hgcalEmulatedSlinkRawData', 'hgcalFEDRawData')
@@ -310,3 +305,12 @@ if options.dqmOnly:
 from DPGAnalysis.HGCalTools.tb2023_cfi import configTBConditions, addPerformanceReports
 configTBConditions(process, options.conditions)
 addPerformanceReports(process)
+
+
+econd_id=0
+for econd in process.hgcalEmulatedSlinkRawData.slinkParams.ECONDs:
+    print('ECON-D {}: active? {}, enabled eRxs: {}, number of channels/eRx: {}, passthrough? {}, characterisation? {}'.format(
+        econd_id, bool(econd.active),
+        [i for i in econd.enabledERxs], econd.numChannelsPerERx.value(),
+        bool(econd.passthroughMode), bool(econd.characterisationMode)))
+    econd_id += 1

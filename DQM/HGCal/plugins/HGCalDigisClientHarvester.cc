@@ -206,6 +206,7 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
   }
 
   //loop over modules to harvest
+  auto plane2eleidMap = moduleInfo.getAsSimplifiedModuleLocatorMap(false);
   std::map<HGCalElectronicsId, hgcal::CellStatistics> summary_stats;
   for (auto it : module_keys) {
     MonitorKey_t k(it.second);
@@ -249,11 +250,12 @@ void HGCalDigisClientHarvester::dqmEndLuminosityBlock(DQMStore::IBooker &ibooker
         hex_bxm1rho[k]->setBinContent(ibin, Rs[1]);
       }
 
-      //add to summary stats
-      bool zside = std::get<0>(k);
-      uint16_t slink = std::get<1>(k);
-      uint16_t captureblock = std::get<2>(k);
-      uint16_t econd = std::get<3>(k);
+      //add to summary stats using the logical id
+      MonitorKey_t logik=plane2eleidMap[k];
+      bool zside = std::get<0>(logik);
+      uint16_t slink = std::get<1>(logik);
+      uint16_t captureblock = std::get<2>(logik);
+      uint16_t econd = std::get<3>(logik);
       uint16_t erx = (ibin - 1) / 39;
       uint16_t seq = (ibin - 1) % 39;
       HGCalElectronicsId eleid(zside, slink, captureblock, econd, erx, seq);
