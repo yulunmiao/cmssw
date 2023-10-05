@@ -2,20 +2,20 @@
 
 HGCalDenseMappingTool::HGCalDenseMappingTool(HGCalDenseMappingToolConfig config) : config_(config) {}
 
-uint32_t HGCalDenseMappingTool::denseMap(uint32_t sLink, uint32_t captureBlock) {
+uint32_t HGCalDenseMappingTool::denseIndex(uint32_t sLink, uint32_t captureBlock) {
   uint32_t rtn = sLink;
   rtn = rtn * config_.sLinkCaptureBlockMax + captureBlock;
   return rtn;
 }
 
-uint32_t HGCalDenseMappingTool::denseMap(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND) {
+uint32_t HGCalDenseMappingTool::denseIndex(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND) {
   uint32_t rtn = sLink;
   rtn = rtn * config_.sLinkCaptureBlockMax + captureBlock;
   rtn = rtn * config_.captureBlockECONDMax + eCOND;
   return rtn;
 }
 
-uint32_t HGCalDenseMappingTool::denseMap(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx) {
+uint32_t HGCalDenseMappingTool::denseIndex(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx) {
   uint32_t rtn = sLink;
   rtn = rtn * config_.sLinkCaptureBlockMax + captureBlock;
   rtn = rtn * config_.captureBlockECONDMax + eCOND;
@@ -23,7 +23,7 @@ uint32_t HGCalDenseMappingTool::denseMap(uint32_t sLink, uint32_t captureBlock, 
   return rtn;
 }
 
-uint32_t HGCalDenseMappingTool::denseMap(
+uint32_t HGCalDenseMappingTool::denseIndex(
     uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx, uint32_t channel) {
   uint32_t rtn = sLink;
   rtn = rtn * config_.sLinkCaptureBlockMax + captureBlock;
@@ -33,8 +33,9 @@ uint32_t HGCalDenseMappingTool::denseMap(
   return rtn;
 }
 
-uint32_t HGCalDenseMappingTool::denseMap(HGCalElectronicsId elecID) {
-  return denseMap(elecID.fedId(), elecID.captureBlock(), elecID.econdIdx(), elecID.econdeRx(), elecID.halfrocChannel());
+uint32_t HGCalDenseMappingTool::denseIndex(HGCalElectronicsId elecID) {
+  return denseIndex(
+      elecID.fedId(), elecID.captureBlock(), elecID.econdIdx(), elecID.econdeRx(), elecID.halfrocChannel());
 }
 
 HGCalElectronicsId HGCalDenseMappingTool::inverseDenseMap(uint32_t denseIdx) {

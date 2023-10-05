@@ -20,11 +20,11 @@ struct HGCalDenseMappingToolConfig {
 class HGCalDenseMappingTool {
 public:
   HGCalDenseMappingTool(HGCalDenseMappingToolConfig);
-  uint32_t denseMap(uint32_t sLink, uint32_t captureBlock);
-  uint32_t denseMap(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND);
-  uint32_t denseMap(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx);
-  uint32_t denseMap(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx, uint32_t channel);
-  uint32_t denseMap(HGCalElectronicsId elecID);
+  uint32_t denseIndex(uint32_t sLink, uint32_t captureBlock);
+  uint32_t denseIndex(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND);
+  uint32_t denseIndex(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx);
+  uint32_t denseIndex(uint32_t sLink, uint32_t captureBlock, uint32_t eCOND, uint32_t eRx, uint32_t channel);
+  uint32_t denseIndex(HGCalElectronicsId elecID);
   HGCalElectronicsId inverseDenseMap(uint32_t denseIdx);
 
 private:
