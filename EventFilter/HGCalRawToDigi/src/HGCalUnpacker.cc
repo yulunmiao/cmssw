@@ -24,7 +24,7 @@ void HGCalUnpacker::parseSLink(
     const std::function<uint16_t(uint16_t sLink, uint8_t captureBlock, uint8_t econd)>& enabledERXMapping,
     const std::function<uint16_t(uint16_t fedid)>& fed2slink) {
   uint16_t sLink;
-  bool zside(false);  //fixme: this should be based on slink number (fedId)
+  bool zside(false);
   channelDataSize_ = 0;
   commonModeDataSize_ = 0;
   flaggedECOND_.clear();
@@ -48,6 +48,7 @@ void HGCalUnpacker::parseSLink(
 
     uint16_t fedid = ((inputArray[iword + 1] >> kSLinkFEDIdShift) & kSLinkFEDIdMask);
     sLink = fed2slink(fedid);
+    zside = sLink > config_.maxFEDsPerEndcap;
     LogDebug("[HGCalUnpacker::parseSLink]") << "SLink=" << sLink << " index assigned from FED ID=" << fedid;
 
     iword += 4;  // length of the S-Link header (128 bits)
@@ -351,7 +352,7 @@ void HGCalUnpacker::parseSLink(
 void HGCalUnpacker::parseSLinkHeaderOnly(const std::vector<uint32_t>& inputArray,
                                          const std::function<uint16_t(uint16_t fedid)>& fed2slink) {
   uint16_t sLink;
-  bool zside(false);  //fixme: this should be based on slink number (fedId)
+  bool zside(false);
   channelDataSize_ = 0;
   commonModeDataSize_ = 0;
   flaggedECOND_.clear();
@@ -375,6 +376,7 @@ void HGCalUnpacker::parseSLinkHeaderOnly(const std::vector<uint32_t>& inputArray
 
     uint16_t fedid = ((inputArray[iword + 1] >> kSLinkFEDIdShift) & kSLinkFEDIdMask);
     sLink = fed2slink(fedid);
+    zside = sLink > config_.maxFEDsPerEndcap;
     LogDebug("[HGCalUnpacker::parseSLink]") << "SLink=" << sLink << " index assigned from FED ID=" << fedid;
 
     iword += 4;  // length of the S-Link header (128 bits)

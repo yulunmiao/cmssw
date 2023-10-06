@@ -23,6 +23,7 @@ struct HGCalUnpackerConfig {
   uint32_t sLinkBOE{0x2a};            ///< S-Link BOE pattern
   uint32_t cbHeaderMarker{0x5f};      ///< Capture block reserved pattern for a new event
   uint32_t econdHeaderMarker{0x154};  ///< ECON-D header Marker pattern for a new event
+  uint32_t maxFEDsPerEndcap{512};     ///< maximum number of FEDs on one side
   uint32_t sLinkCaptureBlockMax{10};  ///< maximum number of capture blocks in one S-Link
   uint32_t captureBlockECONDMax{12};  ///< maximum number of ECON-Ds in one capture block
   uint32_t econdERXMax{12};           ///< maximum number of eRxs in one ECON-D

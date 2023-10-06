@@ -38,7 +38,7 @@ uint32_t HGCalDenseMappingTool::denseIndex(HGCalElectronicsId elecID) {
       elecID.fedId(), elecID.captureBlock(), elecID.econdIdx(), elecID.econdeRx(), elecID.halfrocChannel());
 }
 
-HGCalElectronicsId HGCalDenseMappingTool::inverseDenseMap(uint32_t denseIdx) {
+HGCalElectronicsId HGCalDenseMappingTool::inverseDenseIndex(uint32_t denseIdx) {
   uint8_t halfrocch = denseIdx % config_.erxChannelMax;
   denseIdx = denseIdx / config_.erxChannelMax;
   uint8_t econderx = denseIdx % config_.econdERXMax;
@@ -46,7 +46,7 @@ HGCalElectronicsId HGCalDenseMappingTool::inverseDenseMap(uint32_t denseIdx) {
   uint8_t econdidx = denseIdx % config_.captureBlockECONDMax;
   denseIdx = denseIdx / config_.captureBlockECONDMax;
   uint8_t captureblock = denseIdx % config_.sLinkCaptureBlockMax;
-  uint16_t fedid = denseIdx / config_.sLinkCaptureBlockMax;
-  //TODO:Get the side information
-  return HGCalElectronicsId(true, fedid, captureblock, econdidx, econderx, halfrocch);
+  uint16_t sLink = denseIdx / config_.sLinkCaptureBlockMax;
+  bool zside = sLink > config_.maxFEDsPerEndcap;
+  return HGCalElectronicsId(zside, sLink, captureblock, econdidx, econderx, halfrocch);
 }
