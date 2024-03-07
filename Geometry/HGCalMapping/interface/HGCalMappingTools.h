@@ -22,8 +22,9 @@ namespace hgcal {
       //match module by layer, u, v
       for (int i = 0; i<modules.view().metadata().size(); i++) {
         auto imod = modules.view()[i];
-        if(!imod.valid()) continue;
-        if(imod.zside()!=siid.zside()) continue;
+        if(!imod.valid()) continue;       
+        if(imod.zside()==0 && siid.zside()==1) continue;
+        if(imod.zside()==1 && siid.zside()==-1) continue;
         if(imod.isSiPM()) continue;
         if(imod.plane()!= siid.layer()) continue;
         if(imod.i1()!=siid.waferU()) continue;
