@@ -29,5 +29,6 @@ namespace hgcal {
 
       return HGCScintillatorDetId(type, layer, ring, iphi, false, celltype).rawId();
     }
+    
   }  // namespace mappingtools
 }  // namespace hgcal
