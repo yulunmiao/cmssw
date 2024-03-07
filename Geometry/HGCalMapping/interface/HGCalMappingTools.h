@@ -17,27 +17,23 @@ namespace hgcal {
 
     template<class T1,class T2>
     uint32_t getElectronicsIdForSiCell(const T1 &modules, const T2& cells, uint32_t detid) {
+
+      //get the module and cell parts of the id
       HGCSiliconDetId siid(detid);
-      
-      //match module by layer, u, v
+
+      // match module det id
+      uint32_t modid = siid.moduleId().rawId();
       for (int i = 0; i<modules.view().metadata().size(); i++) {
         auto imod = modules.view()[i];
-        if(!imod.valid()) continue;       
-        if(imod.zside()==0 && siid.zside()==1) continue;
-        if(imod.zside()==1 && siid.zside()==-1) continue;
-        if(imod.isSiPM()) continue;
-        if(imod.plane()!= siid.layer()) continue;
-        if(imod.i1()!=siid.waferU()) continue;
-        if(imod.i2()!=siid.waferV()) continue;
+        if(imod.detid() != modid) continue;
 
-        //match cell by u,v
+        //match cell by type of module and by cell det id
+        DetId::Detector det(DetId::Detector::HGCalEE);
+        uint32_t cellid = 0x3ff & HGCSiliconDetId(det, 0, 0, 0, 0, 0, siid.cellU(), siid.cellV()).rawId();
         for (int j = 0; j < cells.view().metadata().size(); j++) {
           auto jcell = cells.view()[j];
-          if(jcell.typeidx() != imod.typeidx()) continue;
-          if(!jcell.valid()) continue;
-          if(jcell.i1()!=siid.cellU()) continue;
-          if(jcell.i2()!=siid.cellV()) continue;
-
+          if (jcell.typeidx() != imod.typeidx()) continue;
+          if(jcell.detid() != cellid) continue;
           return imod.eleid() + jcell.eleid();
         }
       }
