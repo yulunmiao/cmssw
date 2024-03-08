@@ -79,7 +79,7 @@ namespace ALPAKA_ACCELERATOR_NAMESPACE {
           isSiPM = celltypes.first;
           celltype = celltypes.second;
 
-          eleid = HGCalElectronicsId((zside > 0), fedid, captureblock, econdidx, 0, 0).raw();
+          eleid = HGCalElectronicsId((zside > 0), fedid, captureblockidx, econdidx, 0, 0).raw();
 
           if (!isSiPM) {
             int zp(zside > 0 ? 1 : -1);
